@@ -18,16 +18,18 @@ const meta = {
       control: { type: 'select' }, // Use select control for variants
       options: ['primary', 'secondary'],
     },
-    onClick: { action: 'clicked' }, // Log actions in the Storybook UI
     children: {
       control: 'text', // Allow editing button text
-      defaultValue: 'Button Text',
-    }
+    },
+    onClick: { action: 'clicked' }, // Log actions in the Storybook UI
+    disabled: {
+      control: 'boolean',
+    },
   },
 } satisfies Meta<typeof Button>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<typeof Button>;
 
 // More on writing stories with args: https://storybook.js.org/docs/writing-stories/args
 
@@ -51,7 +53,15 @@ export const Secondary: Story = {
 export const WithCustomClass: Story = {
   args: {
     variant: 'primary',
+    className: 'custom-class',
     children: 'Custom Class Button',
-    className: 'bg-green-500 hover:bg-green-700', // Override default primary styles
+  },
+};
+
+export const Disabled: Story = {
+  args: {
+    variant: 'primary',
+    children: 'Disabled Button',
+    disabled: true,
   },
 }; 

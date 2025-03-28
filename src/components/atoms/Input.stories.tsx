@@ -16,24 +16,22 @@ const meta = {
     type: {
       control: 'select',
       options: ['text', 'password', 'email', 'number', 'search'],
-      defaultValue: 'text',
-      description: 'Input type attribute',
     },
     placeholder: {
       control: 'text',
-      description: 'Placeholder text',
     },
-    disabled: {
-      control: 'boolean',
-      defaultValue: false,
-      description: 'Disable the input',
+    value: {
+      control: 'text',
     },
     onChange: { action: 'changed' },
+    disabled: {
+      control: 'boolean',
+    },
   },
 } satisfies Meta<typeof Input>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<typeof Input>;
 
 export const Default: Story = {
   args: {
@@ -45,7 +43,7 @@ export const WithLabel: Story = {
   args: {
     label: 'Your Name',
     placeholder: 'John Doe',
-    id: 'name-input', // Explicit ID for label association
+    id: 'name-input',
   },
 };
 
@@ -60,7 +58,7 @@ export const Password: Story = {
 export const Disabled: Story = {
   args: {
     label: 'Disabled Input',
-    placeholder: 'Cannot edit',
+    placeholder: 'This input is disabled',
     disabled: true,
   },
 }; 

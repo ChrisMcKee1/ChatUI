@@ -1,28 +1,43 @@
 import React from 'react';
+import '../../styles/theme.css';
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  // Add any custom props here, e.g., variant, size
+interface ButtonProps {
+  children: React.ReactNode;
   variant?: 'primary' | 'secondary';
+  className?: string;
+  onClick?: () => void;
+  disabled?: boolean;
 }
 
 export const Button: React.FC<ButtonProps> = ({ 
   children, 
-  className, 
+  className = '', 
   variant = 'primary', 
-  ...props 
+  onClick,
+  disabled = false
 }) => {
-  const baseStyles = 'font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-150 ease-in-out';
+  const baseClasses = "py-2 px-4 rounded font-bold transition-colors duration-200";
   
-  const variantStyles = {
-    primary: 'bg-blue-500 hover:bg-blue-700 text-white',
-    secondary: 'bg-gray-300 hover:bg-gray-400 text-gray-800',
+  // Use themed button classes
+  const variantClasses = {
+    primary: "btn-primary",
+    secondary: "btn-secondary",
   };
-
+  
+  const disabledClasses = disabled 
+    ? "opacity-50 cursor-not-allowed pointer-events-none" 
+    : "";
+  
   return (
     <button
       type="button"
-      className={`${baseStyles} ${variantStyles[variant]} ${className || ''}`}
-      {...props}
+      className={`${baseClasses} ${variantClasses[variant]} ${disabledClasses} ${className}`}
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        backgroundColor: disabled ? 'var(--color-disabledBackground)' : undefined,
+        color: disabled ? 'var(--color-disabledText)' : undefined,
+      }}
     >
       {children}
     </button>

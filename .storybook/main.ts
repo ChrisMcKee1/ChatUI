@@ -1,4 +1,9 @@
 import type { StorybookConfig } from "@storybook/experimental-nextjs-vite";
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// ESM equivalent of __dirname
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const config: StorybookConfig = {
   "stories": [
@@ -17,6 +22,25 @@ const config: StorybookConfig = {
   },
   "staticDirs": [
     "..\\public"
-  ]
+  ],
+  "viteFinal": async (config) => {
+    // Add any Vite-specific configuration to better handle CSS
+    config.css = {
+      ...config.css,
+      postcss: {
+        plugins: [],  // Let it use the project's postcss.config.js
+      },
+    };
+    
+    // Ensure Tailwind is properly resolved
+    if (config.resolve && config.resolve.alias) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@': path.resolve(__dirname, '../src'),
+      };
+    }
+    
+    return config;
+  }
 };
 export default config;
