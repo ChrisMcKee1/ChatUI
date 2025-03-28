@@ -36,8 +36,6 @@ export const MessageBubble = ({
 
   // Safely get colors from theme with fallbacks
   const userAvatarColor = theme?.colors?.secondary || DEFAULT_USER_COLOR;
-  // IMPORTANT: We're using CHAT_AI_COLOR instead of theme?.colors?.primary for the AI avatar
-  const aiAvatarColor = CHAT_AI_COLOR;
   
   // Get primary color for AI bubbles with fallback
   const primaryColor = theme?.colors?.primary || DEFAULT_AI_COLOR;
@@ -53,6 +51,9 @@ export const MessageBubble = ({
   const aiBubbleBgColor = isDarkMode 
     ? `rgba(${hexToRgb(CHAT_AI_COLOR)}, 0.15)` || DEFAULT_AI_BG_DARK
     : `rgba(${hexToRgb(CHAT_AI_COLOR)}, 0.08)` || DEFAULT_AI_BG_LIGHT;
+  
+  // Make sure AI avatar exactly matches the message bubble background
+  const aiAvatarColor = aiBubbleBgColor;
   
   // Ensure text colors have proper contrast
   const userTextColor = 'white'; // Always white for contrast against blue

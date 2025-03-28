@@ -4,6 +4,7 @@
 - **Framework:** Next.js
 - **Language:** TypeScript
 - **UI Library:** React
+- **Component Libraries:** Material UI, Lucide
 - **Component Development:** Storybook
 - **Version Control:** Git (with Gitflow workflow)
 
@@ -12,13 +13,16 @@
 - Specific setup steps TBD following `create-next-app`.
 
 ## Styling & Theming
-- **Approach:** TBD (Tailwind CSS, CSS Modules, CSS-in-JS like Emotion/styled-components are candidates).
+- **Approach:** Tailwind CSS with Material UI components
+- **Icons:** Lucide.dev icons
 - **Themes:** Light and Dark modes, defined by provided `Monokai Pro Dark theme.json` and `Monokai Pro Light theme.json`.
 
 ## Dependencies (Planned Initial)
 - `next`, `react`, `react-dom`, `typescript` (via `create-next-app`)
 - `@storybook/...` dependencies (via Storybook CLI)
-- Styling library (if chosen, e.g., `tailwindcss`, `emotion`, `styled-components`)
+- `tailwindcss` for additional styling and customization
+- `lucide-react` for icons
+- `@mui/material`, `@emotion/react`, `@emotion/styled` for Material UI components
 - State management library (if chosen, e.g., `zustand`)
 
 ## Constraints

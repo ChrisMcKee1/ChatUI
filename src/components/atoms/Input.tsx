@@ -1,7 +1,7 @@
 import React from 'react';
 import '../../styles/theme.css';
 
-interface InputProps {
+export interface InputProps {
   label?: string;
   id?: string;
   className?: string;
@@ -9,6 +9,7 @@ interface InputProps {
   placeholder?: string;
   value?: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   disabled?: boolean;
   error?: string;
   size?: 'sm' | 'md' | 'lg';
@@ -22,6 +23,7 @@ export const Input: React.FC<InputProps> = ({
   placeholder = '',
   value = '',
   onChange,
+  onKeyDown,
   disabled = false,
   error,
   size = 'md',
@@ -73,8 +75,10 @@ export const Input: React.FC<InputProps> = ({
     ` 
     : '';
 
+  const containerClass = label ? 'mb-4' : '';
+
   return (
-    <div className="mb-4">
+    <div className={containerClass}>
       {label && (
         <label 
           className={`
@@ -96,6 +100,7 @@ export const Input: React.FC<InputProps> = ({
           placeholder={placeholder}
           value={value}
           onChange={onChange}
+          onKeyDown={onKeyDown}
           disabled={disabled}
           className={`${baseClasses} ${disabledClasses} ${errorClasses} ${className}`}
         />
