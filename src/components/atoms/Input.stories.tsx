@@ -17,6 +17,10 @@ const meta = {
       control: 'select',
       options: ['text', 'password', 'email', 'number', 'search'],
     },
+    size: {
+      control: { type: 'select' },
+      options: ['sm', 'md', 'lg'],
+    },
     placeholder: {
       control: 'text',
     },
@@ -26,6 +30,9 @@ const meta = {
     onChange: { action: 'changed' },
     disabled: {
       control: 'boolean',
+    },
+    error: {
+      control: 'text',
     },
   },
 } satisfies Meta<typeof Input>;
@@ -44,6 +51,40 @@ export const WithLabel: Story = {
     label: 'Your Name',
     placeholder: 'John Doe',
     id: 'name-input',
+  },
+};
+
+export const Small: Story = {
+  args: {
+    label: 'Small Input',
+    placeholder: 'Small size input',
+    size: 'sm',
+  },
+};
+
+export const Medium: Story = {
+  args: {
+    label: 'Medium Input',
+    placeholder: 'Medium size input',
+    size: 'md',
+  },
+};
+
+export const Large: Story = {
+  args: {
+    label: 'Large Input',
+    placeholder: 'Large size input',
+    size: 'lg',
+  },
+};
+
+export const WithError: Story = {
+  args: {
+    label: 'Email',
+    type: 'email',
+    placeholder: 'Enter your email',
+    value: 'invalid-email',
+    error: 'Please enter a valid email address',
   },
 };
 

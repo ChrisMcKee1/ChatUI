@@ -7,13 +7,15 @@ interface IconProps {
   size?: number;
   className?: string;
   disabled?: boolean;
+  color?: string;
 }
 
 export const Icon: React.FC<IconProps> = ({ 
   name,
   size = 24,
   className = '',
-  disabled = false
+  disabled = false,
+  color,
 }) => {
   const icons = {
     message: (
@@ -28,13 +30,24 @@ export const Icon: React.FC<IconProps> = ({
     )
   };
 
+  const iconStyle = {
+    color: disabled 
+      ? 'var(--color-disabledText)' 
+      : color || 'var(--color-primary)',
+  };
+
   return (
     <span 
-      className={`inline-block ${className}`}
-      style={{
-        color: disabled ? 'var(--color-disabledText)' : 'var(--color-primary)',
-        opacity: disabled ? 0.5 : 1
-      }}
+      className={`
+        inline-flex
+        items-center
+        justify-center
+        transition-all
+        duration-200
+        ${disabled ? 'opacity-60 cursor-not-allowed' : 'hover:scale-110'}
+        ${className}
+      `}
+      style={iconStyle}
     >
       {icons[name]}
     </span>

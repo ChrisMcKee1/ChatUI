@@ -17,6 +17,9 @@ const meta = {
       control: { type: 'number' },
       defaultValue: 24,
     },
+    color: {
+      control: 'color',
+    },
     className: {
       control: 'text',
     },
@@ -33,7 +36,6 @@ export const Message: Story = {
   args: {
     name: 'message',
     size: 36,
-    className: 'text-blue-500',
   },
 };
 
@@ -41,7 +43,35 @@ export const Robot: Story = {
   args: {
     name: 'robot',
     size: 36,
-    className: 'text-purple-500',
+  },
+};
+
+export const Small: Story = {
+  args: {
+    name: 'robot',
+    size: 20,
+  },
+};
+
+export const Medium: Story = {
+  args: {
+    name: 'robot',
+    size: 36,
+  },
+};
+
+export const Large: Story = {
+  args: {
+    name: 'robot',
+    size: 64,
+  },
+};
+
+export const CustomColor: Story = {
+  args: {
+    name: 'message',
+    size: 36,
+    color: '#00FF00',
   },
 };
 

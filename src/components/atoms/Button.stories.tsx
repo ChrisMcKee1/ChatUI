@@ -18,6 +18,10 @@ const meta = {
       control: { type: 'select' }, // Use select control for variants
       options: ['primary', 'secondary'],
     },
+    size: {
+      control: { type: 'select' },
+      options: ['sm', 'md', 'lg'],
+    },
     children: {
       control: 'text', // Allow editing button text
     },
@@ -55,6 +59,30 @@ export const WithCustomClass: Story = {
     variant: 'primary',
     className: 'custom-class',
     children: 'Custom Class Button',
+  },
+};
+
+export const Small: Story = {
+  args: {
+    variant: 'primary',
+    size: 'sm',
+    children: 'Small Button',
+  },
+};
+
+export const Medium: Story = {
+  args: {
+    variant: 'primary',
+    size: 'md',
+    children: 'Medium Button',
+  },
+};
+
+export const Large: Story = {
+  args: {
+    variant: 'primary',
+    size: 'lg',
+    children: 'Large Button',
   },
 };
 
