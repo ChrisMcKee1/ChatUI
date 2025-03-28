@@ -1,22 +1,24 @@
 # Active Context: ChatUI
 
 ## Current Focus
-- Finalizing the initial development plan.
-- Creating the foundational Memory Bank documents.
+- Setting up Storybook for component development.
+- Creating the initial Atomic Design directory structure within `src/components`.
 
 ## Recent Activities
-- Defined project brief (`projectbrief.md`).
-- Outlined development plan.
-- Created initial versions of `productContext.md`, `progress.md`, `activeContext.md`, `systemPatterns.md`, and `techContext.md`.
+- Completed **Step 1: Project Setup & Initialization**:
+    - Initialized Git repository with `main` and `develop` branches (Gitflow).
+    - Set up Next.js project using `create-next-app` with TypeScript, Tailwind CSS, App Router, `src` directory, ESLint, and `@/*` import alias.
+    - Integrated Memory Bank files, theme files, and original README (`README.old.md`) into the project structure.
+    - Made the initial commit and switched to the `develop` branch.
 
 ## Next Steps
-- Begin **Step 1: Project Setup & Initialization** of the development plan.
-    - Initialize Git repository.
-    - Create `README.md`.
-    - Set up Next.js project.
-    - Define Gitflow strategy.
+- Begin **Step 2: Storybook & Atomic Design Setup**:
+    - Install necessary Storybook dependencies (`@storybook/react`, `@storybook/nextjs`, etc.).
+    - Configure Storybook to work with Next.js, Tailwind CSS, and TypeScript.
+    - Create the basic Atomic Design directory structure: `src/components/atoms`, `src/components/molecules`, `src/components/organisms`, `src/components/templates`.
 
 ## Decisions & Considerations
-- Ensuring all CLI commands are run non-interactively.
-- Explicitly included `ChatHistoryPanel` organism in the plan.
-- Need to decide on styling approach (e.g., Tailwind CSS, CSS Modules, Emotion) during Next.js setup. 
+- Tailwind CSS is configured and integrated with the Next.js project.
+- Using App Router and `src` directory structure for optimal organization.
+- Using `@/*` for absolute imports to simplify imports across the project.
+- Development proceeds on the `develop` branch per Gitflow workflow. 
