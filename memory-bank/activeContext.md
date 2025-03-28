@@ -1,24 +1,28 @@
 # Active Context: ChatUI
 
 ## Current Focus
-- Setting up Storybook for component development.
-- Creating the initial Atomic Design directory structure within `src/components`.
+- **Step 3: Create Basic Atoms**.
+- Starting with essential UI elements like Button, Input, and Icon components within `src/components/atoms`.
 
 ## Recent Activities
+- Completed **Step 2: Storybook & Atomic Design Setup**:
+    - Installed and configured Storybook with default settings for Next.js, TypeScript, and Tailwind.
+    - Created the Atomic Design directory structure (`atoms`, `molecules`, `organisms`, `templates`) within `src/components`.
+    - Committed Storybook configuration and directory structure to the `develop` branch.
 - Completed **Step 1: Project Setup & Initialization**:
     - Initialized Git repository with `main` and `develop` branches (Gitflow).
     - Set up Next.js project using `create-next-app` with TypeScript, Tailwind CSS, App Router, `src` directory, ESLint, and `@/*` import alias.
     - Integrated Memory Bank files, theme files, and original README (`README.old.md`) into the project structure.
-    - Made the initial commit and switched to the `develop` branch.
+    - Made the initial commit and committed Next.js setup to the `develop` branch.
 
 ## Next Steps
-- Begin **Step 2: Storybook & Atomic Design Setup**:
-    - Install necessary Storybook dependencies (`@storybook/react`, `@storybook/nextjs`, etc.).
-    - Configure Storybook to work with Next.js, Tailwind CSS, and TypeScript.
-    - Create the basic Atomic Design directory structure: `src/components/atoms`, `src/components/molecules`, `src/components/organisms`, `src/components/templates`.
+- Implement the `Button` atom component (`src/components/atoms/Button.tsx`).
+- Create a corresponding Storybook story (`src/components/atoms/Button.stories.tsx`).
+- Implement the `Input` atom component (`src/components/atoms/Input.tsx`) and its story.
+- Implement an `Icon` atom component (`src/components/atoms/Icon.tsx`) for handling SVG icons (like the message box and robots specified in the brief) and its story.
 
 ## Decisions & Considerations
-- Tailwind CSS is configured and integrated with the Next.js project.
-- Using App Router and `src` directory structure for optimal organization.
-- Using `@/*` for absolute imports to simplify imports across the project.
-- Development proceeds on the `develop` branch per Gitflow workflow. 
+- Tailwind CSS is configured.
+- Using App Router and `src` directory structure.
+- Using `@/*` for absolute imports.
+- Development proceeds on the `develop` branch. 
