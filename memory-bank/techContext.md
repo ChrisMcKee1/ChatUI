@@ -57,6 +57,66 @@
 - Environment variables are exposed through Next.js's environment variables system
 - Local development can configure each service individually for better flexibility
 
+### Deployment Environment Configuration
+- **Build-time Configuration (Development & CI/CD)**:
+  - Local development uses `.env.local` file
+  - CI/CD builds use GitHub Secrets to generate `.env` file
+  - Variables are passed to build environment in GitHub Actions
+  - All environment variables (client and server) use this approach during development
+
+- **Runtime Configuration (Azure Production)**:
+  - Runtime variables for backend/API are configured in Azure App Settings
+  - Can be configured via Azure Portal or programmatically via GitHub Actions
+  - Allows updating configuration without rebuilds
+  - Recommended approach for production environment in Azure
+  - Uses azure/appservice-settings action:
+    ```yaml
+    - uses: azure/appservice-settings@v1
+      with:
+        app-name: 'app-name'
+        mask-inputs: true
+        app-settings-json: '[{ "name": "SETTING_NAME", "value": "SETTING_VALUE" }]'
+    ```
+
+### Azure Key Vault Integration
+- Sensitive information can be stored in Azure Key Vault
+- Static Web App can access Key Vault via system-assigned managed identity
+- Key Vault secrets are referenced using `@Microsoft.KeyVault(...)` syntax
+- Only available on Azure Static Web Apps Standard plan
+- Only supported in production environment
+
+## Next.js Build Configuration
+- **ESLint and TypeScript Error Handling**:
+  - Build process configured to ignore ESLint and TypeScript errors
+  - Configuration in `next.config.ts`:
+    ```typescript
+    eslint: {
+      ignoreDuringBuilds: true,
+    },
+    typescript: {
+      ignoreBuildErrors: true,
+    }
+    ```
+  - Prevents build failures due to linting or type errors
+  - Used primarily for deployment builds
+  - Local development should still address errors
+
+## GitHub Workflow Configuration
+- **GitHub Actions Workflow**: 
+  - Defined in `.github/workflows/azure-static-web-apps.yml`
+  - Workflow includes:
+    - Checkout of source code
+    - Node.js setup
+    - Dependency installation
+    - Environment file generation from GitHub Secrets
+    - Build and test
+    - Deployment to Azure Static Web Apps
+  - Supports multiple trigger types:
+    - Push to main branch
+    - Pull request events
+    - Manual trigger (workflow_dispatch)
+  - No API backend connected directly to this Static Web App
+
 ## API Integration
 - **Standard Chat API**: Configured via `NEXT_PUBLIC_STANDARD_CHAT_API_URL` and `NEXT_PUBLIC_STANDARD_CHAT_API_MODE`
   - Returns an array with a single response containing Items with text content
