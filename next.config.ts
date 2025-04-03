@@ -7,12 +7,12 @@ const nextConfig: NextConfig = {
     // Removed: instrumentationHook: true
   } as any,
   
-  // Use standalone output mode to support server features like rewrites
-  output: 'standalone',
+  // Use output: 'export' for static site generation
+  output: 'export',
   
   // Configure image optimization
   images: {
-    // unoptimized: true, // No longer needed unless exporting to static HTML
+    unoptimized: true, // Required for static export
   },
   
   // Disable trailing slashes for Azure Static Web Apps
