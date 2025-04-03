@@ -1,0 +1,60 @@
+# ChatUI Architecture Guidelines
+
+## Architecture Diagram Usage
+- ALWAYS review architectureDiagrams.md at the beginning of any task
+- For UI components, refer to Component Architecture diagram (diagram 1)
+- For service-related tasks, refer to Service Architecture diagram (diagram 2)
+- For data flow understanding, refer to Data Flow Diagram (diagram 3)
+- For theming work, refer to Theming System diagram (diagram 4)
+- For environment configuration, refer to Environment Configuration diagram (diagram 5)
+- For message processing logic, refer to Response Processing Flow diagram (diagram 6)
+- For responsive design tasks, refer to Responsive Design System diagram (diagram 7)
+- For loading state implementations, refer to Loading State System diagram (diagram 8)
+- For auto-scrolling functionality, refer to Auto-Scrolling System diagram (diagram 9)
+
+## Architecture First Approach
+- Before making any code changes, identify which architectural component is affected
+- Verify the diagram accurately represents the current state of the system
+- If implementation will deviate from the diagram, document why and update the diagram
+- After implementing significant changes, update the corresponding diagram
+
+## Component Development Guidelines
+- Follow atomic design principles as shown in diagram 1
+- Components must be built according to the hierarchy (atom → molecule → organism → template)
+- Maintain clear separation between UI layer and service layer as shown in diagram 2
+- Respect the data flow shown in diagram 3
+
+## Service Development Guidelines
+- Adhere to the service architecture in diagram 2
+- All services must implement the appropriate service interface
+- Use the ServiceFactory pattern for service creation
+- Respect environment variable configuration as shown in diagram 5
+
+## Responsive Design Guidelines
+- Follow the responsive design patterns in diagram 7
+- Implement breakpoint strategies consistently
+- Use component adaptations as shown in the diagram
+
+## Storybook Implementation Guidelines
+- Each component MUST have corresponding Storybook stories
+- Stories must accurately reflect current component implementation
+- Stories should follow hierarchical organization matching atomic design principles
+- Component stories must demonstrate:
+  - All supported variants and states
+  - Proper theme integration in both light and dark mode
+  - Responsive behavior with mobile-specific stories
+  - Integration with other components where relevant
+- Use consistent render patterns across similar components
+- Include documentation on prop usage in both JSDoc comments and story descriptions
+- Always test theme switching within stories to ensure proper styling
+- When using the Message interface, ensure proper structure with role, content, and timestamp
+- Multi-agent stories should demonstrate proper agent identification and color assignments
+- For responsive components, create specific mobile viewport stories
+- Update stories when component interfaces or behavior changes
+
+## Feature Development Process
+1. Review architectureDiagrams.md to understand affected components
+2. Create a plan that respects the existing architecture
+3. Implement changes according to the design patterns shown
+4. Update diagrams if architecture changes
+5. Update or create Storybook stories that demonstrate the changes 

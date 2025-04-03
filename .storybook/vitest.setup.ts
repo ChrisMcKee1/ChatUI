@@ -1,9 +1,26 @@
+// Basic Vitest setup for Storybook tests without experimental-addon integration
 import { beforeAll } from 'vitest';
-import { setProjectAnnotations } from '@storybook/experimental-nextjs-vite';
 import * as projectAnnotations from './preview';
 
-// This is an important step to apply the right configuration when testing your stories.
-// More info at: https://storybook.js.org/docs/api/portable-stories/portable-stories-vitest#setprojectannotations
-const project = setProjectAnnotations([projectAnnotations]);
+if (typeof window !== 'undefined') {
+  // Mock browser APIs for testing environment
+  window.matchMedia = window.matchMedia || function() {
+    return {
+      matches: false,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false
+    };
+  };
 
-beforeAll(project.beforeAll);
+  // Additional browser mocks if needed for test environment
+  window.scrollTo = () => {};
+  window.resizeTo = () => {};
+}
+
+// These are basic setups that don't try to use the experimental integration
+beforeAll(() => {
+  console.log('Setting up Storybook test environment');
+});

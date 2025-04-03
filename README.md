@@ -1,24 +1,90 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Chat UI
+
+A modern React chat application using Next.js that interacts with both standard and multi-agent chat completion API endpoints.
+
+## Features
+
+- Modern, visually appealing chat interface
+- Two chat modes:
+  - Standard chat (single agent)
+  - Multi-agent chat (multiple specialized agents)
+- Light and dark themes with custom color schemes
+- Chat history management
+- Responsive design for mobile and desktop
+
+## Tech Stack
+
+- Next.js with App Router
+- TypeScript
+- Material UI components
+- Lucide icons
+- Atomic Design principles
+- Storybook for component development
 
 ## Getting Started
 
-First, run the development server:
+For detailed setup instructions, see the [Development Setup](./docs/setup/development.md) guide.
 
+### Quick Start
+
+1. Clone the repository
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repository-url>
+cd chat-ui
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Create a `.env.local` file with the configuration variables (see [API Configuration](./docs/api/configuration.md))
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Run the development server
+```bash
+npm run dev
+```
+
+## Documentation
+
+- **Setup**
+  - [Development Setup](./docs/setup/development.md)
+
+- **API**
+  - [API Configuration](./docs/api/configuration.md)
+  - [Response Formats](./docs/api/response-formats.md)
+  - **Implementation Examples**
+    - [C# Implementation](./docs/api/examples/csharp.md)
+    - [Java Implementation](./docs/api/examples/java.md)
+    - [Python Implementation](./docs/api/examples/python.md)
+
+- **Architecture**
+  - [Service Design](./docs/architecture/service-design.md)
+
+## Architecture
+
+The project follows the Atomic Design methodology:
+
+- **Atoms**: Basic building blocks (Button, TextField, etc.)
+- **Molecules**: Simple components made of atoms (ChatInput, MessageBubble)
+- **Organisms**: More complex components (ChatHeader, ChatHistoryPanel)
+- **Templates**: Page layouts (ChatPageLayout)
+- **Pages**: Actual pages with data
+
+## Services
+
+Chat UI uses a service-based architecture:
+
+- **IChatService**: Interface for chat API interactions
+- **IHistoryService**: Interface for chat history management
+- **MockChatService**: Mock implementation for development
+- **LocalHistoryService**: In-memory history service for development
+
+For production use, the mock services can be replaced with real API implementations without changing the application code. See the [Service Design](./docs/architecture/service-design.md) document for more details.
+
+## Theme
+
+The application supports both light and dark themes using custom color schemes. The theme can be toggled using the theme toggle in the chat header.
 
 ## Learn More
 

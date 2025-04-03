@@ -13,8 +13,7 @@ const config: StorybookConfig = {
   "addons": [
     "@storybook/addon-essentials",
     "@storybook/addon-onboarding",
-    "@chromatic-com/storybook",
-    "@storybook/experimental-addon-test"
+    "@chromatic-com/storybook"
   ],
   "framework": {
     "name": "@storybook/experimental-nextjs-vite",
@@ -37,8 +36,21 @@ const config: StorybookConfig = {
       config.resolve.alias = {
         ...config.resolve.alias,
         '@': path.resolve(__dirname, '../src'),
+        // Mock OpenTelemetry API to avoid __dirname issues
+        '@opentelemetry/api': path.resolve(__dirname, './mocks/opentelemetry.js'),
+        // Mock ServiceProvider for Storybook
+        '@/services/ServiceProvider': path.resolve(__dirname, './mocks/ServiceProvider.js'),
+        // Mock ServiceFactory as well
+        '@/services/ServiceFactory': path.resolve(__dirname, './mocks/ServiceProvider.js'),
       };
     }
+    
+    // Add Node.js polyfills for browser environment
+    config.define = {
+      ...config.define,
+      '__dirname': JSON.stringify(''),
+      'process.env': {},
+    };
     
     return config;
   }

@@ -1,6 +1,9 @@
+'use client';
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import darkThemeVSCode from '../../Monokai Pro Dark theme.json';
-import lightThemeVSCode from '../../Monokai Pro Light theme.json';
+import { createTheme, ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
+import darkThemeVSCode from '../themes/DarkTheme.json';
+import lightThemeVSCode from '../themes/LightTheme.json';
 
 // Default fallback colors if the theme import fails
 const DEFAULT_THEME = {
@@ -98,9 +101,62 @@ type ThemeContextType = {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isDarkMode, setIsDarkMode] = useState(true);
-  const [theme, setTheme] = useState<SimplifiedTheme>(darkTheme);
+export interface ThemeProviderProps {
+  children: React.ReactNode;
+  // Optional prop to override the default theme (used by Storybook)
+  _storybook_isDarkMode?: boolean;
+}
+
+export const ThemeProvider: React.FC<ThemeProviderProps> = ({ 
+  children,
+  _storybook_isDarkMode
+}) => {
+  // Check if we're in Storybook by looking for its classes on the body
+  const detectStorybookDarkMode = () => {
+    if (typeof window !== 'undefined') {
+      // Check if we're in Storybook by looking for the 'sb-show-main' class
+      const isInStorybook = document.body.classList.contains('sb-show-main');
+      
+      if (isInStorybook) {
+        // Check if dark mode is active in Storybook
+        return document.body.classList.contains('sb-theme-dark');
+      }
+    }
+    // Default if not in Storybook or can't detect
+    return typeof _storybook_isDarkMode !== 'undefined' ? _storybook_isDarkMode : true;
+  };
+
+  // Initialize with the detected value
+  const [isDarkMode, setIsDarkMode] = useState(detectStorybookDarkMode());
+  
+  // Add a listener for Storybook theme changes
+  useEffect(() => {
+    const handleStorybookThemeChange = () => {
+      const isInStorybook = document.body.classList.contains('sb-show-main');
+      if (isInStorybook) {
+        const isDark = document.body.classList.contains('sb-theme-dark');
+        setIsDarkMode(isDark);
+      }
+    };
+
+    // Set up a mutation observer to watch for class changes on the body
+    if (typeof window !== 'undefined' && document.body.classList.contains('sb-show-main')) {
+      const observer = new MutationObserver(handleStorybookThemeChange);
+      observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+      
+      return () => observer.disconnect();
+    }
+  }, []);
+
+  // Update isDarkMode if the override prop changes
+  useEffect(() => {
+    if (typeof _storybook_isDarkMode !== 'undefined') {
+      setIsDarkMode(_storybook_isDarkMode);
+    }
+  }, [_storybook_isDarkMode]);
+
+  // Set theme based on current dark mode state
+  const [theme, setTheme] = useState<SimplifiedTheme>(isDarkMode ? darkTheme : lightTheme);
 
   // Toggle between dark and light modes
   const toggleTheme = () => {
@@ -109,17 +165,21 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Update theme when isDarkMode changes
   useEffect(() => {
+    // First update the theme state based on the current mode
     setTheme(isDarkMode ? darkTheme : lightTheme);
+    
+    // Then apply the updated theme's colors to CSS variables
+    const currentTheme = isDarkMode ? darkTheme : lightTheme;
     
     try {
       // Apply theme colors to CSS variables
-      Object.entries(theme.colors).forEach(([key, value]) => {
+      Object.entries(currentTheme.colors).forEach(([key, value]) => {
         document.documentElement.style.setProperty(`--color-${key}`, value);
       });
 
       // Apply other theme properties
-      document.documentElement.style.setProperty('--font-family', theme.typography.fontFamily);
-      document.documentElement.style.setProperty('--font-size', theme.typography.fontSize);
+      document.documentElement.style.setProperty('--font-family', currentTheme.typography.fontFamily);
+      document.documentElement.style.setProperty('--font-size', currentTheme.typography.fontSize);
       
       // Add dark mode class to body
       if (isDarkMode) {
@@ -132,7 +192,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch (error) {
       console.error('Error applying theme:', error);
     }
-  }, [isDarkMode, theme]);
+  }, [isDarkMode]); // Only depend on isDarkMode, not theme
 
   return (
     <ThemeContext.Provider value={{ theme, isDarkMode, toggleTheme }}>

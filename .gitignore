@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+/test-results/
+.nyc_output
 
 # next.js
 /.next/
@@ -19,19 +21,23 @@
 
 # production
 /build
+/dist
 
 # misc
 .DS_Store
 *.pem
+Thumbs.db
 
 # debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+*storybook.log
 
-# env files (can opt-in for committing if needed)
-.env*
+# local env files
+.env*.local
+!.env.example
 
 # vercel
 .vercel
@@ -40,4 +46,23 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-*storybook.log
+# storybook
+/storybook-static
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/settings.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# OpenTelemetry
+otel-logs/
+
+# Cache
+.eslintcache
+.swc/
