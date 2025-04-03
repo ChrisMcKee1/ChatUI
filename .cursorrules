@@ -18,6 +18,60 @@
 - If implementation will deviate from the diagram, document why and update the diagram
 - After implementing significant changes, update the corresponding diagram
 
+## Environment Configuration Guidelines
+- Use GitHub Secrets + .env generation for all variables during development and build
+- For production runtime on Azure, configure environment variables using Azure App Settings
+- NEVER hardcode environment values in the codebase or workflow files
+- Ensure all sensitive values are stored as secrets in GitHub and Azure
+- When adding new environment variables:
+  1. Add to .env.local for local development
+  2. Add to GitHub Secrets for CI/CD builds
+  3. Configure in Azure App Settings for production runtime
+- When API requirements change, update configureAppSettings.yml workflow
+- Maintain the Environment Configuration diagram (diagram 5) in sync with actual configuration
+- For frontend environments in Azure Static Web Apps, environment variables MUST be set at build time via GitHub Secrets
+
+## Build and Deployment Guidelines
+- Azure Static Web App frontend build must have ESLint and TypeScript error checking disabled in next.config.ts
+- Use the following configuration for production builds:
+  ```typescript
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  }
+  ```
+- The GitHub workflow azure-static-web-apps.yml handles frontend deployment
+- GitHub Secrets are used to inject environment variables during build
+- Mock services are used for dev deployments (STANDARD_CHAT_API_MODE=mock, CHAT_HISTORY_MODE=local)
+- The workflow has a manual trigger (workflow_dispatch) for testing deployments
+- There is no API backend connected directly to this Static Web App
+
+## GitHub-Flavored Markdown Guidelines
+- All documentation MUST use GitHub-flavored Markdown (GFM) consistently
+- Mermaid diagrams MUST be enclosed in ```mermaid code blocks
+- Use checkbox lists for task tracking with the following syntax:
+  - `- [ ]` for incomplete tasks
+  - `- [x]` for completed tasks
+- Emoji usage is permitted but should be meaningful and not excessive
+  - Use `:emoji_name:` syntax for consistency
+  - Prefer standard emoji names from GitHub's supported list
+- Use YAML frontmatter for metadata when appropriate, enclosed between `---` lines
+- For footnotes, use the `[^1]` syntax with the definition at the bottom of the document
+- Document structure must follow a clear hierarchy:
+  - H1 (`#`) for document title (only one per document)
+  - H2 (`##`) for major sections
+  - H3 (`###`) for subsections
+  - H4 (`####`) for sub-subsections
+- Code samples must specify the language for proper syntax highlighting:
+  - ```typescript for TypeScript code
+  - ```yaml for YAML files
+  - ```json for JSON content
+- URLs must be enclosed in angle brackets for automatic linking: `<https://example.com>`
+- Use relative links to reference other files in the repository
+- Tables should include alignment indicators (`:---`, `:---:`, `---:`)
+
 ## Component Development Guidelines
 - Follow atomic design principles as shown in diagram 1
 - Components must be built according to the hierarchy (atom → molecule → organism → template)
