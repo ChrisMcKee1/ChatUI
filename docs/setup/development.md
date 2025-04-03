@@ -111,4 +111,15 @@ You can preview the production build with:
 npm run start
 ```
 
-For deployment options, refer to the [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying). 
+## Deployment
+
+This application is configured for deployment to Azure Static Web Apps. The deployment process is automated through GitHub Actions.
+
+### Setting up Azure Static Web Apps
+
+1. Create an Azure Static Web App resource in the Azure Portal
+2. Link it to your GitHub repository
+3. Add the deployment token to your GitHub repository secrets as `AZURE_STATIC_WEB_APPS_API_TOKEN`
+4. Push changes to the `main` or `develop` branch to trigger deployments
+
+For more information on Azure Static Web Apps, refer to the [Azure Static Web Apps documentation](https://learn.microsoft.com/en-us/azure/static-web-apps/). 

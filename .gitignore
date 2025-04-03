@@ -39,8 +39,11 @@ yarn-error.log*
 .env*.local
 !.env.example
 
-# vercel
-.vercel
+# Azure
+.azure/
+.deployment
+.publish/
+azure-static-web-apps-*.yaml
 
 # typescript
 *.tsbuildinfo

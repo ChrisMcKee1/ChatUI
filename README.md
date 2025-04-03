@@ -93,10 +93,20 @@ To learn more about Next.js, take a look at the following resources:
 - [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
 - [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+For more information on the framework, you can check out the [Next.js GitHub repository](https://github.com/nextjs/next.js).
 
-## Deploy on Vercel
+## Deploy on Azure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The application is configured to be deployed on Azure Static Web Apps, which provides a streamlined hosting service for modern web applications.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Deployment Features
+
+- GitHub Actions workflow for CI/CD
+- Integrated CDN for fast global delivery
+- Built-in API capabilities with Azure Functions
+- Automatic HTTPS with SSL certificates
+- Custom domain support
+
+Deployment is handled through the GitHub Actions workflow defined in `.github/workflows/azure-static-web-apps.yml`.
+
+Check out [Azure Static Web Apps documentation](https://learn.microsoft.com/en-us/azure/static-web-apps/) for more details on deployment and configuration.
