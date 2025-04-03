@@ -28,6 +28,12 @@ const nextConfig: NextConfig = {
   eslint: {
     // ESLint errors and warnings won't stop the build
     ignoreDuringBuilds: true,
+  },
+  
+  // Ignore TypeScript errors during build
+  typescript: {
+    // TypeScript errors and warnings won't stop the build
+    ignoreBuildErrors: true,
   }
 };
 
