@@ -33,7 +33,12 @@ jobs:
           echo "NEXT_PUBLIC_CHAT_HISTORY_MODE=${{ secrets.NEXT_PUBLIC_CHAT_HISTORY_MODE }}" >> .env
           echo "NEXT_PUBLIC_MOCK_API_RESPONSE_SPEED=${{ secrets.NEXT_PUBLIC_MOCK_API_RESPONSE_SPEED }}" >> .env
       - name: Build application
-        run: npm run build
+        run: |
+          npm run build
+          # Make sure the output directory has an index.html at the root
+          cp out/index.html out/404.html
+      - name: List build output
+        run: ls -la out
       - name: Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -44,6 +49,7 @@ jobs:
           app_location: "/"
           api_location: ""
           output_location: "out"
+          skip_app_build: true
           skip_deploy_on_missing_secrets: true
 
   close_pull_request:
