@@ -43,7 +43,11 @@ jobs:
         run: |
           # Copy the build artifacts to the deployment directory
           cp -r out/* .
-          cp staticwebapp.config.json .
+          # Make sure we have the config file in the root (don't copy if already exists)
+          if [ ! -f "./staticwebapp.config.json" ]; then
+            cp staticwebapp.config.json . 2>/dev/null || echo "Config file not found in build output"
+          fi
+          echo "Files in root directory:"
           ls -la
       - name: Deploy
         id: builddeploy
