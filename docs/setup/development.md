@@ -115,11 +115,6 @@ npm run start
 
 This application is configured for deployment to Azure Static Web Apps. The deployment process is automated through GitHub Actions.
 
-### Setting up Azure Static Web Apps
-
-1. Create an Azure Static Web App resource in the Azure Portal
-2. Link it to your GitHub repository
-3. Add the deployment token to your GitHub repository secrets as `AZURE_STATIC_WEB_APPS_API_TOKEN`
-4. Push changes to the `main` or `develop` branch to trigger deployments
+For detailed deployment instructions, including environment variable management and Azure Key Vault integration, please refer to the [Deployment Guide](./deployment.md).
 
 For more information on Azure Static Web Apps, refer to the [Azure Static Web Apps documentation](https://learn.microsoft.com/en-us/azure/static-web-apps/). 

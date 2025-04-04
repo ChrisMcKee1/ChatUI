@@ -1,6 +1,6 @@
 # C# API Implementation
 
-This example shows how to implement API endpoints for Chat UI using ASP.NET Core. The implementation supports both streaming and batch responses for multi-agent chat.
+This example shows how to implement API endpoints for Chat UI using ASP.NET Core. The implementation supports both standard chat and multi-agent chat with streaming and batch responses.
 
 ## Implementation
 
@@ -8,16 +8,42 @@ This example shows how to implement API endpoints for Chat UI using ASP.NET Core
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 
 [ApiController]
-[Route("api/[controller]")]
-public class MultiAgentChatController : ControllerBase
+[Route("api")]
+public class ChatController : ControllerBase
 {
-    // Streaming endpoint - responds with Server-Sent Events
-    [HttpPost("stream")]
+    // Standard chat endpoint
+    [HttpPost("chat")]
+    public ActionResult<ChatResponse> StandardChatResponse([FromBody] MessageRequest request)
+    {
+        // Get the last user message
+        string userMessage = request.Messages.Count > 0 ? request.Messages[^1].Content : "";
+        
+        // Create a simple response with all required fields
+        var response = new ChatResponse
+        {
+            MessageId = Guid.NewGuid().ToString(),
+            ConversationId = Guid.NewGuid().ToString(),
+            Status = "completed",
+            Role = "assistant",
+            Content = $"I received your message: '{userMessage}'. Here's my response.",
+            ContentType = "text",
+            Sources = new List<SourceReference>(),
+            Error = null,
+            CreatedAt = DateTime.UtcNow.ToString("o")
+        };
+        
+        // Return as JSON
+        return Ok(response);
+    }
+
+    // Streaming endpoint for multi-agent chat
+    [HttpPost("multi-agent-chat/stream")]
     public async Task StreamMultiAgentResponse([FromBody] MessageRequest request)
     {
         // Configure response for SSE
@@ -30,19 +56,12 @@ public class MultiAgentChatController : ControllerBase
         
         foreach (var agent in agents)
         {
-            // Create ChatMessageContent object
-            var response = new ChatMessageContent
+            // Create response with minimum required fields
+            var response = new AssistantResponse
             {
-                AuthorName = agent,
-                Role = new Role { Label = "Assistant" },
-                Items = new[]
-                {
-                    new TextContent
-                    {
-                        Text = $"This is a response from the {agent} agent regarding your query."
-                    }
-                },
-                ModelId = "gpt-4o"
+                Role = "assistant",
+                Content = $"This is a response from the {agent} agent regarding your query.",
+                AgentName = agent
             };
             
             // Serialize to JSON
@@ -57,54 +76,32 @@ public class MultiAgentChatController : ControllerBase
         }
     }
     
-    // Batch endpoint - responds with complete ChatHistory in a single JSON response
-    [HttpPost("batch")]
-    public ActionResult<List<ChatMessageContent>> BatchMultiAgentResponse([FromBody] MessageRequest request)
+    // Batch endpoint for multi-agent chat
+    [HttpPost("multi-agent-chat/batch")]
+    public ActionResult<List<ChatResponse>> BatchMultiAgentResponse([FromBody] MessageRequest request)
     {
-        // Create chat history to return
-        var chatHistory = new List<ChatMessageContent>();
-        
-        // Add the original user message
-        chatHistory.Add(new ChatMessageContent
-        {
-            Role = new Role { Label = "user" },
-            Items = new[]
-            {
-                new TextContent
-                {
-                    Text = request.Messages.Count > 0 ? request.Messages[^1].Content : "No message content"
-                }
-            }
-        });
-        
-        // Add responses from different agents
+        // Create responses from different agents
         var agents = new List<string> { "Research", "Code", "Planning" };
+        var responses = new List<ChatResponse>();
         
         foreach (var agent in agents)
         {
-            chatHistory.Add(new ChatMessageContent
+            responses.Add(new AssistantResponse
             {
-                AuthorName = agent,
-                Role = new Role { Label = "Assistant" },
-                Items = new[]
-                {
-                    new TextContent
-                    {
-                        Text = $"This is a response from the {agent} agent regarding your query."
-                    }
-                },
-                ModelId = "gpt-4o"
+                Role = "assistant",
+                Content = $"This is a response from the {agent} agent regarding your query.",
+                AgentName = agent
             });
         }
         
-        // Return the entire chat history as a single JSON response
-        return Ok(chatHistory);
+        // Return array of agent responses
+        return Ok(responses);
     }
 }
 
 public class MessageRequest
 {
-    public List<Message> Messages { get; set; }
+    public List<Message> Messages { get; set; } = new List<Message>();
 }
 
 public class Message
@@ -113,60 +110,48 @@ public class Message
     public string Content { get; set; }
 }
 
-// The predefined type provided by the system
-public class ChatMessageContent
+// Simplified response model with only required fields
+public class AssistantResponse
 {
-    public string AuthorName { get; set; }
-    public Role Role { get; set; }
-    public IEnumerable<IContentItem> Items { get; set; }
-    public string ModelId { get; set; }
+    public string Role { get; set; }
+    public string Content { get; set; }
     
-    // Metadata is handled by the system
-}
-
-public class Role
-{
-    public string Label { get; set; }
-}
-
-public interface IContentItem
-{
-}
-
-public class TextContent : IContentItem
-{
-    public string Text { get; set; }
-    public string $type => "TextContent";
+    [JsonPropertyName("agentName")]
+    public string AgentName { get; set; }
 }
 ```
 
 ## Key Points
 
-1. **Dual Endpoint Support**:
-   - `/stream` endpoint for Server-Sent Events streaming responses
-   - `/batch` endpoint for traditional JSON responses with complete chat history
+1. **Simplified Response Format**:
+   - Uses only the minimum required fields:
+     - `role`: Always "assistant" for responses
+     - `content`: The actual message content
+     - `agentName`: Only for multi-agent responses
 
-2. **Streaming Response**:
+2. **Multiple Endpoint Support**:
+   - `/api/chat` endpoint for standard chat responses
+   - `/api/multi-agent-chat/stream` endpoint for streaming multi-agent responses
+   - `/api/multi-agent-chat/batch` endpoint for batch multi-agent responses
+
+3. **Standard Chat**:
+   - Returns a single response object with role and content
+   - Simple JSON structure that's easy to process
+
+4. **Streaming Response**:
    - Sets `Content-Type` to `text/event-stream` for Server-Sent Events
    - Writes each agent response as an SSE event with the format `data: {json}\n\n`
    - Flushes the response buffer after each event to ensure immediate delivery
 
-3. **Batch Response**:
-   - Returns a complete `ChatHistory` array in a single JSON response
-   - Includes the original user message at the beginning of the history
-   - Contains responses from all agents
+5. **Batch Response**:
+   - Returns an array of agent responses in a single JSON response
+   - Each response contains only the required fields
    - Uses standard JSON `Content-Type: application/json`
 
-4. **Response Structure**:
-   - Both endpoints use the predefined `ChatMessageContent` type
-   - Only provide necessary content, while the system handles metadata and formatting
-   - Each agent response includes an `AuthorName` field to identify the agent
+6. **JSON Serialization**:
+   - Uses `JsonPropertyName` attribute to ensure the correct casing for `agentName`
+   - Standard System.Text.Json serialization
 
-5. **Client Integration**:
-   - Client can choose between endpoints based on whether streaming is desired
-   - For streaming, client should set `Accept: text/event-stream` header
-   - For batch responses, client uses standard JSON handling
-
-6. **Error Handling**:
+7. **Error Handling**:
    - In a production environment, add try-catch blocks and proper error handling
    - Consider adding cancellation token support for request cancellation 

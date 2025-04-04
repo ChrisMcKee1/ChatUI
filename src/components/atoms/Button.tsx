@@ -3,35 +3,53 @@ import { Button as MuiButton, ButtonProps as MuiButtonProps } from '@mui/materia
 import { useTheme } from '@/context/ThemeContext';
 import '../../styles/theme.css';
 
+// Add missing color constants
+const DEFAULT_LIGHT_PRIMARY = '#1976d2';
+const DEFAULT_DARK_PRIMARY = '#90caf9';
+const DEFAULT_LIGHT_SECONDARY = '#9c27b0';
+const DEFAULT_DARK_SECONDARY = '#ce93d8';
+const DEFAULT_LIGHT_ERROR = '#d32f2f';
+const DEFAULT_DARK_ERROR = '#f44336';
+const DEFAULT_LIGHT_SUCCESS = '#2e7d32';
+const DEFAULT_DARK_SUCCESS = '#66bb6a';
+const DEFAULT_LIGHT_INFO = '#0288d1';
+const DEFAULT_DARK_INFO = '#29b6f6';
+
 interface ButtonProps {
   children: React.ReactNode;
-  variant?: 'primary' | 'secondary' | 'outlined';
-  className?: string;
+  variant?: 'contained' | 'outlined' | 'text';
+  color?: 'primary' | 'secondary' | 'info' | 'warning' | 'error' | 'success';
+  size?: 'small' | 'medium' | 'large';
+  fullWidth?: boolean;
   onClick?: () => void;
-  disabled?: boolean;
-  size?: 'sm' | 'md' | 'lg';
   startIcon?: React.ReactNode;
   endIcon?: React.ReactNode;
-  fullWidth?: boolean;
+  disabled?: boolean;
+  loading?: boolean;
+  type?: 'button' | 'submit' | 'reset';
+  className?: string;
 }
 
-export const Button: React.FC<ButtonProps> = ({ 
-  children, 
-  className = '', 
-  variant = 'primary', 
+const Button: React.FC<ButtonProps> = ({
+  variant = 'contained',
+  color = 'primary',
+  size = 'medium',
+  children,
+  fullWidth = false,
   onClick,
-  disabled = false,
-  size = 'md',
   startIcon,
   endIcon,
-  fullWidth = false
+  disabled = false,
+  loading = false,
+  type = 'button',
+  className = '',
 }) => {
-  const { theme, isDarkMode } = useTheme();
-  
-  // Get theme colors with fallbacks
-  const primaryColor = theme?.colors?.primary || '#ff6188'; // Pink
-  const secondaryColor = theme?.colors?.secondary || '#78dce8'; // Blue
-  const warningColor = theme?.colors?.warning || '#ffd866'; // Yellow
+  const { isDarkMode } = useTheme();
+  const primaryColor = isDarkMode ? DEFAULT_DARK_PRIMARY : DEFAULT_LIGHT_PRIMARY;
+  const secondaryColor = isDarkMode ? DEFAULT_DARK_SECONDARY : DEFAULT_LIGHT_SECONDARY;
+  const errorColor = isDarkMode ? DEFAULT_DARK_ERROR : DEFAULT_LIGHT_ERROR;
+  const successColor = isDarkMode ? DEFAULT_DARK_SUCCESS : DEFAULT_LIGHT_SUCCESS;
+  const infoColor = isDarkMode ? DEFAULT_DARK_INFO : DEFAULT_LIGHT_INFO;
   
   // Map our variant to MUI variants
   let muiVariant: MuiButtonProps['variant'] = 'contained';
@@ -56,21 +74,7 @@ export const Button: React.FC<ButtonProps> = ({
   }
   
   // Map our sizes to MUI sizes
-  const muiSize = size === 'sm' ? 'small' : size === 'lg' ? 'large' : 'medium';
-  
-  // Helper function to convert hex to rgb
-  function hexToRgb(hex: string) {
-    // Remove # if present
-    hex = hex.replace('#', '');
-    
-    // Parse the hex values
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
-    
-    // Return as comma-separated string for rgba()
-    return `${r}, ${g}, ${b}`;
-  }
+  const muiSize = size === 'small' ? 'small' : size === 'large' ? 'large' : 'medium';
   
   return (
     <MuiButton
@@ -102,4 +106,6 @@ export const Button: React.FC<ButtonProps> = ({
       {children}
     </MuiButton>
   );
-}; 
+};
+
+export default Button; 

@@ -1,14 +1,18 @@
-// This file is loaded by Next.js when the experimental instrumentation hook is enabled
+// This file is loaded by Next.js when the instrumentation hook is enabled
 
 export async function register() {
-  // Check if we are in a Node.js environment (server-side)
-  if (process.env.NEXT_RUNTIME === 'nodejs') {
-    try {
-      // Only import OpenTelemetry on the server-side to avoid issues with browser code
-      await import('./otel-config.js');
-      console.log('OpenTelemetry instrumentation registered successfully');
-    } catch (error) {
-      console.error('Failed to register OpenTelemetry instrumentation:', error);
-    }
+  try {
+    // Import the OpenTelemetry configuration
+    // This will now use a no-op implementation in development or edge environments
+    const otelConfig = await import('./otel-config.js');
+    
+    // Start OpenTelemetry - this will be a no-op in development
+    await otelConfig.default.start();
+    
+    console.log('Instrumentation registered');
+  } catch (error) {
+    // Safely log error without causing further issues
+    console.error('Error in instrumentation register:', 
+                  error instanceof Error ? error.message : 'Unknown error');
   }
 } 

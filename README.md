@@ -49,6 +49,7 @@ npm run dev
 
 - **Setup**
   - [Development Setup](./docs/setup/development.md)
+  - [Deployment Guide](./docs/setup/deployment.md)
 
 - **API**
   - [API Configuration](./docs/api/configuration.md)

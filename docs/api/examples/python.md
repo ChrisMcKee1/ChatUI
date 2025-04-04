@@ -1,6 +1,6 @@
 # Python API Implementation
 
-This example demonstrates how to implement API endpoints for Chat UI using FastAPI. The implementation supports both streaming responses (Server-Sent Events) and traditional JSON batch responses.
+This example demonstrates how to implement API endpoints for Chat UI using FastAPI. The implementation supports both standard chat and multi-agent chat with streaming and batch responses.
 
 ## Implementation
 
@@ -9,7 +9,9 @@ from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse, JSONResponse
 import json
 import asyncio
-from typing import List, Optional, Any
+import uuid
+from datetime import datetime
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 
 app = FastAPI()
@@ -21,49 +23,141 @@ class Message(BaseModel):
 class MessageRequest(BaseModel):
     messages: List[Message]
 
-# The predefined types provided by the system
-class Role(BaseModel):
-    label: str
+class SourceReference(BaseModel):
+    id: str
+    title: Optional[str] = None
+    url: Optional[str] = None
+    snippet: Optional[str] = None
 
-class TextContent(BaseModel):
-    text: str
+class ErrorDetail(BaseModel):
+    message: str
+    code: Optional[str] = None
+
+class ChatResponse(BaseModel):
+    messageId: str
+    conversationId: Optional[str] = None
+    status: str
+    role: str = "assistant"
+    content: str
+    contentType: str = "text"
+    agentName: Optional[str] = None
+    sources: List[SourceReference] = Field(default_factory=list)
+    error: Optional[ErrorDetail] = None
+    createdAt: str
+
+    @classmethod
+    def create(cls, content: str, agent_name: Optional[str] = None, status: str = "completed", 
+               content_type: str = "text", conversation_id: Optional[str] = None):
+        """Helper method to create a standard response"""
+        return cls(
+            messageId=str(uuid.uuid4()),
+            conversationId=conversation_id,
+            status=status,
+            role="assistant",
+            content=content,
+            contentType=content_type,
+            agentName=agent_name,
+            sources=[],
+            error=None,
+            createdAt=datetime.utcnow().isoformat() + "Z"
+        )
+
+# Standard chat endpoint
+@app.post("/api/chat")
+async def standard_chat_response(request: MessageRequest):
+    # Get the last user message
+    user_message = request.messages[-1].content if request.messages else ""
     
-    # Pydantic will use this to add the $type field
-    class Config:
-        fields = {"type": {"alias": "$type"}}
-        
-    type: str = "TextContent"
-
-class ChatMessageContent(BaseModel):
-    author_name: str = Field(None, alias="AuthorName")
-    role: Role = Field(..., alias="Role")
-    items: List[Any] = Field(..., alias="Items")
-    model_id: str = Field(None, alias="ModelId")
+    # Generate a conversation ID if not tracking elsewhere
+    conversation_id = str(uuid.uuid4())
     
-    class Config:
-        allow_population_by_field_name = True
+    # Create a simple response with required fields
+    response = ChatResponse.create(
+        content=f"I received your message: '{user_message}'. Here's my response.",
+        conversation_id=conversation_id
+    )
+    
+    return response
 
-# Streaming endpoint
+# Streaming endpoint for multi-agent chat
 @app.post("/api/multi-agent-chat/stream")
 async def stream_multi_agent_response(request: MessageRequest):
     # Set up streaming response
     async def generate_responses():
+        # Generate a conversation ID for this session
+        conversation_id = str(uuid.uuid4())
+        
         # Agents that will respond
         agents = ["Research", "Code", "Planning"]
         
         for agent in agents:
-            # Create ChatMessageContent object
-            response = ChatMessageContent(
-                AuthorName=agent,
-                Role=Role(label="Assistant"),
-                Items=[TextContent(text=f"This is a response from the {agent} agent regarding your query.")],
-                ModelId="gpt-4o"
+            # Create message ID for this agent's message
+            message_id = str(uuid.uuid4())
+            
+            # Initial processing message
+            initial_response = ChatResponse(
+                messageId=message_id,
+                conversationId=conversation_id,
+                status="processing",
+                role="assistant",
+                content=f"The {agent} agent is analyzing your request...",
+                contentType="text",
+                agentName=agent,
+                sources=[],
+                error=None,
+                createdAt=datetime.utcnow().isoformat() + "Z"
             )
             
-            # Format as SSE event
-            yield f"data: {response.json()}\n\n"
+            # Send initial processing message
+            yield f"data: {json.dumps(initial_response.dict())}\n\n"
+            await asyncio.sleep(0.5)
             
-            # Delay between responses
+            # Send an update with more content
+            update_response = ChatResponse(
+                messageId=message_id,
+                conversationId=conversation_id,
+                status="processing",
+                role="assistant",
+                content=f"The {agent} agent is analyzing your request and preparing information...",
+                contentType="text",
+                agentName=agent,
+                sources=[],
+                error=None,
+                createdAt=datetime.utcnow().isoformat() + "Z"
+            )
+            
+            yield f"data: {json.dumps(update_response.dict())}\n\n"
+            await asyncio.sleep(0.5)
+            
+            # Final completed message with sources for Research agent
+            if agent == "Research":
+                sources = [
+                    SourceReference(
+                        id="source-1",
+                        title="Important Research Paper",
+                        url="https://example.com/paper",
+                        snippet="Relevant information from the paper..."
+                    )
+                ]
+            else:
+                sources = []
+                
+            final_response = ChatResponse(
+                messageId=message_id,
+                conversationId=conversation_id,
+                status="completed",
+                role="assistant",
+                content=f"This is the complete response from the {agent} agent regarding your query.",
+                contentType="text" if agent != "Code" else "markdown",
+                agentName=agent,
+                sources=sources,
+                error=None,
+                createdAt=datetime.utcnow().isoformat() + "Z"
+            )
+            
+            yield f"data: {json.dumps(final_response.dict())}\n\n"
+            
+            # Delay between agent responses
             await asyncio.sleep(1)
     
     return StreamingResponse(
@@ -75,74 +169,110 @@ async def stream_multi_agent_response(request: MessageRequest):
         }
     )
 
-# Batch endpoint
-@app.post("/api/multi-agent-chat/batch")
-async def batch_multi_agent_response(request: MessageRequest):
-    # Create chat history to return
-    chat_history = []
-    
-    # Add the original user message
-    user_message_text = "No message content"
-    if request.messages and len(request.messages) > 0:
-        user_message_text = request.messages[-1].content
-        
-    user_message = ChatMessageContent(
-        Role=Role(label="user"),
-        Items=[TextContent(text=user_message_text)]
+# Error endpoint example
+@app.post("/api/chat/error-example")
+async def error_example():
+    # Example of returning an error response
+    error_response = ChatResponse(
+        messageId=str(uuid.uuid4()),
+        conversationId=str(uuid.uuid4()),
+        status="failed",
+        role="assistant",
+        content="",
+        contentType="text",
+        sources=[],
+        error=ErrorDetail(
+            message="The model encountered an error processing your request.",
+            code="MODEL_ERROR"
+        ),
+        createdAt=datetime.utcnow().isoformat() + "Z"
     )
     
-    chat_history.append(user_message)
+    return error_response
+
+# Batch endpoint for multi-agent chat
+@app.post("/api/multi-agent-chat/batch")
+async def batch_multi_agent_response(request: MessageRequest):
+    # Generate a conversation ID for this session
+    conversation_id = str(uuid.uuid4())
     
-    # Add responses from different agents
+    # Create responses from different agents
     agents = ["Research", "Code", "Planning"]
+    responses = []
     
     for agent in agents:
-        agent_response = ChatMessageContent(
-            AuthorName=agent,
-            Role=Role(label="Assistant"),
-            Items=[TextContent(text=f"This is a response from the {agent} agent regarding your query.")],
-            ModelId="gpt-4o"
+        # Add sources for Research agent
+        if agent == "Research":
+            sources = [
+                SourceReference(
+                    id="source-1",
+                    title="Important Research Paper",
+                    url="https://example.com/paper",
+                    snippet="Relevant information from the paper..."
+                )
+            ]
+        else:
+            sources = []
+            
+        response = ChatResponse(
+            messageId=str(uuid.uuid4()),
+            conversationId=conversation_id,
+            status="completed",
+            role="assistant",
+            content=f"This is a response from the {agent} agent regarding your query.",
+            contentType="text" if agent != "Code" else "markdown",
+            agentName=agent,
+            sources=sources,
+            error=None,
+            createdAt=datetime.utcnow().isoformat() + "Z"
         )
         
-        chat_history.append(agent_response)
+        responses.append(response)
     
-    # Return the entire chat history as a single JSON response
-    return chat_history
+    # Return array of agent responses
+    return [response.dict() for response in responses]
 ```
 
 ## Key Points
 
-1. **Dual Endpoint Support**:
-   - `/stream` endpoint for Server-Sent Events streaming responses
-   - `/batch` endpoint for traditional JSON responses with complete chat history
+1. **Standardized Response Format**:
+   - Uses the complete schema with all required fields:
+     - `messageId`: Unique identifier for tracking and updating messages
+     - `conversationId`: Optional identifier for grouping related messages
+     - `status`: "processing", "completed", or "failed"
+     - `role`: Always "assistant" for responses
+     - `content`: The actual message content
+     - `contentType`: "text" or "markdown"
+     - `agentName`: Only for multi-agent responses
+     - `sources`: Array of source references when available
+     - `error`: Details when status is "failed"
+     - `createdAt`: ISO 8601 timestamp
 
-2. **FastAPI Integration**:
-   - Uses FastAPI's `StreamingResponse` for efficient streaming on the `/stream` endpoint
-   - Returns standard JSON from the `/batch` endpoint
-   - Leverages Python's async capabilities for non-blocking I/O
+2. **Multiple Endpoint Support**:
+   - `/api/chat` endpoint for standard chat responses
+   - `/api/multi-agent-chat/stream` endpoint for streaming multi-agent responses
+   - `/api/multi-agent-chat/batch` endpoint for batch multi-agent responses
+   - `/api/chat/error-example` showing how to format errors
 
-3. **Streaming Responses**:
-   - Sets appropriate headers and media type for SSE
-   - Uses an async generator function to yield responses one at a time
-   - Formats each response as an SSE event with `data: {json}\n\n`
+3. **Streaming Implementation**:
+   - Demonstrates progressive updates with the same messageId
+   - Shows status transitions from "processing" to "completed"
+   - Provides realistic user experience with partial content updates
+   - Uses Server-Sent Events for efficient streaming
 
-4. **Batch Responses**:
-   - Returns a complete `ChatHistory` array in a single JSON response
-   - Includes the original user message at the beginning of the history
-   - Contains responses from all agents
-   - Uses standard JSON content type
+4. **Source Citations**:
+   - Shows how to include source references for retrieved information
+   - Full structure with id, title, url, and snippet fields
 
-5. **Response Structure**:
-   - Both endpoints use Pydantic models for `ChatMessageContent`
-   - Only provides the required content, while the system handles metadata
-   - Properly aliases fields to match the expected JSON format with correct casing
+5. **Error Handling**:
+   - Proper error formatting with message and code
+   - Demonstrates status="failed" state
 
-6. **Request Handling**:
-   - Uses Pydantic for request validation and serialization
-   - Leverages FastAPI's built-in JSON parsing and validation
-   - Properly handles both streaming and batch response formats
+6. **Pydantic Models**:
+   - Strongly typed data models for validation
+   - Helper method for creating standardized responses
 
 7. **Deployment Considerations**:
-   - Requires an ASGI server like Uvicorn or Hypercorn for async support
-   - Use `pip install fastapi uvicorn pydantic` for dependencies
+   - Requires an ASGI server like Uvicorn for async support
+   - Install dependencies: `pip install fastapi uvicorn pydantic`
    - Run with `uvicorn app:app --reload` for development 
