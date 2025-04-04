@@ -7,8 +7,8 @@ const nextConfig: NextConfig = {
     // Removed: instrumentationHook: true
   } as any,
   
-  // Use standalone output mode to support server features like rewrites
-  output: 'standalone',
+  // Use static export for Azure Static Web Apps
+  output: 'export',
   
   // Configure image optimization
   images: {
