@@ -7,8 +7,8 @@ const nextConfig: NextConfig = {
     // Removed: instrumentationHook: true
   } as any,
   
-  // Use output: 'export' for static site generation
-  output: 'export',
+  // Use standalone output mode to support server features like rewrites
+  output: 'standalone',
   
   // Configure image optimization
   images: {

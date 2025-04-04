@@ -19,11 +19,6 @@ jobs:
       - uses: actions/checkout@v3
         with:
           submodules: true
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 18
-      - name: Install dependencies
-        run: npm ci
       - name: Generate environment file
         run: |
           echo "NEXT_PUBLIC_APP_NAME=${{ secrets.NEXT_PUBLIC_APP_NAME }}" > .env
@@ -32,23 +27,6 @@ jobs:
           echo "NEXT_PUBLIC_STANDARD_CHAT_API_MODE=${{ secrets.NEXT_PUBLIC_STANDARD_CHAT_API_MODE }}" >> .env
           echo "NEXT_PUBLIC_CHAT_HISTORY_MODE=${{ secrets.NEXT_PUBLIC_CHAT_HISTORY_MODE }}" >> .env
           echo "NEXT_PUBLIC_MOCK_API_RESPONSE_SPEED=${{ secrets.NEXT_PUBLIC_MOCK_API_RESPONSE_SPEED }}" >> .env
-      - name: Build application
-        run: |
-          npm run build
-          # Make sure the output directory has an index.html at the root
-          cp out/index.html out/404.html
-      - name: List build output
-        run: ls -la out
-      - name: Copy build artifacts
-        run: |
-          # Copy the build artifacts to the deployment directory
-          cp -r out/* .
-          # Make sure we have the config file in the root (don't copy if already exists)
-          if [ ! -f "./staticwebapp.config.json" ]; then
-            cp staticwebapp.config.json . 2>/dev/null || echo "Config file not found in build output"
-          fi
-          echo "Files in root directory:"
-          ls -la
       - name: Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -58,8 +36,11 @@ jobs:
           action: "upload"
           app_location: "/"
           api_location: ""
-          output_location: "/"
-          skip_app_build: true
+          output_location: ".next"
+          app_build_command: "npm run build"
+          config_file_location: "/"
+          skip_app_build: false
+          is_static_export: false
 
   close_pull_request:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
