@@ -39,6 +39,12 @@ jobs:
           cp out/index.html out/404.html
       - name: List build output
         run: ls -la out
+      - name: Copy build artifacts
+        run: |
+          # Copy the build artifacts to the deployment directory
+          cp -r out/* .
+          cp staticwebapp.config.json .
+          ls -la
       - name: Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -48,7 +54,7 @@ jobs:
           action: "upload"
           app_location: "/"
           api_location: ""
-          output_location: "out"
+          output_location: "/"
           skip_app_build: true
 
   close_pull_request:
