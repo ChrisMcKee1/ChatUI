@@ -1,0 +1,27 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Development Guidelines
+
+- **After making changes, ALWAYS make sure to start up a new server so I can test it.**
+- **Always look for existing code to iterate on instead of creating new code.**
+- **Do not drastically change the patterns before trying to iterate on existing patterns.**
+- **Always kill all existing related servers that may have been created in previous testing before trying to start a new server.**
+- **Always prefer simple solutions.**
+- **Avoid duplication of code whenever possible, which means checking for other areas of the codebase that might already have similar code and functionality.**
+- **Write code that takes into account the different environments: dev, test, and prod.**
+- **Only make changes that are requested or that you are confident are well understood and directly related to the change being requested.**
+- **When fixing an issue or bug, do not introduce a new pattern or technology without first exhausting all options for the existing implementation. If you do introduce a new pattern, ensure you remove the old implementation to avoid duplicate logic.**
+- **Keep the codebase very clean and organized.**
+- **Avoid writing scripts in files if possible, especially if the script is likely only to be run once.**
+- **Avoid having files over 300–400 lines of code; refactor when necessary.**
+- **Mocking data is only needed for tests—never mock data for dev or prod.**
+- **Never add stubbing or fake data patterns to code that affects the dev or prod environments.**
+- **Never overwrite the .env file without first asking and confirming.**
+- **Focus on the areas of code relevant to the task.**
+- **Do not touch code that is unrelated to the task.**
+- **Write thorough tests for all major functionality.**
+- **Avoid making major changes to the patterns and architecture of a feature once it has proven effective, unless explicitly instructed.**
+- **Always consider what other methods and areas of code might be affected by code changes.**

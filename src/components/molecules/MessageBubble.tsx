@@ -6,11 +6,13 @@ import { User, Bot } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { useState, useEffect } from 'react';
 import { Message } from './ChatMessagePanel'; // Import the Message type
+import { MarkdownRenderer } from '@/components/atoms/MarkdownRenderer';
+import { TextSizeOption } from './ChatMessagePanel';
 
 export type Role = 'user' | 'assistant' | 'system' | 'tool';
 
 export interface MessageBubbleProps {
-  message: Message; // Use the full Message object
+  message: Message & { textSize?: TextSizeOption }; // Extend the Message type to include textSize
   className?: string;
 }
 
@@ -67,7 +69,7 @@ export const MessageBubble = ({
   const isSmScreen = useMediaQuery(muiTheme.breakpoints.between('sm', 'md'));
   
   // Extract properties from the message object
-  const { content, role, agentName, agentIdentifier } = message;
+  const { content, role, agentName, agentIdentifier, textSize = 'medium' } = message;
   
   // Use agentName if available, otherwise fall back to agentIdentifier
   const agentId = agentName || agentIdentifier;
@@ -146,10 +148,11 @@ export const MessageBubble = ({
   
   // Determine background and text color based on role and agent
   let bubbleBgColor = '';
-  let textColor = '#222'; // Always use black text as requested
+  // Always use black text
+  const textColor = '#222';
   let avatarBgColor = '';
   // Adjust icon color based on mode and background for better contrast
-  let avatarIconColor = '#222'; 
+  let avatarIconColor = '#222';
 
   if (isUserMessage) {
     bubbleBgColor = isDarkMode 
@@ -290,21 +293,11 @@ export const MessageBubble = ({
             borderTopLeftRadius: isUserMessage ? '0.75rem' : 0,  // Adjust bubble shape
           }}
         >
-          <Typography
-            component="div"
-            variant="body2"
-            sx={{ 
-              fontFamily,
-              fontWeight,
-              whiteSpace: 'pre-wrap', 
-              wordBreak: 'break-word', // Ensure long words wrap
-              hyphens: 'auto',
-              color: 'inherit', // Inherit color from parent Box
-              fontSize: 'inherit', // Inherit font size from parent Box
-            }}
-          >
-            {content} {/* Use content from message object */}
-          </Typography>
+          <MarkdownRenderer
+            content={content}
+            textSize={textSize} // Use the textSize from the message prop
+            maxWidth="100%"
+          />
         </Box>
       </Box>
       <Typography

@@ -1,6 +1,8 @@
 # Active Context
 
 ## Current Focus
+- **Fixing layout issues and container sizing in chat UI**
+- **Documenting how to test markdown formatting features**
 - **Complete Storybook rebuild to match current component implementations**
 - **Implementing OpenTelemetry for enhanced application monitoring and observability**
 - Adding enhanced loading state visual feedback for better user experience
@@ -11,6 +13,22 @@
 - **Configure Azure Static Web App deployment with proper error handling for builds**
 
 ## Recent Activities
+- **Fixed layout and container sizing issues:**
+  - Optimized container layout to utilize 100% of available space
+  - Fixed text size control positioning in the top-right corner
+  - Improved empty state centering with reliable flexbox layout
+  - Removed maxWidth constraints that limited container width
+  - Added appropriate margins (95%) for better visual balance
+  - Hid scrollbars while maintaining scrolling functionality
+  - Made text size button larger for better usability
+- **Completed message box text size/resolution improvement and markdown support:**
+  - Implemented responsive text sizing with fluid typography
+  - Added UI density controls for text size adjustment with localStorage persistence
+  - Enhanced visual contrast for better readability in both light and dark themes
+  - Implemented markdown support using micromark and GFM extensions
+  - Created MarkdownRenderer atomic component with theme integration
+  - Enhanced MessageBubble to use the MarkdownRenderer
+  - Added Storybook stories to demonstrate the functionality
 - Completed responsive design for small and very small screens:
   - Added dynamic sizing and spacing in MessageBubble for different screen sizes
   - Created compact versions of AgentToggle and ThemeToggle components

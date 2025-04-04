@@ -1,7 +1,10 @@
+import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 import { ChatMessagePanel } from './ChatMessagePanel';
 import { ThemeProvider } from '@/context/ThemeContext';
-import { Box, useMediaQuery, useTheme } from '@mui/material';
+import { Box, useMediaQuery, useTheme, Typography } from '@mui/material';
+import { v4 as uuidv4 } from 'uuid';
+import { Role } from './MessageBubble';
 
 const meta: Meta<typeof ChatMessagePanel> = {
   component: ChatMessagePanel,
@@ -26,7 +29,8 @@ const meta: Meta<typeof ChatMessagePanel> = {
   ],
   argTypes: {
     messages: {
-      description: 'Array of Message objects to display in the panel',
+      control: 'object',
+      description: 'Array of message objects to display',
     },
     className: {
       control: 'text',
@@ -37,8 +41,8 @@ const meta: Meta<typeof ChatMessagePanel> = {
     },
     isLoading: {
       control: 'boolean',
-      description: 'Whether the panel is in a loading state (affects auto-scrolling behavior)',
-    }
+      description: 'Whether the panel is in a loading state',
+    },
   }
 };
 
@@ -46,23 +50,38 @@ export default meta;
 
 type Story = StoryObj<typeof ChatMessagePanel>;
 
-// Create message helpers
-const createUserMessage = (id: string, content: string, timestamp = '12:30 PM') => ({
-  id,
-  content,
-  role: 'user' as const,
-  timestamp,
-});
+// Sample markdown content
+const markdownContent = `
+# Heading 1
+## Heading 2
 
-const createAssistantMessage = (id: string, content: string, timestamp = '12:31 PM', agentName?: string) => ({
-  id,
-  content,
-  role: 'assistant' as const,
-  timestamp,
-  ...(agentName ? { agentName } : {}),
-});
+This is a paragraph with **bold** and *italic* text.
 
-export const Empty: Story = {
+* List item 1
+* List item 2
+  * Nested item 2.1
+  * Nested item 2.2
+* List item 3
+
+\`\`\`javascript
+function greet(name) {
+  console.log(\`Hello, \${name}!\`);
+  return \`Hello, \${name}!\`;
+}
+\`\`\`
+
+> This is a blockquote
+
+| Name | Role | Department |
+|------|------|------------|
+| John | Developer | Engineering |
+| Lisa | Designer | Design |
+
+[Link to example.com](https://example.com)
+`;
+
+// Empty panel with no messages
+export const EmptyPanel: Story = {
   args: {
     messages: [],
   },
@@ -75,116 +94,305 @@ export const Empty: Story = {
   },
 };
 
-export const StandardConversation: Story = {
+// Panel with a user message
+export const WithUserMessage: Story = {
   args: {
     messages: [
-      createAssistantMessage('1', "Hello! I'm an assistant. How can I help you today?", '12:30 PM'),
-      createUserMessage('2', "I'm trying to understand how to connect to the multi-agent endpoint.", '12:31 PM'),
-      createAssistantMessage('3', "The multi-agent endpoint works similarly to the standard endpoint, but it distributes your query across multiple specialized agents for a more comprehensive response. To connect to it, you'll use the /multi-agent path instead of the standard /chat path, but with the same request format.", '12:32 PM'),
-    ],
-  },
-  parameters: {
-    docs: {
-      description: {
-        story: 'Standard conversation between user and assistant with multiple messages',
+      {
+        id: uuidv4(),
+        content: 'Hello! How can you help me?',
+        role: 'user',
+        timestamp: 'Just now',
       },
-    },
+    ],
   },
 };
 
-export const WithLongMessages: Story = {
+// Panel with a user message and assistant response
+export const WithUserAndAssistantMessages: Story = {
   args: {
     messages: [
-      createUserMessage('1', "Can you explain how quantum computing works? I'm interested in understanding the basic principles and how they differ from classical computing.", '12:30 PM'),
-      createAssistantMessage('2', "Quantum computing is based on the principles of quantum mechanics, which operates at the subatomic level. Unlike classical computers that use bits (0s and 1s), quantum computers use quantum bits or 'qubits'. The key difference is that qubits can exist in multiple states simultaneously due to a property called superposition, not just 0 or 1. Additionally, qubits can be 'entangled' with each other, meaning the state of one qubit can depend on the state of another, regardless of the distance between them. These properties allow quantum computers to process a vast number of possibilities simultaneously, making them potentially much more powerful than classical computers for certain types of problems like factoring large numbers, search algorithms, and simulating quantum systems. However, quantum computers are extremely difficult to build and maintain because qubits are very fragile and susceptible to environmental interference, requiring specialized cooling and isolation systems.", '12:31 PM'),
-      createUserMessage('3', "That's fascinating! What are some practical applications of quantum computing that we might see in the next decade?", '12:32 PM'),
-      createAssistantMessage('4', "In the next decade, we might see practical applications of quantum computing in several fields:\n\n1. Cryptography: Quantum computers could break many current encryption methods, but also enable new, more secure quantum encryption.\n\n2. Drug discovery and materials science: Simulating molecular interactions to accelerate the development of new medicines and materials.\n\n3. Optimization problems: Solving complex logistics, supply chain, and traffic flow problems more efficiently.\n\n4. Machine learning: Enhancing certain AI algorithms with quantum speedups.\n\n5. Financial modeling: Better portfolio optimization and risk assessment.\n\n6. Climate modeling: More accurate weather forecasting and climate change predictions.\n\nHowever, these applications will likely first appear as hybrid solutions where classical computers work together with quantum processors for specific computational tasks rather than as standalone quantum computers replacing classical systems entirely.", '12:33 PM'),
-    ],
-  },
-  parameters: {
-    docs: {
-      description: {
-        story: 'Conversation with long, detailed messages to demonstrate text wrapping and scrolling',
+      {
+        id: uuidv4(),
+        content: 'Hello! How can you help me?',
+        role: 'user',
+        timestamp: '1m ago',
       },
-    },
+      {
+        id: uuidv4(),
+        content: "I'm an AI assistant, and I can help you with various tasks such as answering questions, generating content, providing recommendations, and more. Just let me know what you need!",
+        role: 'assistant',
+        timestamp: 'Just now',
+      },
+    ],
   },
 };
 
+// Panel with multiple messages as a conversation
+export const Conversation: Story = {
+  args: {
+    messages: [
+      {
+        id: uuidv4(),
+        content: 'Hello! I have a question about JavaScript.',
+        role: 'user',
+        timestamp: '5m ago',
+      },
+      {
+        id: uuidv4(),
+        content: "Sure, I'd be happy to help with JavaScript. What would you like to know?",
+        role: 'assistant',
+        timestamp: '4m ago',
+      },
+      {
+        id: uuidv4(),
+        content: 'How do I create a Promise in JavaScript?',
+        role: 'user',
+        timestamp: '3m ago',
+      },
+      {
+        id: uuidv4(),
+        content: 'In JavaScript, you can create a Promise using the Promise constructor. Here\'s an example:\n\n```javascript\nconst myPromise = new Promise((resolve, reject) => {\n  // Asynchronous operation\n  const success = true;\n  \n  if (success) {\n    resolve("Operation completed successfully");\n  } else {\n    reject("Operation failed");\n  }\n});\n\n// Using the Promise\nmyPromise\n  .then(result => console.log(result))\n  .catch(error => console.error(error));\n```\n\nThe Promise constructor takes a function with two parameters: resolve and reject. You call resolve when the asynchronous operation is successful, and reject when it fails.',
+        role: 'assistant',
+        timestamp: '2m ago',
+      },
+      {
+        id: uuidv4(),
+        content: 'Thank you! That was very helpful.',
+        role: 'user',
+        timestamp: '1m ago',
+      },
+      {
+        id: uuidv4(),
+        content: "You're welcome! If you have any more questions about JavaScript or anything else, feel free to ask.",
+        role: 'assistant',
+        timestamp: 'Just now',
+      },
+    ],
+  },
+};
+
+// Panel with a multi-agent conversation
 export const MultiAgentConversation: Story = {
   args: {
     messages: [
-      createUserMessage('1', "What are the pros and cons of electric vehicles compared to internal combustion engines?", '12:30 PM'),
-      createAssistantMessage('2', "Electric vehicles produce zero direct emissions, reducing air pollution in urban areas and greenhouse gas emissions when powered by renewable energy sources.", '12:31 PM', "EnvironmentalExpert"),
-      createAssistantMessage('3', "From an engineering perspective, EVs have fewer moving parts, which generally means lower maintenance costs and potentially longer vehicle lifespans.", '12:31 PM', "EngineeringExpert"),
-      createAssistantMessage('4', "Economically, EVs typically have higher upfront costs but lower operating costs over time. The total cost of ownership depends on electricity prices, driving habits, and available incentives.", '12:32 PM', "EconomicsExpert"),
-      createUserMessage('5', "What about the limitations of electric vehicles?", '12:33 PM'),
-      createAssistantMessage('6', "The primary limitations include limited driving range compared to gasoline vehicles, though this is improving with newer battery technology.", '12:34 PM', "TechnologyExpert"),
-      createAssistantMessage('7', "Charging infrastructure remains insufficient in many areas, making long-distance travel challenging in some regions.", '12:34 PM', "InfrastructureExpert"),
-      createAssistantMessage('8', "The environmental impact of battery production and disposal is significant, including mining for materials like lithium and cobalt.", '12:35 PM', "EnvironmentalExpert"),
-    ],
-  },
-  parameters: {
-    docs: {
-      description: {
-        story: 'Multi-agent conversation with different agents providing specialized responses on the same topic',
+      {
+        id: uuidv4(),
+        content: 'Hello! I need help with a project that requires both coding and design advice.',
+        role: 'user',
+        timestamp: '5m ago',
       },
-    },
+      {
+        id: uuidv4(),
+        content: "I'm Engineer, and I can help with the technical aspects of your project. What kind of coding help do you need?",
+        role: 'assistant',
+        agentName: 'Engineer',
+        timestamp: '4m ago',
+      },
+      {
+        id: uuidv4(),
+        content: "I'm Designer, and I can provide guidance on the visual and UX aspects. What's the design context for this project?",
+        role: 'assistant',
+        agentName: 'Designer',
+        timestamp: '4m ago',
+      },
+      {
+        id: uuidv4(),
+        content: "I'm building a portfolio website and I need help with responsive layout coding and a clean design.",
+        role: 'user',
+        timestamp: '3m ago',
+      },
+      {
+        id: uuidv4(),
+        content: "For responsive layouts, I recommend using a CSS Grid or Flexbox approach rather than older methods. Here's a basic structure you could use:\n\n```css\n.portfolio-container {\n  display: grid;\n  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));\n  gap: 2rem;\n}\n\n@media (max-width: 768px) {\n  .portfolio-container {\n    grid-template-columns: 1fr;\n  }\n}\n```\n\nThis will create a multi-column layout that adjusts to a single column on smaller screens.",
+        role: 'assistant',
+        agentName: 'Engineer',
+        timestamp: '2m ago',
+      },
+      {
+        id: uuidv4(),
+        content: "For a portfolio design, I recommend:\n\n1. **Consistent white space** - Use padding and margins consistently (try a 8px or 16px base unit)\n2. **Limited color palette** - 2-3 primary colors plus 1-2 accent colors\n3. **Typography hierarchy** - 2 fonts maximum (one for headings, one for body text)\n4. **High-quality images** - Optimize all portfolio images for web (compress without losing quality)\n\nMinimalism works well for portfolios as it lets your work be the focus rather than the site design itself.",
+        role: 'assistant',
+        agentName: 'Designer',
+        timestamp: '2m ago',
+      },
+    ],
   },
 };
 
-export const LoadingState: Story = {
+// Panel in loading state
+export const Loading: Story = {
   args: {
     messages: [
-      createUserMessage('1', "What's the capital of France?", '12:30 PM'),
-      createAssistantMessage('2', "The capital of France is Paris. It's one of the most populous cities in Europe and a global center for art, fashion, gastronomy, and culture.", '12:31 PM'),
-      createUserMessage('3', "And what's the capital of Italy?", '12:32 PM'),
+      {
+        id: uuidv4(),
+        content: 'Can you help me understand quantum computing?',
+        role: 'user',
+        timestamp: 'Just now',
+      },
     ],
     isLoading: true,
   },
-  parameters: {
-    docs: {
-      description: {
-        story: 'Conversation in loading state, demonstrating how the panel behaves while waiting for a response',
+};
+
+// Panel with markdown content
+export const WithMarkdownContent: Story = {
+  args: {
+    messages: [
+      {
+        id: uuidv4(),
+        content: 'Can you show me how markdown works in this chat?',
+        role: 'user',
+        timestamp: '1m ago',
       },
-    },
+      {
+        id: uuidv4(),
+        content: markdownContent,
+        role: 'assistant',
+        timestamp: 'Just now',
+      },
+    ],
   },
 };
 
-export const ResponsiveLayout: Story = {
+// Panel showing different text sizes
+export const TextSizes: Story = {
+  render: () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', padding: '1rem' }}>
+      <div>
+        <h3>Small Text Size</h3>
+        <ChatMessagePanel
+          messages={[
+            {
+              id: uuidv4(),
+              content: 'This is a user message with small text size',
+              role: 'user',
+              timestamp: '1m ago',
+              // @ts-ignore - Adding custom property to set text size
+              textSize: 'small',
+            },
+            {
+              id: uuidv4(),
+              content: markdownContent,
+              role: 'assistant',
+              timestamp: 'Just now',
+              // @ts-ignore - Adding custom property to set text size
+              textSize: 'small',
+            },
+          ]}
+        />
+      </div>
+      <div>
+        <h3>Medium Text Size (Default)</h3>
+        <ChatMessagePanel
+          messages={[
+            {
+              id: uuidv4(),
+              content: 'This is a user message with medium text size',
+              role: 'user',
+              timestamp: '1m ago',
+              // @ts-ignore - Adding custom property to set text size
+              textSize: 'medium',
+            },
+            {
+              id: uuidv4(),
+              content: markdownContent,
+              role: 'assistant',
+              timestamp: 'Just now',
+              // @ts-ignore - Adding custom property to set text size
+              textSize: 'medium',
+            },
+          ]}
+        />
+      </div>
+      <div>
+        <h3>Large Text Size</h3>
+        <ChatMessagePanel
+          messages={[
+            {
+              id: uuidv4(),
+              content: 'This is a user message with large text size',
+              role: 'user',
+              timestamp: '1m ago',
+              // @ts-ignore - Adding custom property to set text size
+              textSize: 'large',
+            },
+            {
+              id: uuidv4(),
+              content: markdownContent,
+              role: 'assistant',
+              timestamp: 'Just now',
+              // @ts-ignore - Adding custom property to set text size
+              textSize: 'large',
+            },
+          ]}
+        />
+      </div>
+    </div>
+  ),
+};
+
+export const Responsive: Story = {
   parameters: {
-    docs: {
-      description: {
-        story: 'Demonstrates how the chat panel adapts to different screen sizes',
-      },
+    viewport: {
+      defaultViewport: 'mobile1',
     },
   },
-  render: () => {
-    // This is a render function component that can use hooks
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  render: (args) => {
+    const isMobile = useMediaQuery(useTheme().breakpoints.down('sm'));
     
     const messages = [
-      createUserMessage('1', "How does the layout change on different devices?", '12:30 PM'),
-      createAssistantMessage('2', "The ChatMessagePanel uses responsive design to adapt to different screen sizes. On mobile devices, it has reduced padding and spacing to maximize the available area for messages.", '12:31 PM'),
-      createUserMessage('3', "What other responsive features does it have?", '12:32 PM'),
-      createAssistantMessage('4', "The panel also adjusts font sizes, avatar sizes, and message bubble widths based on the screen size. It maintains proper readability and touch targets on small screens while providing more comfortable spacing on larger displays.", '12:33 PM'),
+      {
+        id: uuidv4(),
+        content: "How does the layout change on different devices?",
+        role: 'user' as Role,
+        timestamp: '12:30 PM',
+      },
+      {
+        id: uuidv4(),
+        content: "The ChatMessagePanel uses responsive design to adapt to different screen sizes. On mobile devices, it has reduced padding and spacing to maximize the available area for messages.",
+        role: 'assistant' as Role,
+        timestamp: '12:31 PM',
+      },
+      {
+        id: uuidv4(),
+        content: "What other responsive features does it have?",
+        role: 'user' as Role,
+        timestamp: '12:32 PM',
+      },
+      {
+        id: uuidv4(),
+        content: "The panel also adjusts font sizes, avatar sizes, and message bubble widths based on the screen size. It maintains proper readability and touch targets on small screens while providing more comfortable spacing on larger displays.",
+        role: 'assistant' as Role,
+        timestamp: '12:33 PM',
+      },
     ];
     
     return (
-      <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <Box sx={{ 
-          textAlign: 'center', 
-          p: 1, 
-          bgcolor: 'rgba(0, 0, 0, 0.05)', 
-          borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
-          fontSize: '14px'
-        }}>
-          Current viewport: {isMobile ? 'Mobile' : 'Desktop/Tablet'}
-        </Box>
-        <Box sx={{ flexGrow: 1, display: 'flex' }}>
-          <ChatMessagePanel messages={messages} />
-        </Box>
+      <Box
+        sx={{
+          border: '1px dashed grey',
+          height: '100vh',
+          width: '100%',
+          overflow: 'hidden',
+        }}
+      >
+        <ChatMessagePanel messages={messages} />
+        <Typography 
+          sx={{ 
+            position: 'absolute', 
+            bottom: '10px', 
+            right: '10px', 
+            bgcolor: 'rgba(0, 0, 0, 0.5)',
+            color: 'white',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            fontSize: '12px',
+          }}
+        >
+          Current viewport: {isMobile ? 'Mobile' : 'Desktop'}
+        </Typography>
       </Box>
     );
-  }
+  },
 }; 

@@ -149,6 +149,7 @@ export const ChatPageLayout = ({
               easing: muiTheme.transitions.easing.sharp,
               duration: muiTheme.transitions.duration.leavingScreen,
             }),
+            overflow: 'hidden',
           }}
         >
           <ChatMessagePanel 
@@ -156,15 +157,12 @@ export const ChatPageLayout = ({
             isLoading={isLoading}
             sx={{
               flexGrow: 1,
-              '& > div': {
-                maxWidth: '1200px',
-                width: '100%',
-                p: {
-                  xs: 2, // Extra small screens (padding 16px)
-                  sm: 3, // Small screens (padding 24px)
-                  md: 4, // Medium and up (padding 32px)
-                }
-              }
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              maxWidth: 'none',
+              mx: 0,
             }}
           />
           

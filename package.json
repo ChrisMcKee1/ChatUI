@@ -27,6 +27,8 @@
     "@opentelemetry/semantic-conventions": "^1.30.0",
     "@types/uuid": "^10.0.0",
     "lucide-react": "^0.485.0",
+    "micromark": "^4.0.2",
+    "micromark-extension-gfm": "^3.0.0",
     "next": "15.2.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

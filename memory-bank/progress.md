@@ -228,6 +228,14 @@
 ## To Do
 
 ### High Priority
+- ✅ **Improve message box text size/resolution and add markdown support:**
+  - ✅ Implement responsive text sizing with fluid typography
+  - ✅ Add UI density controls for text size adjustment
+  - ✅ Enhance visual contrast for better readability
+  - ✅ Implement markdown support using micromark
+  - ✅ Add core markdown features (formatting, lists, code blocks, etc.)
+  - ✅ Enhance MessageBubble component to process markdown
+  - ✅ Add real-time preview capability
 - **Implement OpenTelemetry for monitoring and observability:**
   - Set up OpenTelemetry SDK and auto-instrumentation
   - Configure exporters for telemetry data
@@ -379,3 +387,61 @@ The Storybook rebuild is complete! All component stories have been updated to ma
   - Established clear hierarchy for sections and subsections
   - Standardized relative linking between documentation files
   - Added guidelines for code snippet formatting 
+
+## Testing Markdown Support
+
+### How to Test Markdown Formatting
+
+To test the markdown formatting capabilities in the chat UI:
+
+1. **Launch the application** at http://localhost:3001 (or your current port)
+
+2. **Trigger a markdown demo** using one of these methods:
+   - **Direct trigger phrases**: Type any of these messages in the chat input box and send:
+     ```
+     show me markdown formatting
+     how can I use formatting in messages?
+     what markdown features are supported?
+     ```
+   - The system will automatically respond with a comprehensive markdown demo showing various formatting options including headings, lists, code blocks, tables, and more.
+
+3. **Explore sample chats**:
+   - Look for these predefined chats in the chat history panel (left sidebar):
+     - "Standard: Markdown Demo" - Shows basic markdown formatting examples
+     - "Multi-Agent: Markdown Features" - Displays how different agents use markdown with their specialized styles
+   - Click on these chats to load them and view the markdown examples
+
+4. **Test the text size controls**:
+   - Find the "A" (text size) icon in the top-right corner of the chat panel
+   - Click it to open the size menu
+   - Select from three options: Small, Medium, or Large
+   - See how the markdown formatting adapts to different text sizes
+   - The setting persists between sessions using localStorage
+
+5. **Verify rendering of specific features**:
+   - **Headings**: Check that headings are properly sized and styled
+   - **Lists**: Verify both ordered and unordered lists work, including nesting
+   - **Code blocks**: Confirm syntax highlighting works in code blocks
+   - **Tables**: Check that table formatting is maintained
+   - **Blockquotes**: Verify blockquotes are properly indented and styled
+   - **Links**: Test that links are clearly visible with the purple styling
+
+### Markdown Features Supported
+- Headings (levels 1-6)
+- Text formatting (bold, italic, strikethrough)
+- Lists (ordered, unordered, nested)
+- Code (inline and blocks with syntax highlighting)
+- Blockquotes
+- Tables with alignment
+- Links
+- Task lists (checkboxes)
+- Horizontal rules
+
+### Implementation Details
+- Uses micromark for parsing markdown content
+- Includes gfm extension for GitHub-Flavored Markdown support
+- Custom styling applied via the MarkdownRenderer component
+- Responsive design adapts to different screen sizes and text size preferences
+- Text color is set to black (#222) for maximum readability regardless of theme
+- Links use a distinct purple color (#9e41c3) to stand out on any background
+- Scrollbars are hidden while maintaining scrolling functionality 

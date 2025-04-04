@@ -64,12 +64,19 @@ export class MockChatService implements IChatService {
    * Generates a standard chat response
    */
   private generateStandardResponse(userMessage: string): string {
+    // Add a markdown demo response when the user asks for markdown example
+    if (userMessage.toLowerCase().includes('markdown') || userMessage.toLowerCase().includes('formatting')) {
+      return this.generateMarkdownDemoResponse();
+    }
+    
     const responses = [
       `Thank you for your message: "${userMessage}". I'll help you with that.`,
       `I understand you're asking about "${userMessage}". Here's my response...`,
       `Regarding "${userMessage}", I'd suggest the following approach...`,
       `I've processed your request about "${userMessage}" and here's what I found...`,
       `Based on your message about "${userMessage}", I can provide these insights...`,
+      // Add one markdown example to the random responses
+      this.generateMarkdownDemoResponse(),
     ];
     
     return this.getRandomResponse(responses);
@@ -79,15 +86,108 @@ export class MockChatService implements IChatService {
    * Generates a multi-agent chat response string that appears to combine multiple perspectives
    */
   private generateMultiAgentResponseString(userMessage: string): string {
+    // Add a markdown demo response when the user asks for markdown example
+    if (userMessage.toLowerCase().includes('markdown') || userMessage.toLowerCase().includes('formatting')) {
+      return `[Documentation Agent] ${this.generateMarkdownDemoResponse()}\n\n[Code Agent] Here's how you can implement a basic Markdown renderer in React:\n\n\`\`\`jsx
+import React from 'react';
+import { micromark } from 'micromark';
+
+const MarkdownRenderer = ({ content }) => {
+  const htmlContent = micromark(content);
+  return <div dangerouslySetInnerHTML={{ __html: htmlContent }} />;
+};
+
+export default MarkdownRenderer;
+\`\`\`\n\n[Design Agent] For the best user experience with Markdown, consider these styling tips:\n\n* Use consistent spacing for code blocks\n* Ensure adequate line height (1.5-1.8) for readability\n* Add subtle styling to blockquotes and code elements\n* Use monospace fonts for code that render well at various sizes`;
+    }
+    
     const responses = [
       `[Research Agent] I've analyzed "${userMessage}" and found several peer-reviewed sources.\n\n[Code Agent] Based on this research, here's an implementation approach...\n\n[Planning Agent] Let me integrate these insights into a cohesive strategy for you.`,
       `[Technical Agent] Regarding "${userMessage}", the technical considerations are...\n\n[UX Agent] From a user experience perspective, we should consider...\n\n[Project Agent] Combining these insights, I recommend...`,
       `[Data Agent] I've analyzed the data related to "${userMessage}".\n\n[Domain Agent] In this specific domain, these patterns are significant...\n\n[Strategy Agent] Let me synthesize a comprehensive approach based on these findings.`,
       `[Analysis Agent] Your question about "${userMessage}" can be broken down into...\n\n[Solution Agent] Here are multiple approaches to address this...\n\n[Evaluation Agent] After evaluating all options, I recommend...`,
       `[Framework Agent] For "${userMessage}", relevant frameworks include...\n\n[Implementation Agent] Here's how you might implement this...\n\n[Review Agent] My overall assessment and recommendation is...`,
+      // Add a markdown example with multiple agents
+      `[Documentation Agent] Here's a guide on structuring your project:\n\n# Project Structure\n\n## Core Components\n* Frontend (React/Next.js)\n* Backend API (Node.js)\n* Database (PostgreSQL)\n\n## Recommended Directory Layout\n\`\`\`\nsrc/\n  components/\n  pages/\n  services/\n  utils/\n\`\`\`\n\n[Architecture Agent] I recommend implementing this using the following patterns:\n\n1. **Repository Pattern** for data access\n2. **Service Layer** for business logic\n3. **Component-based UI** with atomic design\n\n[DevOps Agent] For deployment, consider this pipeline:\n\n| Stage | Tools | Purpose |\n|-------|-------|--------|\n| Build | GitHub Actions | Compile, test, lint |\n| Deploy | Azure Static Web Apps | Host frontend |\n| Monitor | OpenTelemetry | Track performance |`
     ];
     
     return this.getRandomResponse(responses);
+  }
+  
+  /**
+   * Generates a comprehensive Markdown demo response
+   */
+  private generateMarkdownDemoResponse(): string {
+    return `# Markdown Formatting Demo
+
+## Text Formatting
+
+You can make text **bold**, *italic*, or ***both***. You can also add ~~strikethrough~~ to text.
+
+## Lists
+
+### Unordered Lists
+* Item 1
+* Item 2
+  * Nested Item 2.1
+  * Nested Item 2.2
+* Item 3
+
+### Ordered Lists
+1. First item
+2. Second item
+   1. Nested item 2.1
+   2. Nested item 2.2
+3. Third item
+
+## Code
+
+Inline code: \`const greeting = "Hello, World!";\`
+
+Code blocks:
+
+\`\`\`javascript
+function greet(name) {
+  return \`Hello, \${name}!\`;
+}
+
+// Call the function
+console.log(greet('User'));
+\`\`\`
+
+## Quotes
+
+> This is a blockquote.
+> 
+> It can span multiple lines and include other Markdown elements.
+
+## Links and Images
+
+[Visit our documentation](https://example.com/docs)
+
+## Tables
+
+| Feature | Supported | Notes |
+|---------|-----------|-------|
+| Headers | Yes | With multiple levels |
+| Lists | Yes | Ordered and unordered |
+| Code | Yes | Inline and blocks |
+| Tables | Yes | With alignment options |
+
+## Task Lists
+
+- [x] Implement Markdown support
+- [ ] Add advanced formatting options
+- [ ] Create comprehensive documentation
+
+## Mathematical Expressions (if supported)
+
+When $a \\ne 0$, there are two solutions to $ax^2 + bx + c = 0$ and they are
+$x = {-b \\pm \\sqrt{b^2-4ac} \\over 2a}$
+
+---
+
+This message demonstrates the Markdown capabilities supported in our chat system.`;
   }
   
   /**

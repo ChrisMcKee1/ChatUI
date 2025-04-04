@@ -1,10 +1,10 @@
 'use client';
 
-import { Box, Typography, SxProps, Theme } from '@mui/material';
+import { Box, Typography, SxProps, Theme, IconButton, Menu, MenuItem } from '@mui/material';
 import { MessageBubble, Role } from '@/components/molecules/MessageBubble';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, Type } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export interface Message {
   id: string;
@@ -22,6 +22,9 @@ export interface ChatMessagePanelProps {
   isLoading?: boolean;
 }
 
+// Text size options for UI density control
+export type TextSizeOption = 'small' | 'medium' | 'large';
+
 export const ChatMessagePanel = ({
   messages,
   className = '',
@@ -32,6 +35,19 @@ export const ChatMessagePanel = ({
   // Create a ref for the messages container to enable auto-scrolling
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  // Add state for text size preference
+  const [textSize, setTextSize] = useState<TextSizeOption>('medium');
+  // Add state for the text size menu
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
+  
+  // Check if a stored preference exists and use it
+  useEffect(() => {
+    const storedTextSize = localStorage.getItem('chatui-text-size');
+    if (storedTextSize && ['small', 'medium', 'large'].includes(storedTextSize)) {
+      setTextSize(storedTextSize as TextSizeOption);
+    }
+  }, []);
   
   // Filter messages to only show user and assistant messages
   // System and tool messages are not displayed
@@ -65,25 +81,25 @@ export const ChatMessagePanel = ({
     }
   };
 
-  // Auto-scroll when messages change or during loading state
+  // Add auto-scroll behavior
   useEffect(() => {
     if (visibleMessages.length > 0) {
-      // Use immediate scrolling during loading (streaming) for a better experience
-      scrollToBottom(isLoading);
+      scrollToBottom();
     }
-  }, [visibleMessages.length, messages, isLoading]);
+  }, [visibleMessages.length, scrollToBottom]);
 
-  // Also check if we should auto-scroll when window is resized
+  // Add resize observer for handling layout changes
   useEffect(() => {
+    // Handle window resize
     const handleResize = () => {
       if (visibleMessages.length > 0) {
-        scrollToBottom(true); // Immediate scrolling on resize
+        scrollToBottom();
       }
     };
-    
+
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [visibleMessages.length]);
+  }, [visibleMessages.length, scrollToBottom]);
 
   // Add a MutationObserver to detect when new message content is added to the DOM
   // This is particularly helpful for streaming responses where the content changes incrementally
@@ -103,7 +119,24 @@ export const ChatMessagePanel = ({
     });
 
     return () => observer.disconnect();
-  }, [isLoading]);
+  }, [isLoading, scrollToBottom]);
+  
+  // Handle opening the text size menu
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  // Handle closing the text size menu
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  // Handle selecting a text size
+  const handleSelectTextSize = (size: TextSizeOption) => {
+    setTextSize(size);
+    localStorage.setItem('chatui-text-size', size);
+    handleClose();
+  };
   
   return (
     <Box
@@ -113,22 +146,84 @@ export const ChatMessagePanel = ({
         display: 'flex',
         flexDirection: 'column',
         flexGrow: 1,
-        height: '100%',
+        height: '100%', // Change from 100vh to 100% to fit parent container
         width: '100%',
         bgcolor: isDarkMode ? 'grey.900' : 'grey.50',
-        overflow: 'auto',
+        overflow: 'hidden',
+        position: 'relative',
         ...sx
       }}
     >
+      {/* Text size adjustment control */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: '1rem',
+          right: '1rem',
+          zIndex: 10,
+        }}
+      >
+        <IconButton
+          onClick={handleClick}
+          size="medium"
+          aria-controls={open ? 'text-size-menu' : undefined}
+          aria-haspopup="true"
+          aria-expanded={open ? 'true' : undefined}
+          sx={{ 
+            bgcolor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+            '&:hover': {
+              bgcolor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+            },
+            padding: '10px',
+            borderRadius: '8px',
+          }}
+        >
+          <Type size={24} color={isDarkMode ? '#fff' : '#000'} />
+        </IconButton>
+        <Menu
+          id="text-size-menu"
+          anchorEl={anchorEl}
+          open={open}
+          onClose={handleClose}
+          MenuListProps={{
+            'aria-labelledby': 'text-size-button',
+          }}
+        >
+          <MenuItem 
+            onClick={() => handleSelectTextSize('small')}
+            selected={textSize === 'small'}
+          >
+            Small
+          </MenuItem>
+          <MenuItem 
+            onClick={() => handleSelectTextSize('medium')}
+            selected={textSize === 'medium'}
+          >
+            Medium
+          </MenuItem>
+          <MenuItem 
+            onClick={() => handleSelectTextSize('large')}
+            selected={textSize === 'large'}
+          >
+            Large
+          </MenuItem>
+        </Menu>
+      </Box>
+
       {visibleMessages.length === 0 ? (
         <Box
           sx={{
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: 3,
             width: '100%',
-            height: '100%'
+            height: '100%',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
           }}
         >
           <Box
@@ -140,8 +235,6 @@ export const ChatMessagePanel = ({
               maxWidth: '400px',
               width: '100%',
               textAlign: 'center',
-              transform: 'translateY(-10%)',
-              mx: 'auto'
             }}
           >
             <Box
@@ -179,14 +272,19 @@ export const ChatMessagePanel = ({
             overflow: 'auto',
             width: '100%', 
             height: '100%',
-            maxWidth: '1200px', 
+            maxWidth: '95%',
             mx: 'auto',
+            '&::-webkit-scrollbar': {
+              display: 'none',
+            },
+            '-ms-overflow-style': 'none',
+            'scrollbar-width': 'none',
           }}
         >
           {visibleMessages.map((message) => (
             <MessageBubble
               key={message.id}
-              message={message}
+              message={Object.assign({}, message, { textSize })}
             />
           ))}
           {/* Invisible element for scrolling to the end of messages */}
