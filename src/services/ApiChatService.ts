@@ -207,12 +207,12 @@ export class ApiChatService implements IChatService {
         
         // Extract text content from the first text item
         const textContent = responseItem.Items
-          .filter(item => item.$type === "TextContent")
+          .filter(item => !item.$type || item.$type === "TextContent")
           .map(item => item.Text)
           .join('\n');
         
         return {
-          id: responseItem.Metadata.Id || uuidv4(),
+          id: responseItem.Metadata?.Id || uuidv4(),
           content: textContent,
           role: 'assistant',
           timestamp: this.formatTimestamp(),
@@ -351,7 +351,7 @@ export class ApiChatService implements IChatService {
             
             // Extract text content from items
             const textContent = data.Items
-              .filter(item => item.$type === "TextContent")
+              .filter(item => !item.$type || item.$type === "TextContent")
               .map(item => item.Text)
               .join('\n');
             
@@ -413,12 +413,12 @@ export class ApiChatService implements IChatService {
       return data.map((agentResponse: MultiAgentResponseBody) => {
         // Extract text content from items
         const textContent = agentResponse.Items
-          .filter(item => item.$type === "TextContent")
+          .filter(item => !item.$type || item.$type === "TextContent")
           .map(item => item.Text)
           .join('\n');
         
         return {
-          id: agentResponse.Metadata.Id || uuidv4(),
+          id: agentResponse.Metadata?.Id || uuidv4(),
           content: textContent,
           role: 'assistant',
           agentName: agentResponse.AuthorName, // Include agent name for multi-agent responses

@@ -29,167 +29,176 @@ Both standard and multi-agent chat modes use the same request format:
 
 The request contains the entire conversation history, with the most recent message at the end of the array.
 
-### Standard Chat Response Format
+### Response Format
 
-For standard chat mode, the API returns an array containing a single response object:
+Both standard and multi-agent chat modes should use a standardized response format that focuses on the essential information needed by the UI:
 
-```json
-[
-  {
-    "Role": {
-      "Label": "Assistant"
-    },
-    "Items": [
-      {
-        "$type": "TextContent",
-        "Text": "Hello! How can I assist you today?"
-      }
-    ],
-    "ModelId": "gpt-4o",
-    "Metadata": {
-      "Id": "chatcmpl-BI4EcluQGKRmOnQTODKmTDVe91gDD",
-      "CreatedAt": "2025-04-03T02:04:42+00:00",
-      "SystemFingerprint": "fp_ded0d14823",
-      "Usage": {
-        "OutputTokenCount": 11,
-        "InputTokenCount": 655,
-        "TotalTokenCount": 666,
-        "OutputTokenDetails": {
-          "ReasoningTokenCount": 0,
-          "AudioTokenCount": 0,
-          "AcceptedPredictionTokenCount": 0,
-          "RejectedPredictionTokenCount": 0
-        },
-        "InputTokenDetails": {
-          "AudioTokenCount": 0,
-          "CachedTokenCount": 0
-        }
-      },
-      "Refusal": null,
-      "FinishReason": "Stop",
-      "ContentTokenLogProbabilities": []
-    }
-  }
-]
-```
-
-### Multi-Agent Chat Response Format
-
-The multi-agent chat API supports two response formats:
-
-#### 1. Streaming Response (Server-Sent Events)
-
-For streaming, each agent response is sent as a separate event in the stream:
-
-```
-data: {"AuthorName":"BusinessAnalyst","Role":{"Label":"Assistant"},"Items":[{"$type":"TextContent","Text":"The sky appears blue due to a phenomenon called Rayleigh scattering..."}],"ModelId":"gpt-4o"}
-
-data: {"AuthorName":"SoftwareEngineer","Role":{"Label":"Assistant"},"Items":[{"$type":"TextContent","Text":"Would you like to proceed with discussing the requirements..."}],"ModelId":"gpt-4o"}
-```
-
-Each event starts with `data: ` followed by a JSON object containing a single agent's response.
-
-#### 2. Batch Response (Complete Chat History)
-
-Alternatively, the API can respond with a complete chat history in a single JSON array:
+#### Standard Response (Single Message)
 
 ```json
-[
-  {
-    "Role": {
-      "Label": "user"
-    },
-    "Items": [
-      {
-        "$type": "TextContent",
-        "Text": "Why is the sky blue"
-      }
-    ]
-  },
-  {
-    "AuthorName": "BusinessAnalyst",
-    "Role": {
-      "Label": "Assistant"
-    },
-    "Items": [
-      {
-        "$type": "TextContent",
-        "Text": "The sky appears blue due to a phenomenon called Rayleigh scattering..."
-      }
-    ],
-    "ModelId": "gpt-4o"
-  },
-  {
-    "AuthorName": "SoftwareEngineer",
-    "Role": {
-      "Label": "Assistant"
-    },
-    "Items": [
-      {
-        "$type": "TextContent",
-        "Text": "Would you like to proceed with discussing the requirements..."
-      }
-    ],
-    "ModelId": "gpt-4o"
-  }
-]
-```
-
-This format includes the original user message followed by all agent responses in a single array.
-
-## How the Application Handles Different Formats
-
-### Standard Mode
-
-- Makes a normal POST request to the API
-- Processes the single response and displays it as a message from the assistant
-
-### Multi-Agent Mode
-
-#### Streaming API
-- Makes a POST request with `Accept: text/event-stream` header
-- Processes a stream of Server-Sent Events (SSE), with each event being a response from a different agent
-- Each agent response is displayed as a separate message with its own visual styling
-
-#### Batch API
-- Makes a normal POST request and receives a complete chat history array
-- Processes each entry in the array as a separate message
-- User messages are displayed normally, agent messages are styled based on the AuthorName
-
-Each agent response is displayed as a separate message with its own visual styling based on the agent identifier. The `AuthorName` is used as the `agentIdentifier` to apply distinct styling.
-
-## Response Type Details
-
-The API uses a `ChatMessageContent` type with the following structure:
-
-```typescript
-interface ChatMessageContent {
-  // For agent messages only - identifies which agent sent the message
-  AuthorName?: string;
-  
-  // Message role information
-  Role: {
-    Label: string; // Either "user" or "Assistant"
-  };
-  
-  // Content items - currently only text is supported
-  Items: Array<{
-    $type: string; // Currently always "TextContent"
-    Text: string;  // The actual message content
-  }>;
-  
-  // Model information - only for assistant messages
-  ModelId?: string;
-  
-  // Metadata - handled by the system
-  Metadata?: any;
+{
+  "messageId": "unique-message-identifier-123",
+  "conversationId": "conversation-identifier-abc",
+  "status": "completed",
+  "role": "assistant",
+  "content": "This is the text response generated by the AI.",
+  "contentType": "text",
+  "sources": [],
+  "error": null,
+  "createdAt": "2023-04-03T16:38:35.123Z"
 }
 ```
 
-For implementation examples in various languages, see:
-- [C# Implementation](./examples/csharp.md)
-- [Java Implementation](./examples/java.md)
-- [Python Implementation](./examples/python.md)
+#### Multi-Agent Response (Array of Messages)
+
+```json
+[
+  {
+    "messageId": "unique-message-identifier-123",
+    "conversationId": "conversation-identifier-abc",
+    "status": "completed", 
+    "role": "assistant",
+    "content": "This is a response from the Research agent.",
+    "contentType": "text",
+    "agentName": "Research",
+    "sources": [
+      {
+        "id": "source-doc-id-1",
+        "title": "Research Paper Title",
+        "url": "https://example.com/research-paper",
+        "snippet": "Relevant text snippet from the source..."
+      }
+    ],
+    "error": null,
+    "createdAt": "2023-04-03T16:38:35.123Z"
+  },
+  {
+    "messageId": "unique-message-identifier-456",
+    "conversationId": "conversation-identifier-abc",
+    "status": "completed",
+    "role": "assistant",
+    "content": "Based on the research, here's how you might implement this feature.",
+    "contentType": "markdown",
+    "agentName": "Code",
+    "sources": [],
+    "error": null,
+    "createdAt": "2023-04-03T16:38:40.456Z"
+  }
+]
+```
+
+### Field Descriptions
+
+| Field | Type | Required | Description |
+|:------|:-----|:---------|:------------|
+| `messageId` | String | Required | A unique identifier for this specific message instance. Needed for tracking messages, updating them (during streaming), and managing message lists. |
+| `conversationId` | String | Optional | An identifier for the conversation thread. Useful for grouping messages or fetching history. |
+| `status` | String | Required | The current state of message generation: `processing`, `completed`, or `failed`. |
+| `role` | String | Required | Indicates who generated the message. Typically `assistant` for AI responses. |
+| `content` | String | Required | The actual textual content of the message. May be partial if status is `processing`. |
+| `contentType` | String | Required | Format of the content: `text` or `markdown`. | 
+| `agentName` | String | Optional | For multi-agent mode only. The name/identifier of the agent that generated this message. |
+| `sources` | Array | Optional | Citation information if the AI response was based on specific retrieved documents. |
+| `error` | Object | Required | Null if successful. Contains at least a `message` field if status is `failed`. |
+| `createdAt` | String | Required | ISO 8601 timestamp indicating when the message was generated. |
+
+### Status Values
+
+- `processing`: The response is still being generated (streaming). The content field contains partial data.
+- `completed`: The response generation is finished successfully. The content field contains the final message.
+- `failed`: An error occurred. The error field contains details.
+
+### Sources Object Structure
+
+Each object in the `sources` array should contain:
+
+```json
+{
+  "id": "source-doc-id-1",
+  "title": "Source Document Title",
+  "url": "https://example.com/optional-source-link",
+  "snippet": "Optional relevant text snippet from the source..."
+}
+```
+
+### Error Object Structure
+
+When `status` is `failed`, the `error` object should contain at least:
+
+```json
+{
+  "message": "User-friendly error description",
+  "code": "ERROR_CODE" 
+}
+```
+
+## Streaming Responses
+
+For streaming responses, the API should send partial updates with the same `messageId` but different content as generation progresses:
+
+### Streaming Response Example
+
+Initial chunk:
+```json
+{
+  "messageId": "unique-message-identifier-123",
+  "conversationId": "conversation-identifier-abc",
+  "status": "processing",
+  "role": "assistant",
+  "content": "I'm analyzing your question",
+  "contentType": "text",
+  "sources": [],
+  "error": null,
+  "createdAt": "2023-04-03T16:38:35.123Z"
+}
+```
+
+Subsequent chunk:
+```json
+{
+  "messageId": "unique-message-identifier-123",
+  "conversationId": "conversation-identifier-abc",
+  "status": "processing",
+  "role": "assistant",
+  "content": "I'm analyzing your question about quantum computing",
+  "contentType": "text",
+  "sources": [],
+  "error": null,
+  "createdAt": "2023-04-03T16:38:36.456Z"
+}
+```
+
+Final chunk:
+```json
+{
+  "messageId": "unique-message-identifier-123",
+  "conversationId": "conversation-identifier-abc",
+  "status": "completed",
+  "role": "assistant",
+  "content": "I'm analyzing your question about quantum computing. Quantum computers use quantum bits (qubits) that can represent both 0 and 1 simultaneously...",
+  "contentType": "text",
+  "sources": [
+    {
+      "id": "source-123",
+      "title": "Introduction to Quantum Computing",
+      "url": "https://example.com/quantum",
+      "snippet": "Quantum computers use quantum bits (qubits) that can represent both 0 and 1 simultaneously."
+    }
+  ],
+  "error": null,
+  "createdAt": "2023-04-03T16:38:40.789Z"
+}
+```
+
+## Server-Sent Events (SSE) Format
+
+For Server-Sent Events streaming, each event should be formatted as:
+
+```
+data: {"messageId":"unique-message-identifier-123","status":"processing","role":"assistant","content":"Partial content...","contentType":"text","sources":[],"error":null,"createdAt":"2023-04-03T16:38:35.123Z"}
+
+data: {"messageId":"unique-message-identifier-123","status":"completed","role":"assistant","content":"Complete content...","contentType":"text","sources":[],"error":null,"createdAt":"2023-04-03T16:38:40.789Z"}
+```
 
 ## History API
 
@@ -229,17 +238,27 @@ The application can also communicate with a history API for managing chat histor
 ```json
 [
   {
-    "id": "msg-123",
-    "content": "Hello, I need help with...",
+    "messageId": "msg-123",
+    "conversationId": "chat-123",
+    "status": "completed",
     "role": "user",
-    "timestamp": "10:15 AM"
+    "content": "Hello, I need help with...",
+    "contentType": "text",
+    "sources": [],
+    "error": null,
+    "createdAt": "2023-04-07T10:15:00.000Z"
   },
   {
-    "id": "msg-124",
-    "content": "I'll help you with that...",
+    "messageId": "msg-124",
+    "conversationId": "chat-123",
+    "status": "completed",
     "role": "assistant",
-    "timestamp": "10:16 AM",
-    "agentIdentifier": "Technical"
+    "content": "I'll help you with that...",
+    "contentType": "text",
+    "agentName": "Technical",
+    "sources": [],
+    "error": null,
+    "createdAt": "2023-04-07T10:16:00.000Z"
   }
 ]
 ```
@@ -248,63 +267,201 @@ The application can also communicate with a history API for managing chat histor
 
 **Request:** `POST /chat-history`
 
+**Payload:**
 ```json
 {
   "mode": "standard",
-  "title": "New Discussion"
+  "title": "New Chat"
 }
 ```
 
 **Response:**
-
 ```json
 {
   "id": "chat-125",
-  "title": "New Discussion",
-  "lastMessage": "",
-  "lastUpdated": "2023-04-07T09:30:00.000Z",
+  "title": "New Chat",
+  "lastUpdated": "2023-04-07T09:00:00.000Z",
   "messageCount": 0
 }
 ```
 
 ### Update Chat
 
-**Request:** `PUT /chat-history/{chatId}`
+**Request:** `PUT /chat-history/{chatId}/messages`
 
+**Payload:**
 ```json
 {
   "messages": [
     {
-      "id": "msg-125",
-      "content": "New message content",
+      "messageId": "msg-125",
+      "conversationId": "chat-123",
+      "status": "completed",
       "role": "user",
-      "timestamp": "09:45 AM"
+      "content": "Can you explain how to use the API?",
+      "contentType": "text",
+      "sources": [],
+      "error": null,
+      "createdAt": "2023-04-07T11:30:00.000Z"
     },
     {
-      "id": "msg-126",
-      "content": "Response to the new message",
+      "messageId": "msg-126",
+      "conversationId": "chat-123",
+      "status": "completed",
       "role": "assistant",
-      "timestamp": "09:46 AM"
+      "content": "Sure, the API has two main endpoints...",
+      "contentType": "text",
+      "sources": [],
+      "error": null,
+      "createdAt": "2023-04-07T11:31:00.000Z"
     }
   ]
 }
 ```
 
 **Response:**
-
 ```json
 {
-  "id": "chat-125",
-  "title": "New Discussion",
-  "lastMessage": "Response to the new message",
-  "lastUpdated": "2023-04-07T09:46:00.000Z",
-  "messageCount": 2,
-  "mode": "standard"
+  "id": "chat-123",
+  "title": "API Discussion",
+  "lastMessage": "Sure, the API has two main endpoints...",
+  "lastUpdated": "2023-04-07T11:31:00.000Z",
+  "messageCount": 14
 }
 ```
 
 ### Delete Chat
 
-**Request:** `DELETE /chat-history/{chatId}?mode=standard`
+**Request:** `DELETE /chat-history/{chatId}`
 
-**Response:** HTTP 200 OK (no body) 
+**Response:**
+```json
+{
+  "success": true
+}
+```
+
+## Minimal Response Format
+
+While the complete format described above is recommended for full functionality, the Chat UI can work with a simplified format. Here is the absolute minimal format required:
+
+```json
+[
+  {
+    "Items": [
+      {
+        "Text": "Your response text here"
+      }
+    ]
+  }
+]
+```
+
+This minimal format must:
+1. Be an array containing at least one object
+2. Each object must have an `Items` array
+3. Each item in `Items` must have a `Text` field with the response content
+
+The field `$type` is optional - if present, it should be "TextContent" for text responses.
+
+### Implementation Examples
+
+#### C# Minimal Implementation
+
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Text.Json;
+using Microsoft.AspNetCore.Mvc;
+
+[ApiController]
+[Route("api")]
+public class ChatController : ControllerBase
+{
+    [HttpPost("chat")]
+    public IActionResult Chat([FromBody] object request)
+    {
+        var response = new List<object>
+        {
+            new
+            {
+                Items = new List<object>
+                {
+                    new
+                    {
+                        Text = "This is the response from the C# API."
+                    }
+                }
+            }
+        };
+        
+        return Ok(response);
+    }
+}
+```
+
+#### Java Minimal Implementation
+
+```java
+import org.springframework.web.bind.annotation.*;
+import java.util.*;
+
+@RestController
+@RequestMapping("/api")
+public class ChatController {
+
+    @PostMapping("/chat")
+    public List<Map<String, Object>> chat(@RequestBody Map<String, Object> request) {
+        List<Map<String, Object>> response = new ArrayList<>();
+        
+        Map<String, Object> messageObj = new HashMap<>();
+        List<Map<String, Object>> items = new ArrayList<>();
+        
+        Map<String, Object> textItem = new HashMap<>();
+        textItem.put("Text", "This is the response from the Java API.");
+        
+        items.add(textItem);
+        messageObj.put("Items", items);
+        response.add(messageObj);
+        
+        return response;
+    }
+}
+```
+
+#### Python Minimal Implementation
+
+```python
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
+@app.route('/api/chat', methods=['POST'])
+def chat():
+    request_data = request.get_json()
+    
+    response = [
+        {
+            "Items": [
+                {
+                    "Text": "This is the response from the Python API."
+                }
+            ]
+        }
+    ]
+    
+    return jsonify(response)
+
+if __name__ == '__main__':
+    app.run(debug=True)
+```
+
+Note: While this minimal format will work with the current implementation, it's recommended to use the complete format for better compatibility with future updates and to support all features of the Chat UI.
+
+## Implementation Examples
+
+For implementation examples in various languages, see:
+
+- [C# Implementation](./examples/csharp.md)
+- [Java Implementation](./examples/java.md)
+- [Python Implementation](./examples/python.md) 
