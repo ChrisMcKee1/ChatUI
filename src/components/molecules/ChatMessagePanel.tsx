@@ -277,8 +277,8 @@ export const ChatMessagePanel = ({
             '&::-webkit-scrollbar': {
               display: 'none',
             },
-            '-ms-overflow-style': 'none',
-            'scrollbar-width': 'none',
+            msOverflowStyle: 'none',
+            scrollbarWidth: 'none',
           }}
         >
           {visibleMessages.map((message) => (
