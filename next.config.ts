@@ -3,8 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   experimental: {
-    // Instrumentation hook is enabled by default via instrumentation.ts
-    // Removed: instrumentationHook: true
+    // Explicitly enable instrumentation hook for OpenTelemetry
+    instrumentationHook: true,
   } as any,
   
   // Use static export for Azure Static Web Apps
@@ -17,6 +17,20 @@ const nextConfig: NextConfig = {
   
   // Disable trailing slashes for Azure Static Web Apps
   trailingSlash: false,
+  
+  // Configure webpack for OpenTelemetry with Azure Monitor
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // Required for @azure/monitor-opentelemetry-exporter to work
+      config.resolve = config.resolve || {};
+      config.resolve.fallback = config.resolve.fallback || {};
+      config.resolve.fallback.os = false;
+      config.resolve.fallback.fs = false;
+      config.resolve.fallback.child_process = false;
+      config.resolve.fallback.path = false;
+    }
+    return config;
+  },
   
   // Properly handle the staticwebapp.config.json
   // This ensures the file is copied to the output directory

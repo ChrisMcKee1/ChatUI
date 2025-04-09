@@ -11,6 +11,7 @@ A modern React chat application using Next.js that interacts with both standard 
 - Light and dark themes with custom color schemes
 - Chat history management
 - Responsive design for mobile and desktop
+- OpenTelemetry instrumentation for observability
 
 ## Tech Stack
 
@@ -20,6 +21,7 @@ A modern React chat application using Next.js that interacts with both standard 
 - Lucide icons
 - Atomic Design principles
 - Storybook for component development
+- OpenTelemetry for monitoring and observability
 
 ## Getting Started
 
@@ -61,6 +63,7 @@ npm run dev
 
 - **Architecture**
   - [Service Design](./docs/architecture/service-design.md)
+  - [Observability](./docs/architecture/observability.md)
 
 ## Architecture
 
@@ -111,3 +114,25 @@ The application is configured to be deployed on Azure Static Web Apps, which pro
 Deployment is handled through the GitHub Actions workflow defined in `.github/workflows/azure-static-web-apps.yml`.
 
 Check out [Azure Static Web Apps documentation](https://learn.microsoft.com/en-us/azure/static-web-apps/) for more details on deployment and configuration.
+
+## Observability with OpenTelemetry
+
+The application is instrumented with OpenTelemetry to provide observability insights into the application's behavior and performance. This helps in understanding the user experience, diagnosing issues, and optimizing performance.
+
+### Key Features
+
+- **Automatic Instrumentation**: Next.js framework operations are automatically instrumented
+- **Custom Instrumentation**: Chat-specific telemetry for messages, agent mode changes, and API calls
+- **Azure Monitor Integration**: Direct integration with Azure Application Insights
+- **Performance Metrics**: Response times, component renders, and user interactions
+
+### Configuration
+
+OpenTelemetry is configured via environment variables:
+
+```
+NEXT_PUBLIC_APPLICATIONINSIGHTS_CONNECTION_STRING=your-connection-string
+OTEL_LOG_LEVEL=info  # Options: error, warn, info, debug, trace
+```
+
+For detailed configuration options and instrumentation guide, see the [Observability](./docs/architecture/observability.md) documentation.
