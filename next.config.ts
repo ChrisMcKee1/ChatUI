@@ -2,10 +2,6 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  experimental: {
-    // Explicitly enable instrumentation hook for OpenTelemetry
-    instrumentationHook: true,
-  } as any,
   
   // Use static export for Azure Static Web Apps
   output: 'export',

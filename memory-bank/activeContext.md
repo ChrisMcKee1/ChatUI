@@ -9,12 +9,14 @@
 
 ## Recent Activities
 - **Implemented OpenTelemetry with Azure Monitor Integration:**
-  - Set up OpenTelemetry instrumentation using @vercel/otel package
-  - Added Azure Monitor exporter for Application Insights integration
-  - Created custom telemetry utilities for tracking chat operations
+  - Set up OpenTelemetry SDK for Azure Application Insights
+  - Removed Vercel OpenTelemetry in favor of direct Azure Monitor integration
+  - Configured auto-instrumentation for HTTP requests
+  - Implemented server-side only instrumentation to improve performance
+  - Updated OpenTelemetry dependencies to compatible versions
+  - Added proper resource attributes and shutdown handling
   - Updated webpack configuration for Azure Monitor compatibility
   - Added comprehensive documentation for OpenTelemetry implementation
-  - Updated next.config.ts to enable instrumentation hook
 - **Completed Full Project Review & Documentation Update:**
     - Reviewed all Memory Bank files and `.cursorrules`.
     - Updated `progress.md` to reflect completed tasks (Storybook, API Error Handling) and reorganized for clarity.

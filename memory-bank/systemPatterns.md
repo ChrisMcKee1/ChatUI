@@ -174,41 +174,27 @@
 ## OpenTelemetry Observability Patterns
 
 - **Configuration Approach**: Uses Next.js instrumentation hook to initialize OpenTelemetry only on the server side
-  - Keeps OpenTelemetry configuration in a separate file (otel-config.js)
-  - Only imports OpenTelemetry in a Node.js environment to avoid browser compatibility issues
+  - Initializes OpenTelemetry directly in the instrumentation.ts file
+  - Only imports OpenTelemetry SDK in a Node.js environment to avoid browser compatibility issues
   - Uses environment variables for flexible configuration
 
 - **Instrumentation Strategy**:
-  - **Auto-Instrumentation**: Leverages OpenTelemetry's auto-instrumentations for Next.js, HTTP, and fetch
-  - **Custom Instrumentation**: Uses utility functions for manual instrumentation of:
-    - User actions (e.g., sending messages, changing agent mode)
-    - API calls with detailed performance metrics
-    - Component render performance
+  - **Auto-Instrumentation**: Leverages OpenTelemetry's auto-instrumentations for HTTP
+  - **Server-Side Focus**: Implemented for Node.js server-side components only
+  - **Simplified Implementation**: Direct integration with Azure Monitor without intermediate layers
 
 - **Telemetry Data Collection**:
   - **Tracing**: Captures distributed traces for request processing across the application
-  - **Metrics**: Records performance metrics for API calls and component renders
-  - **Attributes**: Adds contextual information to spans for better analysis
-    - Agent mode, message count, and content length for user actions
-    - Response times and error details for API calls
-    - Component-specific details for render performance
+  - **Resource Attributes**: Includes service name, version, and environment information for proper context
+  - **Azure Monitor Integration**: Sends telemetry directly to Azure Application Insights
 
 - **Resource Management**:
-  - Uses sampling to control the amount of telemetry data collected
-  - Implements timeout mechanism for long-running spans
-  - Ensures proper cleanup of resources with span.end() calls
-
-- **Error Handling Integration**:
-  - Enhances existing error handling with detailed span attributes
-  - Records error types, messages, and stack traces when available
-  - Maintains spans for errors to track failure points
+  - Implements proper SDK startup and shutdown procedures
+  - Ensures graceful termination with SIGTERM handler
+  - Provides detailed error logging for initialization failures
 
 - **Deployment Considerations**:
-  - Configurable endpoints for different environments (development, staging, production)
-  - Service name and version tracking for proper identification
+  - Azure-specific implementation optimized for Azure Application Insights
+  - Configurable connection string through environment variables
   - Environment-aware configuration to adapt to deployment context
-
-- **Observability Backend Options**:
-  - Configured to work with standard OpenTelemetry collectors
-  - Compatible with Jaeger, Zipkin, Prometheus, and other observability tools
-  - Enables seamless switching between backends without code changes 
+  - Webpack configuration to handle Node.js specific modules 
