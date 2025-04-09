@@ -71,6 +71,7 @@
 - URLs must be enclosed in angle brackets for automatic linking: `<https://example.com>`
 - Use relative links to reference other files in the repository
 - Tables should include alignment indicators (`:---`, `:---:`, `---:`)
+- **Documentation Style**: Write fun, energetic, clear, and concise documentation ✨. Use well-placed emojis to add personality 😊, but avoid overuse 🚫.
 
 ## Component Development Guidelines
 - Follow atomic design principles as shown in diagram 1
