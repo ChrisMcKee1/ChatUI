@@ -250,46 +250,39 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       timestamp: formatTimestamp(),
     };
     
-    // Add user message optimistically and set loading
+    // Get current messages reliably before updating
+    const currentMessages = [...state.messages];
+    
+    // Add user message to currentMessages
+    const messagesWithUserMessage = [...currentMessages, userMessage];
+    
+    // Update state with user message and loading state
     setState(prevState => ({
       ...prevState,
-      messages: [...prevState.messages, userMessage], 
+      messages: messagesWithUserMessage, 
       isLoading: true,
     }));
 
     // --- Phase 3: Call API and handle response --- 
     try {
-      // Prepare messages for API using the state *after* user message was added
-      // Need to get the latest messages state *before* calling the API
-      let messagesForApi: Message[] = [];
-      setState(prevState => { 
-        messagesForApi = prevState.messages; // Capture the up-to-date messages
-        return prevState; // No actual state change here, just capturing
-      });
-
-      if (!messagesForApi.length) {
-         // If messagesForApi is somehow empty, use the user message directly
-         // This might happen if setState above hasn't flushed?
-         // Fallback to ensure user message is included.
-         messagesForApi = [userMessage]; 
-      }
-      
-      const chatMessages = messagesForApi.map(convertToChatMessage);
+      // Use the messagesWithUserMessage which includes the user's message
+      const chatMessages = messagesWithUserMessage.map(convertToChatMessage);
       const response = await chatService.sendMessage(chatMessages, state.agentMode);
       const newAssistantMessages = Array.isArray(response) ? response : [response];
       
       // --- Phase 4: Update state with assistant response & update history ---
+      // Combine messages with user input and assistant response
+      const updatedMessages = [...messagesWithUserMessage, ...newAssistantMessages];
+      
       setState(prevState => ({
         ...prevState,
-        // Replace previous messages with the list including the user message + new assistant messages
-        messages: [...messagesForApi, ...newAssistantMessages],
+        messages: updatedMessages,
         isLoading: false,
       }));
       
       // Update history *after* successful response
       if (currentActiveChatId) {
-        const finalMessagesForHistory = [...messagesForApi, ...newAssistantMessages];
-        await historyService.updateChat(currentActiveChatId, finalMessagesForHistory);
+        await historyService.updateChat(currentActiveChatId, updatedMessages);
         
         // Update chat histories list (optional, could rely on load on mode change)
         const chatMode = mapAgentModeToChatMode(state.agentMode);
@@ -333,13 +326,14 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       setState(prevState => ({
         ...prevState,
         // Add error message *after* the user message that triggered it
-        messages: [...prevState.messages.filter(m => m.id !== userMessage.id), userMessage, errorMessage],
+        messages: [...messagesWithUserMessage, errorMessage],
         isLoading: false,
       }));
     }
   }, [
     state.activeChatId, 
     state.agentMode,
+    state.messages, // Add messages to dependencies 
     createNewChat, 
     formatTimestamp,
     historyService,

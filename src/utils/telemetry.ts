@@ -186,4 +186,45 @@ export function trackComponentRender(
       span.end();
     }
   };
+}
+
+/**
+ * Track a chat message being sent
+ * 
+ * @param content The message content
+ * @param agentMode The current agent mode
+ */
+export function trackMessageSent(content: string, agentMode: 'standard' | 'multiAgent'): void {
+  tracer.startActiveSpan('send-message', (span) => {
+    try {
+      span.setAttribute('message.length', content.length);
+      span.setAttribute('agent.mode', agentMode);
+      span.setAttribute('message.timestamp', Date.now());
+      span.setStatus({ code: SpanStatusCode.OK });
+    } finally {
+      span.end();
+    }
+  });
+}
+
+/**
+ * Track agent mode changes
+ * 
+ * @param newMode The new agent mode
+ * @param previousMode The previous agent mode
+ */
+export function trackAgentModeChange(
+  newMode: 'standard' | 'multiAgent',
+  previousMode: 'standard' | 'multiAgent'
+): void {
+  tracer.startActiveSpan('agent-mode-change', (span) => {
+    try {
+      span.setAttribute('agent.new_mode', newMode);
+      span.setAttribute('agent.previous_mode', previousMode);
+      span.setAttribute('agent.change_timestamp', Date.now());
+      span.setStatus({ code: SpanStatusCode.OK });
+    } finally {
+      span.end();
+    }
+  });
 } 

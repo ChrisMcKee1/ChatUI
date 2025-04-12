@@ -14,6 +14,9 @@ const nextConfig: NextConfig = {
   // Disable trailing slashes for Azure Static Web Apps
   trailingSlash: false,
   
+  // Note: We're using the src/instrumentation.ts file for OpenTelemetry
+  // This works with Next.js's default instrumentation mechanism
+  
   // Configure webpack for OpenTelemetry with Azure Monitor
   webpack: (config, { isServer }) => {
     if (isServer) {
@@ -28,12 +31,6 @@ const nextConfig: NextConfig = {
     return config;
   },
   
-  // Properly handle the staticwebapp.config.json
-  // This ensures the file is copied to the output directory
-  async rewrites() {
-    return [];
-  },
-
   // Ignore ESLint errors during build
   eslint: {
     // ESLint errors and warnings won't stop the build
