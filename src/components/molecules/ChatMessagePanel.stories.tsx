@@ -2,9 +2,10 @@ import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 import { ChatMessagePanel } from './ChatMessagePanel';
 import { ThemeProvider } from '@/context/ThemeContext';
-import { Box, useMediaQuery, useTheme, Typography } from '@mui/material';
+import { Box, useMediaQuery, useTheme, Typography, Paper, Stack, Divider, IconButton } from '@mui/material';
 import { v4 as uuidv4 } from 'uuid';
 import { Role } from './MessageBubble';
+import { MessageSquare, Type } from 'lucide-react';
 
 const meta: Meta<typeof ChatMessagePanel> = {
   component: ChatMessagePanel,
@@ -13,7 +14,7 @@ const meta: Meta<typeof ChatMessagePanel> = {
     layout: 'fullscreen',
     docs: {
       description: {
-        component: 'Container for displaying chat messages with responsive layout and empty state handling. Supports auto-scrolling and multi-agent conversations.',
+        component: 'Container for displaying chat messages with responsive layout and empty state handling. This molecule composes atomic components to create a complete chat interface with features like auto-scrolling, multi-agent conversations, text size controls, and responsive design adaptations.',
       },
     },
   },
@@ -88,7 +89,7 @@ export const EmptyPanel: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Empty state showing a message prompting the user to start a conversation',
+        story: 'Empty state showing a message prompting the user to start a conversation. This provides a helpful initial state with clear guidance for users.',
       },
     },
   },
@@ -105,6 +106,13 @@ export const WithUserMessage: Story = {
         timestamp: 'Just now',
       },
     ],
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Shows the appearance of a single user message with timestamp. Demonstrates message alignment and styling for user messages.',
+      },
+    },
   },
 };
 
@@ -125,6 +133,13 @@ export const WithUserAndAssistantMessages: Story = {
         timestamp: 'Just now',
       },
     ],
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Basic conversation with one user message and an assistant response. Shows the message bubble alignment and styling differences between user and assistant messages.',
+      },
+    },
   },
 };
 
@@ -169,6 +184,13 @@ export const Conversation: Story = {
         timestamp: 'Just now',
       },
     ],
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Complete conversation flow with multiple back-and-forth messages. Demonstrates the auto-scrolling behavior, message spacing, and code formatting within messages.',
+      },
+    },
   },
 };
 
@@ -218,6 +240,13 @@ export const MultiAgentConversation: Story = {
       },
     ],
   },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Multi-agent conversation with color-coded messages for different agents. Shows how agent names are displayed and how message styling adapts to create visual distinction between different assistants.',
+      },
+    },
+  },
 };
 
 // Panel in loading state
@@ -232,6 +261,13 @@ export const Loading: Story = {
       },
     ],
     isLoading: true,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Panel in loading state, ready to receive an assistant response. This demonstrates how the auto-scrolling behavior is optimized for streaming responses.',
+      },
+    },
   },
 };
 
@@ -253,89 +289,240 @@ export const WithMarkdownContent: Story = {
       },
     ],
   },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Shows markdown rendering capabilities including headings, lists, code blocks, tables, and blockquotes. Demonstrates how complex formatted content is displayed in messages.',
+      },
+    },
+  },
+};
+
+// Component composition story
+export const ComponentComposition: Story = {
+  render: () => (
+    <Box sx={{ p: 3, maxWidth: '800px' }}>
+      <Typography variant="h6" gutterBottom>ChatMessagePanel Composition</Typography>
+      <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
+        <Typography variant="body2" paragraph>
+          The ChatMessagePanel molecule is composed of these components:
+        </Typography>
+        
+        <Box component="ul" sx={{ pl: 2, mb: 3 }}>
+          <li>MessageBubble components - Display individual chat messages</li>
+          <li>Typography components - Empty state text and labels</li>
+          <li>IconButton with Type icon - Text size adjustment control</li>
+          <li>Menu and MenuItem components - Text size selection dropdown</li>
+          <li>MessageSquare icon - Empty state illustration</li>
+          <li>Box components - Layout containers and scrollable area</li>
+        </Box>
+        
+        <Divider sx={{ my: 2 }} />
+        
+        <Stack spacing={3}>
+          <Box>
+            <Typography variant="subtitle2" gutterBottom>Key Features:</Typography>
+            <Box component="ul" sx={{ pl: 2 }}>
+              <li>Auto-scrolling behavior for new messages</li>
+              <li>Responsive layout with mobile optimizations</li>
+              <li>Adjustable text size with persistent preferences</li>
+              <li>Multi-agent conversation support with color coding</li>
+              <li>Empty state with clear user guidance</li>
+              <li>Markdown rendering for rich content</li>
+            </Box>
+          </Box>
+          
+          <Box>
+            <Typography variant="subtitle2" gutterBottom>Internal Components:</Typography>
+            <Stack direction="row" spacing={2} flexWrap="wrap">
+              <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, width: 110 }}>
+                <MessageSquare size={24} />
+                <Typography variant="caption">Empty State Icon</Typography>
+              </Paper>
+              
+              <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, width: 110 }}>
+                <Type size={24} />
+                <Typography variant="caption">Text Size Control</Typography>
+              </Paper>
+              
+              <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, width: 110 }}>
+                <Box sx={{ height: 24, width: 24, bgcolor: 'rgba(120, 220, 232, 0.3)', borderRadius: '4px' }} />
+                <Typography variant="caption">Message Bubble</Typography>
+              </Paper>
+            </Stack>
+          </Box>
+        </Stack>
+      </Paper>
+      
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="subtitle1" gutterBottom>Sample Empty State:</Typography>
+        <Box sx={{ height: 200, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 1, overflow: 'hidden' }}>
+          <ChatMessagePanel messages={[]} />
+        </Box>
+      </Box>
+      
+      <Box>
+        <Typography variant="subtitle1" gutterBottom>Sample Conversation:</Typography>
+        <Box sx={{ height: 300, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 1, overflow: 'hidden' }}>
+          <ChatMessagePanel
+            messages={[
+              {
+                id: uuidv4(),
+                content: 'Hello! How does this component work?',
+                role: 'user',
+                timestamp: '1m ago',
+              },
+              {
+                id: uuidv4(),
+                content: "The ChatMessagePanel is a molecule component that handles the display of chat messages. It manages message layout, scrolling, and styling.",
+                role: 'assistant',
+                timestamp: 'Just now',
+              },
+            ]}
+          />
+        </Box>
+      </Box>
+    </Box>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: 'Demonstrates how the ChatMessagePanel is composed of smaller atomic components and the key features it provides. Shows the internal structure and composition of the molecule.',
+      },
+    },
+  },
 };
 
 // Panel showing different text sizes
-export const TextSizes: Story = {
+export const TextSizeControl: Story = {
   render: () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', padding: '1rem' }}>
-      <div>
-        <h3>Small Text Size</h3>
-        <ChatMessagePanel
-          messages={[
-            {
-              id: uuidv4(),
-              content: 'This is a user message with small text size',
-              role: 'user',
-              timestamp: '1m ago',
-              // @ts-ignore - Adding custom property to set text size
-              textSize: 'small',
-            },
-            {
-              id: uuidv4(),
-              content: markdownContent,
-              role: 'assistant',
-              timestamp: 'Just now',
-              // @ts-ignore - Adding custom property to set text size
-              textSize: 'small',
-            },
-          ]}
-        />
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h6" gutterBottom>Text Size Control Feature</Typography>
+      <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
+        <Typography variant="body2" paragraph>
+          The ChatMessagePanel includes a text size control feature that allows users to adjust the size of text in messages. This enhances accessibility and user preference customization.
+        </Typography>
+        
+        <Stack direction="row" spacing={3} alignItems="center" mb={3}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <IconButton sx={{ bgcolor: 'rgba(0,0,0,0.05)', p: 1.5, borderRadius: 1 }}>
+              <Type size={24} />
+            </IconButton>
+            <Typography variant="caption">Text Size Control</Typography>
+          </Box>
+          
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 'bold' }}>Size Options:</Typography>
+            <Typography variant="caption">• Small (0.875rem)</Typography>
+            <Typography variant="caption">• Medium (1rem) - Default</Typography>
+            <Typography variant="caption">• Large (1.125rem)</Typography>
+          </Box>
+        </Stack>
+        
+        <Box sx={{ fontSize: '0.875rem', opacity: 0.7, mb: 2 }}>
+          User preference is stored in localStorage as "chatui-text-size" and persists between sessions.
+        </Box>
+      </Paper>
+      
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+        <div>
+          <Typography variant="subtitle2" gutterBottom>Small Text Size</Typography>
+          <Paper elevation={1} sx={{ overflow: 'hidden', height: 200 }}>
+            <ChatMessagePanel
+              messages={[
+                {
+                  id: uuidv4(),
+                  content: 'This is a user message with small text size',
+                  role: 'user',
+                  timestamp: '1m ago',
+                  // @ts-ignore - Adding custom property to set text size
+                  textSize: 'small',
+                },
+                {
+                  id: uuidv4(),
+                  content: 'This is an assistant response with small text size. Small text is useful for dense information displays and when screen space is limited.',
+                  role: 'assistant',
+                  timestamp: 'Just now',
+                  // @ts-ignore - Adding custom property to set text size
+                  textSize: 'small',
+                },
+              ]}
+            />
+          </Paper>
+        </div>
+        
+        <div>
+          <Typography variant="subtitle2" gutterBottom>Medium Text Size (Default)</Typography>
+          <Paper elevation={1} sx={{ overflow: 'hidden', height: 200 }}>
+            <ChatMessagePanel
+              messages={[
+                {
+                  id: uuidv4(),
+                  content: 'This is a user message with medium text size',
+                  role: 'user',
+                  timestamp: '1m ago',
+                  // @ts-ignore - Adding custom property to set text size
+                  textSize: 'medium',
+                },
+                {
+                  id: uuidv4(),
+                  content: 'This is an assistant response with medium text size. Medium text provides a balanced reading experience for most users.',
+                  role: 'assistant',
+                  timestamp: 'Just now',
+                  // @ts-ignore - Adding custom property to set text size
+                  textSize: 'medium',
+                },
+              ]}
+            />
+          </Paper>
+        </div>
+        
+        <div>
+          <Typography variant="subtitle2" gutterBottom>Large Text Size</Typography>
+          <Paper elevation={1} sx={{ overflow: 'hidden', height: 200 }}>
+            <ChatMessagePanel
+              messages={[
+                {
+                  id: uuidv4(),
+                  content: 'This is a user message with large text size',
+                  role: 'user',
+                  timestamp: '1m ago',
+                  // @ts-ignore - Adding custom property to set text size
+                  textSize: 'large',
+                },
+                {
+                  id: uuidv4(),
+                  content: 'This is an assistant response with large text size. Large text improves readability for users who prefer or need larger text.',
+                  role: 'assistant',
+                  timestamp: 'Just now',
+                  // @ts-ignore - Adding custom property to set text size
+                  textSize: 'large',
+                },
+              ]}
+            />
+          </Paper>
+        </div>
       </div>
-      <div>
-        <h3>Medium Text Size (Default)</h3>
-        <ChatMessagePanel
-          messages={[
-            {
-              id: uuidv4(),
-              content: 'This is a user message with medium text size',
-              role: 'user',
-              timestamp: '1m ago',
-              // @ts-ignore - Adding custom property to set text size
-              textSize: 'medium',
-            },
-            {
-              id: uuidv4(),
-              content: markdownContent,
-              role: 'assistant',
-              timestamp: 'Just now',
-              // @ts-ignore - Adding custom property to set text size
-              textSize: 'medium',
-            },
-          ]}
-        />
-      </div>
-      <div>
-        <h3>Large Text Size</h3>
-        <ChatMessagePanel
-          messages={[
-            {
-              id: uuidv4(),
-              content: 'This is a user message with large text size',
-              role: 'user',
-              timestamp: '1m ago',
-              // @ts-ignore - Adding custom property to set text size
-              textSize: 'large',
-            },
-            {
-              id: uuidv4(),
-              content: markdownContent,
-              role: 'assistant',
-              timestamp: 'Just now',
-              // @ts-ignore - Adding custom property to set text size
-              textSize: 'large',
-            },
-          ]}
-        />
-      </div>
-    </div>
+    </Box>
   ),
+  parameters: {
+    docs: {
+      description: {
+        story: 'Demonstrates the text size adjustment feature with examples of small, medium, and large text sizes. Shows how the component adapts to different text density preferences.',
+      },
+    },
+  },
 };
 
 export const Responsive: Story = {
   parameters: {
     viewport: {
       defaultViewport: 'mobile1',
+    },
+    docs: {
+      description: {
+        story: 'Shows how the ChatMessagePanel adapts to different screen sizes. The component adjusts padding, font sizes, and spacing to optimize the layout for mobile devices.',
+      },
     },
   },
   render: (args) => {
@@ -375,23 +562,36 @@ export const Responsive: Story = {
           height: '100vh',
           width: '100%',
           overflow: 'hidden',
+          position: 'relative',
         }}
       >
         <ChatMessagePanel messages={messages} />
-        <Typography 
+        <Paper
           sx={{ 
             position: 'absolute', 
             bottom: '10px', 
             right: '10px', 
-            bgcolor: 'rgba(0, 0, 0, 0.5)',
+            bgcolor: 'rgba(0, 0, 0, 0.6)',
             color: 'white',
-            padding: '4px 8px',
+            padding: '8px 12px',
             borderRadius: '4px',
             fontSize: '12px',
+            zIndex: 10,
           }}
         >
-          Current viewport: {isMobile ? 'Mobile' : 'Desktop'}
-        </Typography>
+          <Typography variant="caption" sx={{ fontSize: '12px', fontWeight: 'bold' }}>
+            Current viewport: {isMobile ? 'Mobile' : 'Desktop'}
+          </Typography>
+          <Typography variant="caption" component="div" sx={{ fontSize: '10px', opacity: 0.8 }}>
+            Key Responsive Adaptations:
+          </Typography>
+          <Box component="ul" sx={{ m: 0, pl: 2, fontSize: '10px', opacity: 0.8 }}>
+            <li>Reduced padding and margins</li>
+            <li>Smaller avatar sizes</li>
+            <li>Adjusted font sizes</li>
+            <li>Wider message bubbles</li>
+          </Box>
+        </Paper>
       </Box>
     );
   },

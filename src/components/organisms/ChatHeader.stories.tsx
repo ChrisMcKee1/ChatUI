@@ -3,7 +3,11 @@ import React, { useState } from 'react';
 import { ChatHeader } from './ChatHeader';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { AgentMode } from '@/components/molecules/AgentToggle';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Paper, Stack, Divider } from '@mui/material';
+import { AgentToggle } from '@/components/molecules/AgentToggle';
+import { ThemeToggle } from '@/components/molecules/ThemeToggle';
+import Button from '@/components/atoms/Button';
+import { Plus } from 'lucide-react';
 
 // Create a stateful wrapper for Storybook interactions
 const StatefulChatHeader = ({ 
@@ -38,7 +42,7 @@ const meta: Meta<typeof ChatHeader> = {
     layout: 'fullscreen',
     docs: {
       description: {
-        component: 'Header component for the chat application with app title, agent mode toggle, new chat button, and theme toggle. Features responsive design with adaptations for small and very small screens.',
+        component: 'Header component for the chat application. This organism composes the AgentToggle, ThemeToggle, and New Chat button molecules/atoms to provide top-level controls and application branding. It features responsive design with adaptations for small and very small screens.',
       },
     },
   },
@@ -91,7 +95,7 @@ export default meta;
 
 type Story = StoryObj<typeof ChatHeader>;
 
-// Standard mode story
+// Basic examples
 export const StandardMode: Story = {
   args: {
     agentMode: 'standard',
@@ -101,13 +105,12 @@ export const StandardMode: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'ChatHeader with standard chat mode selected',
+        story: 'ChatHeader with standard chat mode selected. Shows the default state with standard mode active in the AgentToggle.',
       },
     },
   },
 };
 
-// Multi-agent mode story
 export const MultiAgentMode: Story = {
   args: {
     agentMode: 'multiAgent',
@@ -117,7 +120,7 @@ export const MultiAgentMode: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'ChatHeader with multi-agent chat mode selected',
+        story: 'ChatHeader with multi-agent chat mode selected. Demonstrates the appearance when multi-agent mode is active.',
       },
     },
   },
@@ -130,13 +133,13 @@ export const Interactive: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Interactive ChatHeader that maintains state when toggling between modes',
+        story: 'Interactive ChatHeader that maintains state when toggling between modes. Demonstrates the internal state management of the AgentToggle via the stateful wrapper.',
       },
     },
   },
 };
 
-// Mobile view story
+// Responsive variations
 export const MobileView: Story = {
   args: {
     agentMode: 'standard',
@@ -150,13 +153,12 @@ export const MobileView: Story = {
     },
     docs: {
       description: {
-        story: 'ChatHeader optimized for mobile devices with compact components',
+        story: 'ChatHeader optimized for mobile devices (isSmallScreen=true). Shows compact versions of AgentToggle and ThemeToggle, and reduced spacing.',
       },
     },
   },
 };
 
-// Very small mobile view story
 export const VerySmallMobileView: Story = {
   args: {
     agentMode: 'standard',
@@ -171,37 +173,78 @@ export const VerySmallMobileView: Story = {
     },
     docs: {
       description: {
-        story: 'ChatHeader optimized for very small mobile devices with further spacing optimizations',
+        story: 'ChatHeader optimized for very small mobile devices (isSmallScreen=true, isExtraSmallScreen=true). Shows further spacing reductions for extremely narrow viewports.',
       },
     },
   },
 };
 
-// Responsive variations story
-export const ResponsiveVariations: Story = {
-  args: {},
+// Component composition story
+export const ComponentComposition: Story = {
   render: () => (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <Box>
-        <Typography variant="h6" sx={{ mb: 1, pl: 2 }}>Desktop View</Typography>
-        <StatefulChatHeader initialMode="standard" />
+    <Box sx={{ p: 3, maxWidth: '800px' }}>
+      <Typography variant="h6" gutterBottom>ChatHeader Composition</Typography>
+      <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
+        <Typography variant="body2" paragraph>
+          The ChatHeader organism is composed of these molecule/atom components:
+        </Typography>
+        
+        <Box component="ul" sx={{ pl: 2, mb: 3 }}>
+          <li>AgentToggle molecule - For switching chat modes</li>
+          <li>ThemeToggle molecule - For switching between light/dark themes</li>
+          <li>IconButton atom (with Plus icon) - For starting a new chat</li>
+          <li>Typography component - For displaying the application title</li>
+          <li>AppBar and Toolbar components - For layout and structure</li>
+        </Box>
+        
+        <Divider sx={{ my: 2 }} />
+        
+        <Stack spacing={2}>
+          <Typography variant="subtitle2" gutterBottom>Key Features:</Typography>
+          <Box component="ul" sx={{ pl: 2 }}>
+            <li>Consolidated top-level controls (Mode, Theme, New Chat)</li>
+            <li>Application branding display</li>
+            <li>Responsive design with automatic adaptations</li>
+            <li>Theme integration via child components</li>
+            <li>Clear separation of concerns using composed components</li>
+          </Box>
+        </Stack>
+      </Paper>
+      
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <Paper sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} elevation={1}>
+          <Typography variant="body2">Agent Toggle:</Typography>
+          <AgentToggle mode="standard" onToggle={() => {}} />
+        </Paper>
+        
+        <Paper sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} elevation={1}>
+          <Typography variant="body2">Theme Toggle:</Typography>
+          <ThemeToggle />
+        </Paper>
+        
+        <Paper sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} elevation={1}>
+          <Typography variant="body2">New Chat Button:</Typography>
+          <Button variant="contained" startIcon={<Plus size={16} />} onClick={() => {}}>
+            New Chat
+          </Button>
+        </Paper>
       </Box>
       
-      <Box>
-        <Typography variant="h6" sx={{ mb: 1, pl: 2 }}>Tablet View (isSmallScreen=true)</Typography>
-        <StatefulChatHeader initialMode="standard" isSmallScreen={true} />
-      </Box>
-      
-      <Box>
-        <Typography variant="h6" sx={{ mb: 1, pl: 2 }}>Mobile View (isSmallScreen=true, isExtraSmallScreen=true)</Typography>
-        <StatefulChatHeader initialMode="standard" isSmallScreen={true} isExtraSmallScreen={true} />
+      <Box sx={{ mt: 4 }}>
+        <Typography variant="subtitle1" gutterBottom>Full Header Example:</Typography>
+        <ChatHeader 
+          agentMode="standard" 
+          onAgentModeToggle={() => {}} 
+          onNewChat={() => {}} 
+        />
       </Box>
     </Box>
   ),
   parameters: {
+    layout: 'centered',
     docs: {
       description: {
-        story: 'Demonstrates how the header adapts to different screen sizes',
+        story: 'Demonstrates how the ChatHeader is composed of molecule and atom components. Shows the individual parts (AgentToggle, ThemeToggle, Button) and how they are assembled within the header structure.',
       },
     },
   },
