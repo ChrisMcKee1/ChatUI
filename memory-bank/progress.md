@@ -38,7 +38,7 @@
   - [x] Review and update Atom stories (`src/components/atoms/**/*.stories.tsx`)
   - [ ] Review and update Molecule stories (`src/components/molecules/**/*.stories.tsx`)
     - [x] Update `MessageBubble.stories.tsx`
-    - [ ] Update `ChatInput.stories.tsx`
+    - [x] Update `ChatInput.stories.tsx`
     - [ ] Update `ThemeToggle.stories.tsx`
     - [ ] Update `AgentToggle.stories.tsx`
     - [ ] Update `ChatMessagePanel.stories.tsx`

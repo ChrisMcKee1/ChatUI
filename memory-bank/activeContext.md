@@ -7,7 +7,8 @@
     - ✅ Update Atom stories (`Button`, `Input`, `MarkdownRenderer`)
     - 🔄 Update Molecule stories
         - ✅ Updated `MessageBubble.stories.tsx` with ThemeProvider decorator, improved documentation, and new stories for markdown support and theme variations.
-        - [ ] Update remaining Molecule stories
+        - ✅ Updated `ChatInput.stories.tsx` with ThemeProvider decorator, improved documentation, and new stories for interaction patterns.
+        - [ ] Update remaining Molecule stories (`ThemeToggle.stories.tsx`, `AgentToggle.stories.tsx`, `ChatMessagePanel.stories.tsx`)
     - [ ] Update Organism stories
     - [ ] Update Template stories
 - ✅ **API Response Format Update (Semantic Kernel Focus):**
@@ -24,6 +25,13 @@
 - **Implement additional accessibility improvements** (Medium Priority) ♿️
 
 ## Recent Activities
+- **Updated ChatInput.stories.tsx**: 
+    - Added ThemeProvider decorator to ensure proper theme integration
+    - Enhanced documentation with more detailed descriptions
+    - Added new InteractionPatterns story to demonstrate event handling
+    - Fixed ThemeVariations story to show various states
+    - Improved story examples with visual guides and better organization
+    - Added comprehensive descriptions to showcase component composition and usage
 - **Updated Cursor Rules with Component-Specific Storybook Guidelines**: Added detailed guidelines for Molecule, Organism, and Template components in Storybook, covering composition, state management, interaction patterns, responsiveness, and more.
 - **Updated MessageBubble.stories.tsx**: 
     - Added ThemeProvider decorator to ensure proper theme integration
