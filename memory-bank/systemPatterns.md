@@ -150,20 +150,17 @@
   - Production builds can target real endpoints through environment configuration 
 
 ## API Response Processing
-- **Standard Chat Responses**:
-  - Processed as single message from array response
-  - Extracts text content from items with type "TextContent"
-  - Converts API format to application Message format
-
-- **Multi-Agent Responses**:
-  - Supports two response modes: streaming and batch
-  - Streaming mode uses Server-Sent Events (SSE) protocol
-  - Each agent response comes as separate event in the stream
-  - Processes events by extracting AuthorName for agent identification
-  - Creates separate Message objects for each agent response
-  - Agent responses styled with distinct colors in the UI
-  - Batch mode processes an array of responses
-  - Each response includes agent identification information
+- **Semantic Kernel Focus:**
+  - The primary recommendation is for APIs using Semantic Kernel (C#, Java, Python) to return the native `ChatMessageContent` object serialized as JSON.
+  - The frontend `ApiChatService` is designed to parse this richer structure, extracting necessary fields like `Role`, `AuthorName`/`name`, and `Content`/`Items`.
+- **Minimal Format Alternative:**
+  - For APIs *not* using Semantic Kernel, a minimal JSON structure is defined in `docs/api/response-formats.md`.
+  - This minimal format requires `Role: { Label: "Assistant" }` and text content (either via `Items[].Text` or a direct `Content` property).
+  - `AuthorName` is required only for multi-agent responses in the minimal format.
+- **Frontend Parsing:**
+  - `ApiChatService` handles both the full `ChatMessageContent` structure and the minimal format.
+  - It prioritizes extracting content from a direct `Content` property, falling back to the `Items` array.
+  - It checks for both `AuthorName` (C#) and `name` (Python) for agent identification.
 
 - **Error Handling**:
   - API calls include proper error handling and user feedback

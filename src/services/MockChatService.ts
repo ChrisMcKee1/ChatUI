@@ -112,6 +112,7 @@ export default MarkdownRenderer;
     ];
     
     return this.getRandomResponse(responses);
+
   }
   
   /**

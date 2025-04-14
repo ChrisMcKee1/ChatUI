@@ -1,157 +1,232 @@
-# C# API Implementation
+# C# API Implementation (Semantic Kernel Focused)
 
-This example shows how to implement API endpoints for Chat UI using ASP.NET Core. The implementation supports both standard chat and multi-agent chat with streaming and batch responses.
+This example shows how to implement API endpoints for Chat UI using ASP.NET Core and **Microsoft Semantic Kernel**.
 
-## Implementation
+**Recommended Approach:** Directly return the native `Microsoft.SemanticKernel.ChatMessageContent` object (or a `List` of them) serialized as JSON. The frontend (`ApiChatService.ts`) is designed to parse this.
+
+**Alternative (Non-SK):** If not using Semantic Kernel, see the [Minimal JSON Format definition](../response-formats.md#alternative-approach-minimal-json-format-non-semantic-kernel) and construct that structure manually.
+
+The examples below focus on the recommended Semantic Kernel approach.
+
+## Request Format
+
+All chat endpoints expect the following JSON request body:
+
+```json
+{
+  "messages": [
+    { "role": "user", "content": "..." },
+    { "role": "assistant", "content": "..." },
+    { "role": "user", "content": "latest message..." }
+  ]
+}
+```
+
+## Semantic Kernel `ChatMessageContent` Structure (Conceptual)
+
+The API response should be the JSON serialization of one or more `ChatMessageContent` objects. Key fields the frontend expects:
+
+*   `Role` (e.g., `AuthorRole.Assistant`)
+*   `Content` (string, primary text)
+*   `Items` (collection, fallback for text via `TextContent`)
+*   `AuthorName` (string, required for multi-agent)
+
+## Implementation Example (ASP.NET Core with Semantic Kernel)
+
+This example assumes you have a Semantic Kernel `Kernel` and a `IChatCompletionService` configured.
+
+### Imports and Namespaces
 
 ```csharp
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
+```
 
+### Request DTOs
+
+```csharp
+// --- Request DTOs (Minimal) ---
+
+public class MessageRequest
+{
+    public List<MessageDto>? Messages { get; set; }
+}
+
+// Renamed to avoid conflict with SK's internal Message class if used directly
+public class MessageDto 
+{
+    public string? Role { get; set; }
+    public string? Content { get; set; }
+}
+```
+
+### Controller Setup
+
+```csharp
 [ApiController]
 [Route("api")]
 public class ChatController : ControllerBase
 {
-    // Standard chat endpoint
-    [HttpPost("chat")]
-    public ActionResult<ChatResponse> StandardChatResponse([FromBody] MessageRequest request)
-    {
-        // Get the last user message
-        string userMessage = request.Messages.Count > 0 ? request.Messages[^1].Content : "";
-        
-        // Create a simple response with all required fields
-        var response = new ChatResponse
-        {
-            MessageId = Guid.NewGuid().ToString(),
-            ConversationId = Guid.NewGuid().ToString(),
-            Status = "completed",
-            Role = "assistant",
-            Content = $"I received your message: '{userMessage}'. Here's my response.",
-            ContentType = "text",
-            Sources = new List<SourceReference>(),
-            Error = null,
-            CreatedAt = DateTime.UtcNow.ToString("o")
-        };
-        
-        // Return as JSON
-        return Ok(response);
-    }
+    private readonly IChatCompletionService _chatCompletionService;
+    private readonly Kernel _kernel; // Assuming Kernel is injected or available
 
-    // Streaming endpoint for multi-agent chat
+    public ChatController(IChatCompletionService chatCompletionService, Kernel kernel)
+    {
+        _chatCompletionService = chatCompletionService;
+        _kernel = kernel; // Required if using plugins/function calling
+    }
+```
+
+### Standard Chat Endpoint
+
+```csharp
+    // Standard chat endpoint (/api/chat)
+    [HttpPost("chat")]
+    public async Task<ActionResult<List<ChatMessageContent>>> StandardChatResponse([FromBody] MessageRequest request)
+    {
+        var chatHistory = new ChatHistory();
+        request.Messages?.ForEach(m => 
+        {
+            var role = m.Role?.ToLowerInvariant() switch {
+                "user" => AuthorRole.User,
+                "assistant" => AuthorRole.Assistant,
+                "system" => AuthorRole.System,
+                _ => AuthorRole.User // Default or handle error
+            };
+            chatHistory.AddMessage(new ChatMessageContent(role, m.Content));
+        });
+
+        // *** Semantic Kernel Integration Point ***
+        // Get response from SK Chat Completion Service
+        // This might involve kernel.InvokePromptAsync or directly using _chatCompletionService
+        // For simplicity, let's assume _chatCompletionService returns a ChatMessageContent
+        
+        // Example: Directly using the service (without plugins/planning for simplicity)
+        var result = await _chatCompletionService.GetChatMessageContentAsync(chatHistory);
+
+        // *** Return the SK object directly ***
+        // The result is already ChatMessageContent, wrap in List for consistency
+        return Ok(new List<ChatMessageContent> { result });
+    }
+```
+
+### Multi-Agent Streaming Endpoint
+
+```csharp
+    // Streaming endpoint for multi-agent chat (/api/multi-agent-chat/stream)
     [HttpPost("multi-agent-chat/stream")]
     public async Task StreamMultiAgentResponse([FromBody] MessageRequest request)
     {
-        // Configure response for SSE
-        Response.Headers.Add("Content-Type", "text/event-stream");
-        Response.Headers.Add("Cache-Control", "no-cache");
-        Response.Headers.Add("Connection", "keep-alive");
-        
-        // Simulate responses from different agents
+        Response.Headers.Append("Content-Type", "text/event-stream");
+        Response.Headers.Append("Cache-Control", "no-cache");
+        Response.Headers.Append("Connection", "keep-alive");
+
+        var chatHistory = new ChatHistory(); // Populate as in standard chat
+         request.Messages?.ForEach(m => 
+        {
+            var role = m.Role?.ToLowerInvariant() switch {
+                "user" => AuthorRole.User,
+                "assistant" => AuthorRole.Assistant,
+                "system" => AuthorRole.System,
+                _ => AuthorRole.User // Default or handle error
+            };
+            chatHistory.AddMessage(new ChatMessageContent(role, m.Content));
+        });
+
+        // *** Semantic Kernel Integration Point ***
+        // Use streaming completion. This might involve multiple agents/plugins.
+        // We need to simulate multiple responses for the example.
+        // In a real scenario, this might loop through agent results or process SK streaming chunks.
+
         var agents = new List<string> { "Research", "Code", "Planning" };
-        
+        var tempConversationId = Guid.NewGuid().ToString(); // Example ID
+
         foreach (var agent in agents)
         {
-            // Create response with minimum required fields
-            var response = new AssistantResponse
-            {
-                Role = "assistant",
-                Content = $"This is a response from the {agent} agent regarding your query.",
-                AgentName = agent
-            };
-            
-            // Serialize to JSON
-            string jsonResponse = JsonSerializer.Serialize(response);
-            
-            // Send as SSE event
+             // Simulate getting a ChatMessageContent result for each agent
+             // In a real app, this would come from invoking the agent/kernel
+            var agentResponse = new ChatMessageContent(
+                AuthorRole.Assistant, 
+                content: $"Streamed response from the {agent} agent.",
+                authorName: agent // Set AuthorName for multi-agent
+                // metadata can be added if needed
+            );
+            agentResponse.Metadata ??= new Dictionary<string, object?>();
+            agentResponse.Metadata["ConversationId"] = tempConversationId; // Example metadata
+
+            // *** Serialize and stream the SK object directly ***
+            string jsonResponse = JsonSerializer.Serialize(agentResponse, new JsonSerializerOptions 
+            { 
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull 
+                // Add converters if needed for complex SK types not handled by default
+            });
+
             await Response.WriteAsync($"data: {jsonResponse}\n\n");
             await Response.Body.FlushAsync();
-            
-            // Add delay between responses to simulate thinking time
-            await Task.Delay(1000);
+            await Task.Delay(1000, HttpContext.RequestAborted); // Simulate work
         }
     }
-    
-    // Batch endpoint for multi-agent chat
+```
+
+### Multi-Agent Batch Endpoint
+
+```csharp
+    // Batch endpoint for multi-agent chat (/api/multi-agent-chat/batch)
     [HttpPost("multi-agent-chat/batch")]
-    public ActionResult<List<ChatResponse>> BatchMultiAgentResponse([FromBody] MessageRequest request)
+    public async Task<ActionResult<List<ChatMessageContent>>> BatchMultiAgentResponse([FromBody] MessageRequest request)
     {
-        // Create responses from different agents
+        var chatHistory = new ChatHistory(); // Populate as in standard chat
+         request.Messages?.ForEach(m => 
+        {
+            var role = m.Role?.ToLowerInvariant() switch {
+                "user" => AuthorRole.User,
+                "assistant" => AuthorRole.Assistant,
+                "system" => AuthorRole.System,
+                _ => AuthorRole.User // Default or handle error
+            };
+            chatHistory.AddMessage(new ChatMessageContent(role, m.Content));
+        });
+
+        // *** Semantic Kernel Integration Point ***
+        // Simulate getting results from multiple agents/kernel invocations
         var agents = new List<string> { "Research", "Code", "Planning" };
-        var responses = new List<ChatResponse>();
-        
+        var responses = new List<ChatMessageContent>();
+        var tempConversationId = Guid.NewGuid().ToString(); // Example ID
+
         foreach (var agent in agents)
         {
-            responses.Add(new AssistantResponse
-            {
-                Role = "assistant",
-                Content = $"This is a response from the {agent} agent regarding your query.",
-                AgentName = agent
-            });
+            // Simulate getting a ChatMessageContent result for each agent
+            var agentResponse = new ChatMessageContent(
+                AuthorRole.Assistant,
+                content: $"Batch response from the {agent} agent.",
+                authorName: agent // Set AuthorName for multi-agent
+            );
+            agentResponse.Metadata ??= new Dictionary<string, object?>();
+            agentResponse.Metadata["ConversationId"] = tempConversationId; // Example metadata
+            responses.Add(agentResponse);
         }
-        
-        // Return array of agent responses
+
+        // *** Return the List of SK objects directly ***
         return Ok(responses);
     }
-}
-
-public class MessageRequest
-{
-    public List<Message> Messages { get; set; } = new List<Message>();
-}
-
-public class Message
-{
-    public string Role { get; set; }
-    public string Content { get; set; }
-}
-
-// Simplified response model with only required fields
-public class AssistantResponse
-{
-    public string Role { get; set; }
-    public string Content { get; set; }
-    
-    [JsonPropertyName("agentName")]
-    public string AgentName { get; set; }
 }
 ```
 
 ## Key Points
 
-1. **Simplified Response Format**:
-   - Uses only the minimum required fields:
-     - `role`: Always "assistant" for responses
-     - `content`: The actual message content
-     - `agentName`: Only for multi-agent responses
+1.  **Return Native `ChatMessageContent`**: The recommended approach is to return the `Microsoft.SemanticKernel.ChatMessageContent` object (or `List<ChatMessageContent>`) directly serialized as JSON. The frontend handles parsing.
+2.  **Simplified Backend Logic**: No need to manually create specific DTOs like `MinimalResponse` if using Semantic Kernel; leverage the native SK types.
+3.  **Frontend Responsibility**: The frontend (`ApiChatService.ts`) is responsible for extracting the needed fields (`Role`, `AuthorName`, `Content`/`Items`) from the potentially richer `ChatMessageContent` structure.
+4.  **`AuthorName`**: Ensure `AuthorName` is populated in `ChatMessageContent` for multi-agent scenarios.
+5.  **Streaming**: For streaming, serialize and send each `ChatMessageContent` object as an individual SSE `data:` event.
+6.  **Non-SK Alternative**: If not using Semantic Kernel, implement the [minimal JSON format](../response-formats.md#alternative-approach-minimal-json-format-non-semantic-kernel).
 
-2. **Multiple Endpoint Support**:
-   - `/api/chat` endpoint for standard chat responses
-   - `/api/multi-agent-chat/stream` endpoint for streaming multi-agent responses
-   - `/api/multi-agent-chat/batch` endpoint for batch multi-agent responses
-
-3. **Standard Chat**:
-   - Returns a single response object with role and content
-   - Simple JSON structure that's easy to process
-
-4. **Streaming Response**:
-   - Sets `Content-Type` to `text/event-stream` for Server-Sent Events
-   - Writes each agent response as an SSE event with the format `data: {json}\n\n`
-   - Flushes the response buffer after each event to ensure immediate delivery
-
-5. **Batch Response**:
-   - Returns an array of agent responses in a single JSON response
-   - Each response contains only the required fields
-   - Uses standard JSON `Content-Type: application/json`
-
-6. **JSON Serialization**:
-   - Uses `JsonPropertyName` attribute to ensure the correct casing for `agentName`
-   - Standard System.Text.Json serialization
-
-7. **Error Handling**:
-   - In a production environment, add try-catch blocks and proper error handling
-   - Consider adding cancellation token support for request cancellation 
+This Semantic Kernel-centric approach simplifies the C# backend implementation significantly. 

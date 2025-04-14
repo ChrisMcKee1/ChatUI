@@ -10,6 +10,12 @@ export async function register() {
   // Only set up OpenTelemetry in server environment
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     try {
+      // Check if OpenTelemetry is disabled
+      if (process.env.OTEL_SDK_DISABLED === 'true') {
+        console.log('OpenTelemetry is disabled via OTEL_SDK_DISABLED=true');
+        return;
+      }
+      
       // Check if the connection string is available
       const connectionString = process.env.NEXT_PUBLIC_APPLICATIONINSIGHTS_CONNECTION_STRING;
       

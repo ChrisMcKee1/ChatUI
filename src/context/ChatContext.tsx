@@ -298,7 +298,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       
       // Create a user-friendly error message based on error type
       let errorContent = '';
-      let errorRole: Role = 'system';
+      const errorRole: Role = 'system';
       
       if (error instanceof Error) {
         // Check for our custom error types

@@ -1,22 +1,31 @@
 # Active Context
 
 ## Current Focus
-- ✅ **Implement OpenTelemetry for monitoring and observability** (Completed) 🔭
+- ✅ **API Response Format Update (Semantic Kernel Focus):**
+    - ✅ Refactored `ApiChatService.ts` to parse richer `ChatMessageContent`-inspired responses.
+    - ✅ Updated `docs/api/response-formats.md` to prioritize native SK returns.
+    - ✅ Updated `docs/api/examples/csharp.md` for native SK returns.
+    - ✅ Updated `docs/api/examples/java.md` for native SK returns.
+    - ✅ Updated `docs/api/examples/python.md` for native SK returns.
+- **Final Documentation Cleanup & Standardization** ✨: Update diagrams and other docs based on API changes.
 - **Add Unit Tests for responsive behavior** (Medium Priority) 🧪
 - **Document Component API** (Medium Priority) 📝
 - **Implement additional accessibility improvements** (Medium Priority) ♿️
-- Final documentation cleanup and standardization ✨
 
 ## Recent Activities
+- **Updated API Documentation & Examples for Semantic Kernel Focus:**
+    - Refactored `ApiChatService.ts` to handle richer `ChatMessageContent` structure directly.
+    - Updated `response-formats.md` to recommend returning native SK `ChatMessageContent` objects and provide minimal format as alternative.
+    - Updated C#, Java, and Python API examples to show returning native SK objects, simplifying backend logic.
 - **Implemented OpenTelemetry with Azure Monitor Integration:**
-  - Set up OpenTelemetry SDK for Azure Application Insights
-  - Removed Vercel OpenTelemetry in favor of direct Azure Monitor integration
-  - Configured auto-instrumentation for HTTP requests
-  - Implemented server-side only instrumentation to improve performance
-  - Updated OpenTelemetry dependencies to compatible versions
-  - Added proper resource attributes and shutdown handling
-  - Updated webpack configuration for Azure Monitor compatibility
-  - Added comprehensive documentation for OpenTelemetry implementation
+    - Set up OpenTelemetry SDK for Azure Application Insights
+    - Removed Vercel OpenTelemetry in favor of direct Azure Monitor integration
+    - Configured auto-instrumentation for HTTP requests
+    - Implemented server-side only instrumentation to improve performance
+    - Updated OpenTelemetry dependencies to compatible versions
+    - Added proper resource attributes and shutdown handling
+    - Updated webpack configuration for Azure Monitor compatibility
+    - Added comprehensive documentation for OpenTelemetry implementation
 - **Completed Full Project Review & Documentation Update:**
     - Reviewed all Memory Bank files and `.cursorrules`.
     - Updated `progress.md` to reflect completed tasks (Storybook, API Error Handling) and reorganized for clarity.
@@ -109,6 +118,7 @@
 - **Separating frontend and backend deployments for better modularity and independent scaling**
 - **Documentation Style**: Embracing energetic, clear, concise GFM with well-placed emojis for all future documentation. 😊
 - **Current State**: Application is considered feature-complete for this phase, stable, and deployed. Focus shifts to observability and final polish (testing, documentation, accessibility).
+- **API Response Format Strategy:** Prioritize backend simplicity for Semantic Kernel users by recommending the return of native `ChatMessageContent` objects. The frontend `ApiChatService` will handle parsing the necessary fields from this richer structure. Non-SK users should adhere to the documented minimal format.
 
 ## Open Questions
 - What additional loading state enhancements would improve user experience? (Lower priority)

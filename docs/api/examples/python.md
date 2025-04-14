@@ -1,278 +1,200 @@
-# Python API Implementation
+# Python API Implementation (Semantic Kernel Focused)
 
-This example demonstrates how to implement API endpoints for Chat UI using FastAPI. The implementation supports both standard chat and multi-agent chat with streaming and batch responses.
+This example demonstrates how to implement API endpoints for Chat UI using FastAPI and **Microsoft Semantic Kernel for Python**.
 
-## Implementation
+**Recommended Approach:** Directly return the native `semantic_kernel.contents.chat_message_content.ChatMessageContent` object (or a `List` of them) serialized as JSON. The frontend (`ApiChatService.ts`) is designed to parse this.
+
+**Alternative (Non-SK):** If not using Semantic Kernel, see the [Minimal JSON Format definition](../response-formats.md#alternative-approach-minimal-json-format-non-semantic-kernel) and construct that structure manually (e.g., using dictionaries).
+
+The examples below focus on the recommended Semantic Kernel approach.
+
+## Request Format (Unchanged)
+
+All chat endpoints expect the following JSON request body:
+
+```json
+{
+  "messages": [
+    { "role": "user", "content": "..." },
+    { "role": "assistant", "content": "..." },
+    { "role": "user", "content": "latest message..." }
+  ]
+}
+```
+
+## Semantic Kernel `ChatMessageContent` Structure (Conceptual)
+
+The API response should be the JSON serialization of one or more `ChatMessageContent` objects. Key fields the frontend expects:
+
+*   `role` (e.g., `AuthorRole.ASSISTANT`)
+*   `content` (string, primary text - SK provides this as a property)
+*   `name` (string, maps to `AuthorName`, required for multi-agent)
+*   `items` (list, fallback for text via `TextContent`)
+
+## Implementation Example (FastAPI with Semantic Kernel)
+
+This example assumes you have a Semantic Kernel `Kernel` and a chat completion service (like `AzureChatCompletion` or `OpenAIChatCompletion`) configured.
+
+### Imports
 
 ```python
-from fastapi import FastAPI, Request
-from fastapi.responses import StreamingResponse, JSONResponse
-import json
 import asyncio
 import uuid
-from datetime import datetime
-from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field
+from typing import List, Optional
 
-app = FastAPI()
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 
-class Message(BaseModel):
+from semantic_kernel import Kernel # Assuming Kernel is configured
+from semantic_kernel.connectors.ai.chat_completion_client_base import ChatCompletionClientBase # Base type for services
+from semantic_kernel.contents.chat_history import ChatHistory
+from semantic_kernel.contents.chat_message_content import ChatMessageContent
+from semantic_kernel.contents.text_content import TextContent
+from semantic_kernel.contents.utils.author_role import AuthorRole
+```
+
+### Request Models
+
+```python
+# --- Request Models --- 
+
+class MessageDto(BaseModel):
     role: str
     content: str
 
 class MessageRequest(BaseModel):
-    messages: List[Message]
+    messages: List[MessageDto]
+```
 
-class SourceReference(BaseModel):
-    id: str
-    title: Optional[str] = None
-    url: Optional[str] = None
-    snippet: Optional[str] = None
+### App Setup and Helper Function
 
-class ErrorDetail(BaseModel):
-    message: str
-    code: Optional[str] = None
+```python
+app = FastAPI()
 
-class ChatResponse(BaseModel):
-    messageId: str
-    conversationId: Optional[str] = None
-    status: str
-    role: str = "assistant"
-    content: str
-    contentType: str = "text"
-    agentName: Optional[str] = None
-    sources: List[SourceReference] = Field(default_factory=list)
-    error: Optional[ErrorDetail] = None
-    createdAt: str
+# --- Assume Kernel and Chat Service are configured and potentially injected --- 
+# kernel = Kernel()
+# kernel.add_service(...) # Add your configured AzureChatCompletion or OpenAIChatCompletion
+# chat_service = kernel.get_service(ChatCompletionClientBase)
 
-    @classmethod
-    def create(cls, content: str, agent_name: Optional[str] = None, status: str = "completed", 
-               content_type: str = "text", conversation_id: Optional[str] = None):
-        """Helper method to create a standard response"""
-        return cls(
-            messageId=str(uuid.uuid4()),
-            conversationId=conversation_id,
-            status=status,
-            role="assistant",
-            content=content,
-            contentType=content_type,
-            agentName=agent_name,
-            sources=[],
-            error=None,
-            createdAt=datetime.utcnow().isoformat() + "Z"
-        )
+# Helper to get configured chat service (replace with your actual injection/retrieval logic)
+async def get_chat_service() -> ChatCompletionClientBase:
+    # This is a placeholder. In a real app, you'd likely inject the kernel or service.
+    from semantic_kernel.connectors.ai.open_ai import AzureChatCompletion # Example
+    # Load config from env or other sources
+    # service = AzureChatCompletion(...) 
+    # return service
+    raise NotImplementedError("Kernel/Chat Service not configured in this example")
+```
 
-# Standard chat endpoint
-@app.post("/api/chat")
+### Standard Chat Endpoint
+
+```python
+# Standard chat endpoint (/api/chat)
+@app.post("/api/chat") # Removed response_model as we return SK object directly
 async def standard_chat_response(request: MessageRequest):
-    # Get the last user message
-    user_message = request.messages[-1].content if request.messages else ""
+    chat_service = await get_chat_service() # Get the configured service
     
-    # Generate a conversation ID if not tracking elsewhere
-    conversation_id = str(uuid.uuid4())
-    
-    # Create a simple response with required fields
-    response = ChatResponse.create(
-        content=f"I received your message: '{user_message}'. Here's my response.",
-        conversation_id=conversation_id
-    )
-    
-    return response
+    chat_history = ChatHistory()
+    # Populate chat_history from request.messages
+    for msg in request.messages:
+        role = AuthorRole(msg.role.upper())
+        chat_history.add_message(ChatMessageContent(role=role, items=[TextContent(text=msg.content)]))
 
-# Streaming endpoint for multi-agent chat
+    # *** Semantic Kernel Integration Point ***
+    # Get response from SK Chat Completion Service
+    # This might involve kernel.invoke() if using plugins/planning
+    # For simplicity, calling the service directly:
+    results: List[ChatMessageContent] = await chat_service.get_chat_message_contents(chat_history=chat_history) # kernel=kernel if needed
+
+    # Check if we got a result
+    if not results:
+        # Handle error: No response from AI
+        # Using FastAPI's HTTPException is recommended here
+        return {"error": "No response from AI"} # Simple error for example
+        
+    # *** Return the SK object directly ***
+    # FastAPI handles Pydantic model serialization. Return the list (usually one item).
+    # Ensure your SK ChatMessageContent can be serialized (check Pydantic v1/v2 compatibility if needed)
+    return results 
+```
+
+### Multi-Agent Streaming Endpoint
+
+```python
+# Streaming endpoint for multi-agent chat (/api/multi-agent-chat/stream)
 @app.post("/api/multi-agent-chat/stream")
 async def stream_multi_agent_response(request: MessageRequest):
-    # Set up streaming response
-    async def generate_responses():
-        # Generate a conversation ID for this session
-        conversation_id = str(uuid.uuid4())
-        
-        # Agents that will respond
-        agents = ["Research", "Code", "Planning"]
-        
-        for agent in agents:
-            # Create message ID for this agent's message
-            message_id = str(uuid.uuid4())
-            
-            # Initial processing message
-            initial_response = ChatResponse(
-                messageId=message_id,
-                conversationId=conversation_id,
-                status="processing",
-                role="assistant",
-                content=f"The {agent} agent is analyzing your request...",
-                contentType="text",
-                agentName=agent,
-                sources=[],
-                error=None,
-                createdAt=datetime.utcnow().isoformat() + "Z"
-            )
-            
-            # Send initial processing message
-            yield f"data: {json.dumps(initial_response.dict())}\n\n"
-            await asyncio.sleep(0.5)
-            
-            # Send an update with more content
-            update_response = ChatResponse(
-                messageId=message_id,
-                conversationId=conversation_id,
-                status="processing",
-                role="assistant",
-                content=f"The {agent} agent is analyzing your request and preparing information...",
-                contentType="text",
-                agentName=agent,
-                sources=[],
-                error=None,
-                createdAt=datetime.utcnow().isoformat() + "Z"
-            )
-            
-            yield f"data: {json.dumps(update_response.dict())}\n\n"
-            await asyncio.sleep(0.5)
-            
-            # Final completed message with sources for Research agent
-            if agent == "Research":
-                sources = [
-                    SourceReference(
-                        id="source-1",
-                        title="Important Research Paper",
-                        url="https://example.com/paper",
-                        snippet="Relevant information from the paper..."
-                    )
-                ]
-            else:
-                sources = []
-                
-            final_response = ChatResponse(
-                messageId=message_id,
-                conversationId=conversation_id,
-                status="completed",
-                role="assistant",
-                content=f"This is the complete response from the {agent} agent regarding your query.",
-                contentType="text" if agent != "Code" else "markdown",
-                agentName=agent,
-                sources=sources,
-                error=None,
-                createdAt=datetime.utcnow().isoformat() + "Z"
-            )
-            
-            yield f"data: {json.dumps(final_response.dict())}\n\n"
-            
-            # Delay between agent responses
-            await asyncio.sleep(1)
-    
-    return StreamingResponse(
-        generate_responses(),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-        }
-    )
+    # chat_service = await get_chat_service() # Potentially needed if streaming comes from service
+    # chat_history = ChatHistory() # Populate as above
 
-# Error endpoint example
-@app.post("/api/chat/error-example")
-async def error_example():
-    # Example of returning an error response
-    error_response = ChatResponse(
-        messageId=str(uuid.uuid4()),
-        conversationId=str(uuid.uuid4()),
-        status="failed",
-        role="assistant",
-        content="",
-        contentType="text",
-        sources=[],
-        error=ErrorDetail(
-            message="The model encountered an error processing your request.",
-            code="MODEL_ERROR"
-        ),
-        createdAt=datetime.utcnow().isoformat() + "Z"
-    )
-    
-    return error_response
+    # *** Semantic Kernel Integration Point ***
+    # Simulate multiple agent responses for the example
+    # In a real app, this would involve invoking multiple agents/plugins via the kernel
+    # and handling their streaming results (e.g., using chat_service.complete_chat_stream_async).
 
-# Batch endpoint for multi-agent chat
-@app.post("/api/multi-agent-chat/batch")
-async def batch_multi_agent_response(request: MessageRequest):
-    # Generate a conversation ID for this session
-    conversation_id = str(uuid.uuid4())
-    
-    # Create responses from different agents
     agents = ["Research", "Code", "Planning"]
-    responses = []
-    
-    for agent in agents:
-        # Add sources for Research agent
-        if agent == "Research":
-            sources = [
-                SourceReference(
-                    id="source-1",
-                    title="Important Research Paper",
-                    url="https://example.com/paper",
-                    snippet="Relevant information from the paper..."
-                )
-            ]
-        else:
-            sources = []
+    temp_conversation_id = str(uuid.uuid4()) # Example ID
+
+    async def generate_responses():
+        for agent in agents:
+            # Simulate getting a ChatMessageContent result for each agent
+            agent_response = ChatMessageContent(
+                role=AuthorRole.ASSISTANT,
+                items=[TextContent(text=f"Streamed response from the {agent} agent.")],
+                name=agent, # Use 'name' for AuthorName in Python SK
+                metadata={'ConversationId': temp_conversation_id} # Example metadata
+            )
             
-        response = ChatResponse(
-            messageId=str(uuid.uuid4()),
-            conversationId=conversation_id,
-            status="completed",
-            role="assistant",
-            content=f"This is a response from the {agent} agent regarding your query.",
-            contentType="text" if agent != "Code" else "markdown",
-            agentName=agent,
-            sources=sources,
-            error=None,
-            createdAt=datetime.utcnow().isoformat() + "Z"
+            # *** Serialize and stream the SK object directly ***
+            # Use .model_dump_json for Pydantic v2, .json for v1
+            try: 
+              json_response = agent_response.model_dump_json(exclude_none=True)
+            except AttributeError: 
+              json_response = agent_response.json(exclude_none=True)
+              
+            yield f"data: {json_response}\n\n"
+            await asyncio.sleep(1) # Simulate agent work
+
+    return StreamingResponse(generate_responses(), media_type="text/event-stream")
+```
+
+### Multi-Agent Batch Endpoint
+
+```python
+# Batch endpoint for multi-agent chat (/api/multi-agent-chat/batch)
+@app.post("/api/multi-agent-chat/batch") # Removed response_model
+async def batch_multi_agent_response(request: MessageRequest):
+    # chat_service = await get_chat_service() # Potentially needed
+    # chat_history = ChatHistory() # Populate as above
+
+    # *** Semantic Kernel Integration Point ***
+    # Simulate getting results from multiple agents/kernel invocations
+    agents = ["Research", "Code", "Planning"]
+    responses: List[ChatMessageContent] = []
+    temp_conversation_id = str(uuid.uuid4()) # Example ID
+
+    for agent in agents:
+         # Simulate getting a ChatMessageContent result for each agent
+         agent_response = ChatMessageContent(
+            role=AuthorRole.ASSISTANT,
+            items=[TextContent(text=f"Batch response from the {agent} agent.")],
+            name=agent, # Use 'name' for AuthorName
+            metadata={'ConversationId': temp_conversation_id} # Example metadata
         )
-        
-        responses.append(response)
-    
-    # Return array of agent responses
-    return [response.dict() for response in responses]
+         responses.append(agent_response)
+
+    # *** Return the List of SK objects directly ***
+    return responses
 ```
 
 ## Key Points
 
-1. **Standardized Response Format**:
-   - Uses the complete schema with all required fields:
-     - `messageId`: Unique identifier for tracking and updating messages
-     - `conversationId`: Optional identifier for grouping related messages
-     - `status`: "processing", "completed", or "failed"
-     - `role`: Always "assistant" for responses
-     - `content`: The actual message content
-     - `contentType`: "text" or "markdown"
-     - `agentName`: Only for multi-agent responses
-     - `sources`: Array of source references when available
-     - `error`: Details when status is "failed"
-     - `createdAt`: ISO 8601 timestamp
+1.  **Return Native `ChatMessageContent`**: The recommended approach is to return the `semantic_kernel.contents.chat_message_content.ChatMessageContent` object (or `List`) directly. FastAPI handles Pydantic model serialization.
+2.  **Simplified Backend Logic**: No need to manually create specific Pydantic models for the response if using Semantic Kernel; leverage the native SK types.
+3.  **Frontend Responsibility**: The frontend (`ApiChatService.ts`) is responsible for extracting the needed fields (`role`, `name`/`AuthorName`, `content`/`items`) from the potentially richer `ChatMessageContent` structure.
+4.  **`name` Property**: Use the `name` property of `ChatMessageContent` to convey the `AuthorName` for multi-agent scenarios.
+5.  **Serialization**: Ensure proper JSON serialization, using `.model_dump_json(exclude_none=True)` for Pydantic v2 or `.json(exclude_none=True)` for v1, especially in streaming.
+6.  **Non-SK Alternative**: If not using Semantic Kernel, implement the [minimal JSON format](../response-formats.md#alternative-approach-minimal-json-format-non-semantic-kernel) using Python dictionaries.
 
-2. **Multiple Endpoint Support**:
-   - `/api/chat` endpoint for standard chat responses
-   - `/api/multi-agent-chat/stream` endpoint for streaming multi-agent responses
-   - `/api/multi-agent-chat/batch` endpoint for batch multi-agent responses
-   - `/api/chat/error-example` showing how to format errors
-
-3. **Streaming Implementation**:
-   - Demonstrates progressive updates with the same messageId
-   - Shows status transitions from "processing" to "completed"
-   - Provides realistic user experience with partial content updates
-   - Uses Server-Sent Events for efficient streaming
-
-4. **Source Citations**:
-   - Shows how to include source references for retrieved information
-   - Full structure with id, title, url, and snippet fields
-
-5. **Error Handling**:
-   - Proper error formatting with message and code
-   - Demonstrates status="failed" state
-
-6. **Pydantic Models**:
-   - Strongly typed data models for validation
-   - Helper method for creating standardized responses
-
-7. **Deployment Considerations**:
-   - Requires an ASGI server like Uvicorn for async support
-   - Install dependencies: `pip install fastapi uvicorn pydantic`
-   - Run with `uvicorn app:app --reload` for development 
+This Semantic Kernel-centric approach simplifies the Python backend implementation significantly. 

@@ -3,6 +3,24 @@ import { Message } from '@/components/molecules/ChatMessagePanel';
 import { ChatHistory } from '@/components/organisms/ChatHistoryPanel';
 import { ChatMode, IHistoryService } from './IHistoryService';
 
+// Define interfaces for API responses
+interface ChatHistoryApiResponse {
+  id: string;
+  title: string;
+  lastMessage?: string;
+  lastUpdated: string; // Date as string from API
+  messageCount: number;
+  mode: ChatMode;
+}
+
+interface ChatMessageApiResponse {
+  id?: string;
+  content: string;
+  role: string;
+  timestamp: string;
+  agentIdentifier?: string;
+}
+
 /**
  * Implementation of IHistoryService that makes actual API calls
  * Uses environment variables for API endpoints
@@ -37,10 +55,10 @@ export class ApiHistoryService implements IHistoryService {
       const data = await response.json();
       
       // Map the API response to the expected ChatHistory format
-      return data.map((item: any) => ({
+      return data.map((item: ChatHistoryApiResponse) => ({
         id: item.id,
         title: item.title,
-        lastMessage: item.lastMessage,
+        lastMessage: item.lastMessage || '',
         lastUpdated: new Date(item.lastUpdated),
         messageCount: item.messageCount,
         mode: mode
@@ -73,7 +91,7 @@ export class ApiHistoryService implements IHistoryService {
       const data = await response.json();
       
       // Map the API response to the expected Message format
-      return data.map((item: any) => ({
+      return data.map((item: ChatMessageApiResponse) => ({
         id: item.id || uuidv4(),
         content: item.content,
         role: item.role,

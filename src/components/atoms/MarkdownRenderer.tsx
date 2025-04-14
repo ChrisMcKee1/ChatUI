@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Box, Typography, useMediaQuery, useTheme as useMuiTheme } from '@mui/material';
+import { Box, useMediaQuery, useTheme as useMuiTheme } from '@mui/material';
 import { useTheme } from '@/context/ThemeContext';
 import { micromark } from 'micromark';
 import { gfm, gfmHtml } from 'micromark-extension-gfm';

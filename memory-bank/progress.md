@@ -19,14 +19,27 @@
     - Layout Fixes & Container Sizing
     - GitHub-Flavored Markdown Documentation Guidelines
     - ✅ OpenTelemetry implementation with Azure Monitor (simplified implementation)
+    - ✅ API Response Format Update (Prioritizing Semantic Kernel `ChatMessageContent`)
+    - ✅ Refactored Frontend API Service (`ApiChatService.ts`) for New Response Format
 - **Key Remaining Tasks:**
-    - Add Unit Tests (Responsive Behavior) (Medium Priority)
-    - Document Component API (Medium Priority)
-    - Implement Additional Accessibility Improvements (Medium Priority)
+    - **Final Documentation Cleanup & Standardization**: ✨
+        - [ ] Update `systemPatterns.md`
+        - [x] Review `architectureDiagrams.md` (Adding new diagram)
+    - Add Unit Tests (Responsive Behavior) (Medium Priority) 🧪
+    - Document Component API (Medium Priority) 📝
+    - Implement Additional Accessibility Improvements (Medium Priority) ♿️
 
 ## Detailed To-Do List
 
 ### High Priority
+- ✅ **Simplify API Response Format & Implementation:** 🔄
+  - ✅ Update `docs/api/response-formats.md` (Prioritize native SK return)
+  - ✅ Update Java API examples (Show native SK return)
+  - ✅ Update C# API examples (Show native SK return)
+  - ✅ Update Python API examples (Show native SK return)
+  - ✅ Refactor `ApiChatService.ts` (Handle richer SK response format)
+  - [ ] Update `MockChatService.ts` (Align with new frontend expectations - TBD if needed)
+  - [ ] Review Data Flow Diagram in `architectureDiagrams.md`
 - ✅ **Implement OpenTelemetry for monitoring and observability:** 🔭
   - ✅ Set up OpenTelemetry SDK and auto-instrumentation
   - ✅ Configure Azure Monitor exporter for telemetry data

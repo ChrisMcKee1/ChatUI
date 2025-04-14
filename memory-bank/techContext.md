@@ -119,21 +119,18 @@
 
 ## API Integration
 - **Standard Chat API**: Configured via `NEXT_PUBLIC_STANDARD_CHAT_API_URL` and `NEXT_PUBLIC_STANDARD_CHAT_API_MODE`
-  - Returns an array with a single response containing Items with text content
-  - Processed as a single response message
 - **Multi-agent Chat API**: Configured via `NEXT_PUBLIC_MULTI_AGENT_CHAT_API_URL` and `NEXT_PUBLIC_MULTI_AGENT_CHAT_API_MODE`
-  - Implemented as a streaming API using Server-Sent Events (SSE)
-  - Each agent's response comes as a separate event in the stream
-  - Uses AuthorName to identify different agents for styling
-  - Supports fallback to non-streaming mode if needed
 - **History API**: Configured via `NEXT_PUBLIC_CHAT_HISTORY_API_URL` and `NEXT_PUBLIC_CHAT_HISTORY_MODE`
+- **Standardized Minimal Response Format**: All chat API endpoints now conform to a single minimal response structure:
+  - Format: `[ { Role: { Label: "Assistant" }, AuthorName?: string, ConversationId?: string, Items: [ { $type?: "TextContent", Text: string } ] } ]`
+  - `AuthorName` is included only for multi-agent responses.
+  - `ConversationId` is optional.
+- **Streaming**: Multi-agent streaming endpoint (`/stream`) sends individual response objects (matching the structure above) as separate SSE events.
 - **Service Implementation**:
-  - `ApiChatService`: Makes HTTP calls to chat endpoints with proper error handling and request abortion
-    - Handles both normal requests and streaming requests
-    - Processes API-specific response formats into our application's Message format
-  - `ApiHistoryService`: Full CRUD operations for chat history management
-  - Services selected via `ServiceFactory` based on environment variables
-  - Mock implementations available for development and testing
+  - `ApiChatService`: Makes HTTP calls to chat endpoints. It *consumes* the minimal API response format and *constructs* the richer `Message` object required by the frontend UI (generating `id`, `timestamp`, etc.). Includes error handling and request abortion.
+  - `ApiHistoryService`: Full CRUD operations for chat history management (Note: History API response format is separate from the chat response format).
+  - Services selected via `ServiceFactory` based on environment variables.
+  - Mock implementations available for development and testing.
 
 ## Constraints
 - Must consume external Java APIs (standard chat, multi-agent chat) eventually.

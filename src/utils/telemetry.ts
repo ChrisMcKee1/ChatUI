@@ -1,5 +1,5 @@
 // OpenTelemetry utilities for custom instrumentation
-import { trace, context, SpanStatusCode } from '@opentelemetry/api';
+import { trace, SpanStatusCode } from '@opentelemetry/api';
 
 // Get the OpenTelemetry tracer
 const tracer = trace.getTracer('chat-ui-custom-instrumentation');

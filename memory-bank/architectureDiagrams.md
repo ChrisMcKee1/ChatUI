@@ -263,16 +263,24 @@ sequenceDiagram
     alt Standard Mode
         ChatCtx->>ChatSvc: sendMessage(userMessage)
         ChatSvc->>API: POST /chat with message
-        API-->>ChatSvc: Response with assistant message
-        ChatSvc-->>ChatCtx: Return assistant message
+        API-->>ChatSvc: Minimal Response (Items[].Text)
+        ChatSvc-->>ChatCtx: Return constructed Message object
     else Multi-Agent Mode
         ChatCtx->>ChatSvc: sendMultiAgentMessage(userMessage)
-        ChatSvc->>API: POST /multi-agent-chat with message
-        API-->>ChatSvc: Response with agent messages
-        ChatSvc-->>ChatCtx: Return agent messages
+        alt Streaming
+            ChatCtx->>ChatSvc: sendMultiAgentMessage(userMessage)
+            ChatSvc->>API: POST /multi-agent-chat/stream with message
+            API-->>ChatSvc: Stream of SSE events (each with Minimal Response format)
+            ChatSvc-->>ChatCtx: Stream constructed Message objects
+        else Batch
+            ChatCtx->>ChatSvc: sendMultiAgentMessage(userMessage)
+            ChatSvc->>API: POST /multi-agent-chat/batch with message
+            API-->>ChatSvc: Array of Minimal Responses (Items[].Text, AuthorName)
+            ChatSvc-->>ChatCtx: Return array of constructed Message objects
+        end
     end
     
-    ChatCtx->>ChatCtx: Add response to messages state
+    ChatCtx->>ChatCtx: Add constructed Message(s) to state
     ChatCtx->>UI: Update with response
     
     ChatCtx->>HistorySvc: saveMessages(chatId, messages)
@@ -670,4 +678,75 @@ flowchart TD
     style ManualTrigger fill:#5e35b1,stroke:#4527a0,color:#ffffff
     
     linkStyle default stroke:#88ccff,stroke-width:2px
+```
+
+## 11. API Communication Flow (Response Formats)
+
+This diagram illustrates how the frontend (`ApiChatService`) interacts with the backend API and handles the two possible response formats.
+
+```mermaid
+%%{init: {'theme':'dark'}}%%
+sequenceDiagram
+    participant FE as Frontend (ApiChatService)
+    participant BE as Backend API
+    participant SK as Semantic Kernel (Optional)
+    
+    FE->>BE: POST /chat or /multi-agent-chat/... (Request with messages)
+    
+    alt Backend Uses Semantic Kernel
+        BE->>SK: Process request, generate ChatMessageContent
+        SK-->>BE: Return native ChatMessageContent object(s)
+        BE-->>FE: Response (JSON Serialized ChatMessageContent)
+        FE->>FE: Parse Role, AuthorName/name, Content/Items[Text]
+        FE->>FE: Construct UI Message object(s)
+    else Backend Does NOT Use Semantic Kernel
+        BE->>BE: Process request, manually build response
+        BE-->>FE: Response (Minimal JSON Format)
+        FE->>FE: Parse Role, AuthorName, Items[Text] or Content
+        FE->>FE: Construct UI Message object(s)
+    end
+```
+
+## 12. Frontend Error Handling Flow
+
+```mermaid
+graph TD
+    A1[API Service: fetch]
+    A2[Check Response]
+    A3[Parse JSON]
+    A4[Extract Data]
+    A5[Return Message]
+    
+    E1[HTTP Error]
+    E2[Parse Error]
+    E3[Data Error]
+    E4[Timeout]
+    E5[Network Error]
+    
+    C1[Context: send]
+    C2[Try/Catch]
+    C3[Show Error]
+    C4[Reset Loading]
+
+    C1-->A1
+    A1-->A2
+    A2-->A3
+    A2-->E1
+    A3-->A4
+    A3-->E2
+    A4-->A5
+    A4-->E3
+    A1-->E4
+    A1-->E5
+    
+    E1-->C2
+    E2-->C2
+    E3-->C2
+    E4-->C2
+    E5-->C2
+    
+    A5-->C2
+    C2-->C3
+    C2-->C4
+    C3-->C4
 ``` 
