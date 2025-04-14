@@ -107,7 +107,7 @@ If your backend does **not** use Semantic Kernel, you must return a JSON respons
 
 ---
 
-## Chat Request Format (Unchanged)
+## Chat Request Format
 
 The request format sent *to* the API remains unchanged:
 
