@@ -32,6 +32,9 @@
 ## Detailed To-Do List
 
 ### High Priority
+- ✅ **Populate `docs/architecture/` with Diagrams**: 🏗️
+  - [x] Create standalone markdown files for key architecture diagrams.
+  - [x] Update README for easy navigation.
 - ✅ **Simplify API Response Format & Implementation:** 🔄
   - ✅ Update `docs/api/response-formats.md` (Prioritize native SK return)
   - ✅ Update Java API examples (Show native SK return)

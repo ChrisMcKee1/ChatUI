@@ -1,26 +1,29 @@
 # System Patterns: ChatUI
 
+This document outlines the key architectural and design patterns used in the ChatUI application. For visual representations, please refer to `architectureDiagrams.md`.
+
 ## Architecture
+*(Refer to: [Diagram 2: Application Architecture](architectureDiagrams.md#2-application-architecture))*
 - **Frontend:** Next.js (React framework)
-- **Design System:** Atomic Design principles will guide component structure (`atoms`, `molecules`, `organisms`, `templates`).
-- **Component Development:** Storybook will be used for isolated component development and documentation.
-- **UI Components:** Material UI will be used for base components, with custom components built on top following atomic design principles.
-- **Icons:** Lucide.dev icons are imported and used directly throughout the application.
+- **Design System:** Atomic Design principles guide component structure (`atoms`, `molecules`, `organisms`, `templates`). *(Refer to: [Diagram 1: Component Architecture](architectureDiagrams.md#1-component-architecture-atomic-design))*
+- **Component Development:** Storybook is used for isolated component development, documentation, and visual testing. *(Refer to: [Storybook Implementation Guidelines](../.cursorrules))*\n- **UI Components:** Material UI provides base components, customized and extended following atomic design principles.
+- **Icons:** Lucide.dev icons are imported and used directly.
 
 ## Component Strategy
-- **Atoms:** Use Material UI components directly where possible (Button, TextField, etc.) and import Lucide icons directly.
+*(Refer to: [Diagram 1: Component Architecture](architectureDiagrams.md#1-component-architecture-atomic-design))*
+- **Atoms:** Base building blocks, often directly using Material UI components (Button, TextField) and Lucide icons.
 - **Molecules:** Combine MUI components into more complex components following atomic design principles.
 - **Organisms:** Build larger components that may use both MUI components and custom molecules.
-- **Templates:** Arrange organisms into full page layouts.
+- **Templates:** Arrange organisms into full page layouts (e.g., `ChatPageLayout`).
 
 ## Responsive Design Patterns
-- **Breakpoint System:** Uses Material UI's useMediaQuery hook for consistent breakpoints across the application
-  - Standard breakpoints: xs (<600px), sm (600-900px), md (900-1200px), lg (1200-1536px), xl (>1536px)
-  - Custom breakpoint for very small screens: `(max-width:360px)`
+*(Refer to: [Diagram 7: Responsive Design System](architectureDiagrams.md#7-responsive-design-system))*
+- **Breakpoint System:** Leverages Material UI's `useMediaQuery` hook for consistent breakpoints.
+  - Standard: xs (<600px), sm (600-900px), md (900-1200px), lg (1200-1536px), xl (>1536px).
+  - Custom: Extra small screens (`max-width:360px`).
 - **Dynamic Sizing Strategy:**
-  - Components set sizing values (width, padding, font size) conditionally based on screen size
-  - Uses responsive object syntax from Material UI (e.g., `p: { xs: 2, sm: 3, md: 4 }`)
-  - Calculates percentage-based widths for very small screens where needed
+  - Components adjust sizing (width, padding, font size) based on screen size using MUI's responsive object syntax.
+  - Percentage-based widths used for very small screens.
 - **Compact Mode Pattern:**
   - Components with a `compact` prop that enables a space-efficient version
   - Used primarily for UI controls (AgentToggle, ThemeToggle)
@@ -32,11 +35,10 @@
   - Elements maintain proper touch target sizes on small screens
 
 ## Loading State Patterns
+*(Refer to: [Diagram 8: Loading State System](architectureDiagrams.md#8-loading-state-system))*
 - **Visual Feedback Strategy:**
-  - Animated indicators with smooth fade transitions using Material UI's Fade component
-  - Contextual messages that change based on the current agent mode
-  - Secondary descriptive messages to provide additional context
-  - Disabled state for input elements during loading
+  - Animated indicators (Spinners) with smooth fade transitions (MUI Fade).
+  - Contextual messages varying by agent mode.
 - **Loading Component Structure:**
   - Primary indicator: Spinner with context-specific text in header area
   - Secondary indicator: Additional explanatory text below the input area
@@ -50,10 +52,10 @@
   - Maintains proper contrast for accessibility
 
 ## Auto-Scrolling Pattern
-- **Implementation Strategy:** 
-  - Uses React refs to access DOM elements for scrolling
-  - Employs useEffect hooks to trigger scrolling when messages change
-  - Implements MutationObserver to detect DOM changes during streaming
+*(Refer to: [Diagram 9: Auto-Scrolling System](architectureDiagrams.md#9-auto-scrolling-system))*
+- **Implementation Strategy:**
+  - React refs access DOM elements for scrolling control.
+  - `useEffect` triggers scrolling on message updates.
 - **Scroll Behavior Management:**
   - Differentiates between regular updates (smooth scrolling) and streaming (immediate scrolling)
   - Uses scrollIntoView with configurable behavior parameter
@@ -68,45 +70,48 @@
   - ChatPageLayout passes loading state from ChatContext
 
 ## Theme Integration
-- **CSS Variables:** Our application uses CSS variables for theming defined in theme files.
-- **MUI Theme:** We convert CSS variable values to actual color values for Material UI.
+*(Refer to: [Diagram 4: Theming System](architectureDiagrams.md#4-theming-system))*
+- **CSS Variables:** The application uses custom CSS variables defined in theme files (`src/themes/`).
+- **MUI Theme:** CSS variable values are dynamically converted to actual color values for Material UI's theme object.
 - **Integration Approach:**
-  - ThemeProvider component combines our theme context with MUI's ThemeProvider.
-  - We extract computed values of CSS variables at runtime to use in MUI theme.
-  - For components that need theme colors, we provide the actual color values rather than CSS variables.
-  - Lucide icons receive color values directly via props rather than through CSS.
+  - `ThemeProvider` (`src/providers/ThemeProvider.tsx`) combines the custom theme context with MUI's `ThemeProvider`.
+- **Markdown Rendering Pattern:**
+  - **Implementation:** Uses `micromark` with GFM extensions (`micromark-extension-gfm`) for rendering Markdown in messages.
+  - **Component:** A dedicated `MarkdownRenderer` atom handles the conversion from Markdown string to HTML.
+  - **Styling:** Rendered Markdown elements are styled according to the active theme (light/dark).
+  - **Integration:** `MessageBubble` molecule utilizes `MarkdownRenderer` to display message content.
+
+## Accessibility Patterns
+- **Focus:** Ensuring the application is usable by everyone, including those using assistive technologies. (Ongoing Improvement)
+- **Practices:**
+  - Semantic HTML where appropriate.
+  - ARIA attributes to enhance component roles and states.
+  - Keyboard navigation support.
+  - Sufficient color contrast adhering to WCAG guidelines (checked via Storybook and manual testing).
+  - Focus management during interactions.
 
 ## Key Technical Decisions
-- Gitflow workflow for version control.
-- Mock service for initial API simulation.
-- State management solution TBD (React Context or Zustand likely).
-- Styling approach: Tailwind CSS with Material UI, using the MUI theming system for customization.
-- Using Lucide.dev icons imported directly in components instead of a wrapper component.
-- Using Material UI's useMediaQuery hook for responsive breakpoints.
-- Implementing compact mode pattern for mobile optimization.
-- Using fade transitions for loading states to improve perceived performance.
+- **Version Control:** Gitflow workflow.
+- **API Simulation:** Mock services available for development and testing.
+- **State Management:** React Context API (`ChatProvider`, `ThemeProvider`, `ServiceProvider`). *(Refer to: [Diagram 3: State Management and Data Flow](architectureDiagrams.md#3-state-management-and-data-flow))*
+- **Styling:** Primarily Material UI with its theming system; Tailwind CSS utility classes used sparingly where needed.
+- **Icons:** Direct import of Lucide icons.
+- **Testing:** Storybook for visual/component testing; Unit tests (Jest/React Testing Library) for specific logic and responsive behavior.
 
-## Component Relationships (Planned)
-- **Pages** (e.g., Chat Page) will use **Templates** (e.g., `ChatPageLayout`).
-- **Templates** will arrange **Organisms** (e.g., `Header`, `ChatHistoryPanel`, `ChatInputArea`).
-- **Organisms** are composed of **Molecules** (e.g., `ChatHistoryPanel` uses `MessageBubble`, `ChatInputArea` uses `ChatInput`).
-- **Molecules** are built from **Atoms** (e.g., `ChatInput` uses MUI TextField and Button) and Lucide icons.
+## Component Relationships
+*(Refer to: [Diagram 1: Component Architecture](architectureDiagrams.md#1-component-architecture-atomic-design))*
+- Follows the Atomic Design hierarchy: Pages use Templates, Templates arrange Organisms, Organisms compose Molecules, Molecules are built from Atoms.
 
 ## Service Architecture
-- **Service Factory Pattern**: `ServiceFactory` class creates appropriate service implementations based on environment variables
-  - Inspects environment variables to determine which implementation to create
-  - Creates chat, multi-agent chat, and history services with appropriate implementations
-  - Provides a single point of configuration for all service creation
+*(Refer to: [Diagram 2: Application Architecture](architectureDiagrams.md#2-application-architecture))*
+- **Service Factory Pattern**: `ServiceFactory` class (`src/services/ServiceFactory.ts`) instantiates appropriate service implementations based on environment variables. *(Refer to: [Diagram 5: Environment Configuration](architectureDiagrams.md#5-environment-configuration))*
+  - Determines implementations for chat, multi-agent chat, and history services.
+  - Centralizes service configuration.
 
-- **API Interface Layer**: Clear interfaces for all API communications
-  - `IChatService`: Interface defining standard chat-related service methods
-  - `IMultiAgentChatService`: Interface defining multi-agent chat-related service methods
-  - `IHistoryService`: Interface for chat history operations, with mode-aware methods
-    - `getHistories(mode: 'standard' | 'multiAgent')`: Fetches histories for specific mode
-    - `saveHistory(history)`: Saves history with mode information
-    - `deleteHistory(id, mode)`: Deletes history for specific mode
-    - `clearHistories(mode)`: Clears all histories for a specific mode
-
+- **API Interface Layer**: Defined in `src/interfaces/`.
+  - `IChatService`: Standard chat methods.
+  - `IMultiAgentChatService`: Multi-agent chat methods.
+  - `IHistoryService`: Mode-aware chat history operations.
 - **Implementation Layer**:
   - `MockChatService`: Implementation for standard chat using simulated responses
   - `MockMultiAgentChatService`: Implementation for multi-agent chat using simulated responses
@@ -122,66 +127,38 @@
     - Processes API-specific response formats into application Message format
     - Includes proper error handling and request abortion capabilities
 
-- **Service Registration**: Services registered and accessed through a service factory pattern
-  - Factory determines which implementation to use based on environment variables
-  - Each service type has its own mode setting for individual control
-  - History service is created based on NEXT_PUBLIC_CHAT_HISTORY_MODE environment variable
-
 ## State Management
-- **Current Mode Management**: Application tracks the current chat mode
-  - AgentToggle component controls the current mode 
-  - Mode changes trigger reloading of appropriate chat histories
-  - Mode is stored in React state (no persistence needed across page reloads)
-
-- **In-Session Persistence**: Chat history and state management during application runtime
-  - Uses React context for sharing state across components
-  - Maintains current chat mode ('standard' or 'multiAgent') in state
-  - Loads appropriate histories when mode changes
-  - No persistence between application restarts (intentional design)
-
-- **Mode-Specific History**: Chat histories are separated by mode
-  - Standard and multi-agent histories are stored separately
-  - UI displays only histories relevant to current mode
-  - History operations (create, read, delete) respect current mode
-
-- **Environment Configuration**: Environment variables control API endpoints and modes
-  - Individual mode settings for each service type (standard chat, multi-agent chat, history)
-  - Local development can mix mock and real implementations as needed
-  - Production builds can target real endpoints through environment configuration 
+*(Refer to: [Diagram 3: State Management and Data Flow](architectureDiagrams.md#3-state-management-and-data-flow))*
+- **Context Providers:** Uses React Context (`ChatProvider`, `ThemeProvider`, `ServiceProvider`) located in `src/providers/`.
+- **Current Mode Management**: `ChatContext` tracks the current mode (`standard` or `multiAgent`).
+  - `AgentToggle` component controls the mode.
+  - Mode changes trigger re-fetching of relevant chat histories.
+- **In-Session Persistence**: State managed by Context providers during application runtime. No persistence between restarts.
 
 ## API Response Processing
+*(Refer to: [Diagram 6: Response Processing Flow](architectureDiagrams.md#6-response-processing-flow))*
 - **Semantic Kernel Focus:**
-  - The primary recommendation is for APIs using Semantic Kernel (C#, Java, Python) to return the native `ChatMessageContent` object serialized as JSON.
-  - The frontend `ApiChatService` is designed to parse this richer structure, extracting necessary fields like `Role`, `AuthorName`/`name`, and `Content`/`Items`.
+  - Recommended: Backends return native Semantic Kernel `ChatMessageContent` objects (serialized JSON).
+  - Frontend `ApiChatService` parses this structure (Role, AuthorName/name, Content/Items).
 - **Minimal Format Alternative:**
-  - For APIs *not* using Semantic Kernel, a minimal JSON structure is defined in `docs/api/response-formats.md`.
-  - This minimal format requires `Role: { Label: "Assistant" }` and text content (either via `Items[].Text` or a direct `Content` property).
-  - `AuthorName` is required only for multi-agent responses in the minimal format.
+  - For non-SK backends, a minimal format is defined (`docs/api/response-formats.md`).
+  - Requires specific fields like `Role`, `Content`/`Items`. `AuthorName` needed for multi-agent minimal format.
 - **Frontend Parsing:**
-  - `ApiChatService` handles both the full `ChatMessageContent` structure and the minimal format.
-  - It prioritizes extracting content from a direct `Content` property, falling back to the `Items` array.
-  - It checks for both `AuthorName` (C#) and `name` (Python) for agent identification.
-
-- **Error Handling**:
-  - API calls include proper error handling and user feedback
-  - Supports request abortion for cancelling in-progress requests
-  - Maintains user message in case of API failure to allow retries
-  - Uses AbortController for clean cancellation of in-flight requests 
+  - `ApiChatService` (`src/services/ApiChatService.ts`) handles both formats.
 
 ## OpenTelemetry Observability Patterns
-
-- **Configuration Approach**: Uses Next.js instrumentation hook to initialize OpenTelemetry only on the server side
-  - Initializes OpenTelemetry directly in the instrumentation.ts file
-  - Only imports OpenTelemetry SDK in a Node.js environment to avoid browser compatibility issues
-  - Uses environment variables for flexible configuration
+*(Refer to: [Diagram 2: Application Architecture](architectureDiagrams.md#2-application-architecture))*
+- **Configuration Approach**: Uses Next.js instrumentation hook (`instrumentation.ts`) for server-side initialization.
+  - Avoids loading SDK in the browser.
+  - Configured via environment variables. *(Refer to: [Diagram 5: Environment Configuration](architectureDiagrams.md#5-environment-configuration))*
 
 - **Instrumentation Strategy**:
-  - **Auto-Instrumentation**: Leverages OpenTelemetry's auto-instrumentations for HTTP
-  - **Server-Side Focus**: Implemented for Node.js server-side components only
-  - **Simplified Implementation**: Direct integration with Azure Monitor without intermediate layers
+  - **Auto-Instrumentation**: OpenTelemetry's auto-instrumentations for HTTP on the server.
+  - **Server-Side Focus**: Node.js server-side components only.
+  - **Backend Integration**: Direct integration with Azure Monitor. *(Refer to: [Diagram 2: Application Architecture](architectureDiagrams.md#2-application-architecture) and [Diagram 10: Deployment Architecture](architectureDiagrams.md#10-deployment-architecture) for context)*
 
 - **Telemetry Data Collection**:
-  - **Tracing**: Captures distributed traces for request processing across the application
+  - **Tracing**: Distributed traces for server-side request processing.
   - **Resource Attributes**: Includes service name, version, and environment information for proper context
   - **Azure Monitor Integration**: Sends telemetry directly to Azure Application Insights
 

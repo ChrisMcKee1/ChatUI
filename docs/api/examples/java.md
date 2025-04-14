@@ -1,12 +1,8 @@
-# Java API Implementation (Semantic Kernel Focused)
+# Java API Implementation for ChatUI
 
-This example demonstrates how to implement API endpoints for Chat UI using Spring Boot and **Microsoft Semantic Kernel for Java**.
+This example demonstrates how to implement API endpoints for Chat UI using Spring Boot. It shows how to produce the JSON structure expected by the frontend's `ApiChatService.ts`.
 
-**Recommended Approach:** Directly return the native `com.microsoft.semantickernel.services.chatcompletion.ChatMessageContent<?>` object (or a `List` of them) serialized as JSON. The frontend (`ApiChatService.ts`) is designed to parse this.
-
-**Alternative (Non-SK):** If not using Semantic Kernel, see the [Minimal JSON Format definition](../response-formats.md#alternative-approach-minimal-json-format-non-semantic-kernel) and construct that structure manually (e.g., using `Map<String, Object>`).
-
-The examples below focus on the recommended Semantic Kernel approach.
+**Key Frontend Expectation:** The frontend service (`ApiChatService.ts`) parses specific fields from the JSON response array. Ensure your API provides these fields correctly.
 
 ## Request Format
 
@@ -22,26 +18,48 @@ All chat endpoints expect the following JSON request body:
 }
 ```
 
-## Semantic Kernel `ChatMessageContent` Structure (Conceptual)
+## Response Format Expected by Frontend
 
-The API response should be the JSON serialization of one or more `ChatMessageContent` objects. Key fields the frontend expects:
+The API should return a JSON array where each object represents a message. Key fields the frontend (`ApiChatService.ts`) looks for:
 
-*   `AuthorRole` (e.g., `AuthorRole.ASSISTANT`)
-*   `Content` (string, primary text)
-*   `AuthorName` (string, required for multi-agent)
+*   `content`: (String) **Required.** The main text content of the message.
+*   `authorRole`: (String) **Required.** The role of the message author (e.g., "ASSISTANT").
+*   `authorName`: (String) **Required for Multi-Agent.** The name of the specific agent. This field is *crucial* for differentiating messages in multi-agent mode. It can be at the root level of the message object or nested within `metadata`.
+*   `metadata`: (Object) Optional. Can contain any additional information (e.g., usage, IDs, timestamps). If `authorName` is nested here, the frontend will attempt to find it.
 
-## Implementation Example (Spring Boot with Semantic Kernel)
+**Example Response Object:**
 
-This example assumes you have a Semantic Kernel `Kernel` and a `ChatCompletionService` configured.
+```json
+  {
+    "innerContent": null, // Not used by frontend
+    "metadata": { 
+      // Can contain arbitrary data
+      "id": "chatcmpl-unique-id",
+      "usage": { /* ... */ },
+      "authorName": "ResearchAgent" // Possible location for agent name
+    },
+    "authorRole": "ASSISTANT", // Frontend uses this
+    "content": "Here is the information you requested.", // Frontend uses this
+    "authorName": "ResearchAgent", // Alternative location for agent name
+    "items": null, // Not used by frontend
+    "encoding": "UTF-8", // Not used by frontend
+    "contentType": "TEXT" // Not used by frontend
+  }
+```
+
+## Implementation Example (Spring Boot)
+
+This example uses simple Maps to construct the required JSON structure. You can adapt this using DTOs or your preferred serialization method.
 
 ### Imports
 
 ```java
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.microsoft.semantickernel.Kernel; // Assuming Kernel is available
-import com.microsoft.semantickernel.services.chatcompletion.*; // Core SK chat types
-import com.microsoft.semantickernel.services.chatcompletion.message.*; // For specific content types
+// --- Remove Semantic Kernel specific imports if not used ---
+// import com.microsoft.semantickernel.Kernel;
+// import com.microsoft.semantickernel.services.chatcompletion.*; 
+// import com.microsoft.semantickernel.services.chatcompletion.message.*;
 
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -56,7 +74,7 @@ import java.util.HashMap;
 import java.util.UUID;
 ```
 
-### Request and Message Classes
+### Request and Message Classes (Input DTOs)
 
 ```java
 // --- Request Body Classes (Minimal) ---
@@ -69,7 +87,7 @@ class MessageRequest {
     public void setMessages(List<MessageDto> messages) { this.messages = messages; }
 }
 
-// Renamed to avoid conflict with SK's internal Message class if used directly
+// Renamed to avoid conflict with internal/library Message classes
 class MessageDto {
     private String role;
     private String content;
@@ -90,13 +108,16 @@ class MessageDto {
 public class ChatController {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final ChatCompletionService chatCompletionService; // Injected SK service
-    private final Kernel kernel; // Injected SK kernel (needed for plugins/planning)
+    // --- Remove SK services if not used ---
+    // private final ChatCompletionService chatCompletionService; 
+    // private final Kernel kernel;
 
-    public ChatController(ChatCompletionService chatCompletionService, Kernel kernel) {
-        this.chatCompletionService = chatCompletionService;
-        this.kernel = kernel;
-    }
+    // public ChatController(ChatCompletionService chatCompletionService, Kernel kernel) {
+    //     this.chatCompletionService = chatCompletionService;
+    //     this.kernel = kernel;
+    // }
+    // Basic constructor if not using SK
+     public ChatController() {}
 ```
 
 ### Standard Chat Endpoint
@@ -104,29 +125,26 @@ public class ChatController {
 ```java
     // Standard chat endpoint (/api/chat)
     @PostMapping(path = "/chat", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<ChatMessageContent<?>>> standardChatResponse(@RequestBody MessageRequest request) {
-        ChatHistory chatHistory = new ChatHistory();
-        // Populate chatHistory from request.messages
-        request.getMessages().forEach(m -> {
-            AuthorRole role = AuthorRole.valueOf(m.getRole().toUpperCase());
-            chatHistory.addMessage(ChatMessageTextContent.builder().withContent(m.getContent()).withAuthorRole(role).build());
-        });
+    public ResponseEntity<List<Map<String, Object>>> standardChatResponse(@RequestBody MessageRequest request) {
+        // 1. Process the incoming messages (e.g., call your LLM/logic)
+        // String userQuery = getLastUserMessage(request);
+        String assistantResponseContent = "Hello! This is a standard response."; // Replace with actual AI response
 
-        // *** Semantic Kernel Integration Point ***
-        // Use the injected ChatCompletionService
-        // This might use kernel.invokePromptAsync if templating/plugins are needed
-        // For simplicity, calling the service directly:
-        List<ChatMessageContent<?>> results = chatCompletionService.getChatMessageContentsAsync(chatHistory, kernel, null).block(); 
+        // 2. Construct the response object matching the frontend expectation
+        Map<String, Object> responseMessage = new HashMap<>();
+        responseMessage.put("authorRole", "ASSISTANT"); // Required by frontend
+        responseMessage.put("content", assistantResponseContent); // Required by frontend
         
-        // Check if we got a result (usually one for standard chat)
-        if (results == null || results.isEmpty()) {
-            // Handle error: No response from AI
-            return ResponseEntity.internalServerError().build(); 
-        }
-
-        // *** Return the SK object(s) directly ***
-        // Usually results contains one ChatMessageContent for standard chat
-        return ResponseEntity.ok(results); 
+        // Add optional metadata if needed
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("id", "some-unique-id-" + UUID.randomUUID());
+        metadata.put("timestamp", java.time.Instant.now().toString());
+        responseMessage.put("metadata", metadata);
+        
+        // Standard chat expects a list with a single message
+        List<Map<String, Object>> responseList = List.of(responseMessage);
+        
+        return ResponseEntity.ok(responseList);
     }
 ```
 
@@ -136,39 +154,35 @@ public class ChatController {
     // Streaming endpoint for multi-agent chat (/api/multi-agent-chat/stream)
     @PostMapping(path = "/multi-agent-chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> streamMultiAgentResponse(@RequestBody MessageRequest request) {
-        ChatHistory chatHistory = new ChatHistory(); // Populate as in standard chat
-         request.getMessages().forEach(m -> {
-            AuthorRole role = AuthorRole.valueOf(m.getRole().toUpperCase());
-            chatHistory.addMessage(ChatMessageTextContent.builder().withContent(m.getContent()).withAuthorRole(role).build());
-        });
-
-        // *** Semantic Kernel Integration Point ***
-        // Simulate multiple agent responses for the example
-        // In a real app, this would involve invoking multiple agents/plugins via the kernel
-        // and handling their streaming results.
-
-        List<String> agents = List.of("Research", "Code", "Planning");
-        String tempConversationId = UUID.randomUUID().toString(); // Example ID
+        // 1. Process request, potentially involving multiple agents/steps
+        List<String> agents = List.of("Research", "Code", "Review");
+        String tempConversationId = UUID.randomUUID().toString();
 
         return Flux.fromIterable(agents)
-            .delayElements(Duration.ofSeconds(1)) // Simulate agent work
-            .map(agent -> {
-                // Simulate getting a ChatMessageContent result for each agent
-                ChatMessageContent<?> agentResponse = ChatMessageTextContent.builder()
-                    .withContent("Streamed response from the " + agent + " agent.")
-                    .withAuthorRole(AuthorRole.ASSISTANT)
-                    .withAuthorName(agent) // Set AuthorName for multi-agent
-                    .withMetadata(Map.of("ConversationId", tempConversationId)) // Example metadata
-                    .build();
+            .delayElements(Duration.ofSeconds(1)) // Simulate work
+            .map(agentName -> {
+                // 2. For each agent response, construct the message object
+                String agentContent = "Streamed response from the " + agentName + " agent.";
+                
+                Map<String, Object> responseMessage = new HashMap<>();
+                responseMessage.put("authorRole", "ASSISTANT"); // Required
+                responseMessage.put("content", agentContent); // Required
+                responseMessage.put("authorName", agentName); // Required for multi-agent
+
+                // Optional: Add metadata
+                Map<String, Object> metadata = new HashMap<>();
+                metadata.put("conversationId", tempConversationId);
+                // You could also place authorName inside metadata if preferred:
+                // metadata.put("authorName", agentName);
+                responseMessage.put("metadata", metadata);
 
                 try {
-                    // *** Serialize and stream the SK object directly ***
-                    // Configure ObjectMapper for potential SK specific types if needed
-                    String jsonResponse = objectMapper.writeValueAsString(agentResponse);
+                    // 3. Serialize and format as Server-Sent Event (SSE)
+                    String jsonResponse = objectMapper.writeValueAsString(responseMessage);
                     return "data: " + jsonResponse + "\n\n";
                 } catch (JsonProcessingException e) {
-                    System.err.println("Error serializing SK response for agent " + agent + ": " + e.getMessage());
-                    return ""; // Send empty event or handle differently
+                    System.err.println("Error serializing response for agent " + agentName + ": " + e.getMessage());
+                    return ""; // Skip event on error
                 }
             })
             .filter(sseEvent -> !sseEvent.isEmpty());
@@ -180,48 +194,46 @@ public class ChatController {
 ```java
     // Batch endpoint for multi-agent chat (/api/multi-agent-chat/batch)
     @PostMapping(path = "/multi-agent-chat/batch", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<ChatMessageContent<?>>> batchMultiAgentResponse(@RequestBody MessageRequest request) {
-         ChatHistory chatHistory = new ChatHistory(); // Populate as in standard chat
-         request.getMessages().forEach(m -> {
-            AuthorRole role = AuthorRole.valueOf(m.getRole().toUpperCase());
-            chatHistory.addMessage(ChatMessageTextContent.builder().withContent(m.getContent()).withAuthorRole(role).build());
-        });
+    public ResponseEntity<List<Map<String, Object>>> batchMultiAgentResponse(@RequestBody MessageRequest request) {
+        // 1. Process request, get responses from all agents
+        List<String> agents = List.of("Research", "Code", "Review");
+        List<Map<String, Object>> responseList = new ArrayList<>();
+        String tempConversationId = UUID.randomUUID().toString();
 
-        // *** Semantic Kernel Integration Point ***
-        // Simulate getting results from multiple agents/kernel invocations
-        List<String> agents = List.of("Research", "Code", "Planning");
-        List<ChatMessageContent<?>> responses = new ArrayList<>();
-        String tempConversationId = UUID.randomUUID().toString(); // Example ID
+        for (String agentName : agents) {
+            // 2. Construct message object for each agent response
+            String agentContent = "Batch response from the " + agentName + " agent.";
+            
+            Map<String, Object> responseMessage = new HashMap<>();
+            responseMessage.put("authorRole", "ASSISTANT"); // Required
+            responseMessage.put("content", agentContent); // Required
+            responseMessage.put("authorName", agentName); // Required for multi-agent
 
-        for (String agent : agents) {
-             // Simulate getting a ChatMessageContent result for each agent
-             ChatMessageContent<?> agentResponse = ChatMessageTextContent.builder()
-                .withContent("Batch response from the " + agent + " agent.")
-                .withAuthorRole(AuthorRole.ASSISTANT)
-                .withAuthorName(agent) // Set AuthorName for multi-agent
-                .withMetadata(Map.of("ConversationId", tempConversationId)) // Example metadata
-                .build();
-            responses.add(agentResponse);
+            // Optional: Add metadata
+            Map<String, Object> metadata = new HashMap<>();
+            metadata.put("conversationId", tempConversationId);
+            responseMessage.put("metadata", metadata);
+
+            responseList.add(responseMessage);
         }
-
-        // *** Return the List of SK objects directly ***
-        return ResponseEntity.ok(responses);
+        
+        // 3. Return the list of messages
+        return ResponseEntity.ok(responseList);
     }
 ```
 
-### Helper Methods
+### Helper Methods (Example)
 
 ```java
-    // --- Helper Methods ---
+    // --- Helper Methods (Example) ---
     private String getLastUserMessage(MessageRequest request) {
         if (request.getMessages() != null && !request.getMessages().isEmpty()) {
-            for (int i = request.getMessages().size() - 1; i >= 0; i--) {
-                Message msg = request.getMessages().get(i);
-                if ("user".equalsIgnoreCase(msg.getRole())) {
-                    return msg.getContent();
-                }
-            }
-            return request.getMessages().get(request.getMessages().size() - 1).getContent();
+            // Find the last message with role 'user'
+             return request.getMessages().stream()
+                .filter(m -> "user".equalsIgnoreCase(m.getRole()))
+                .map(MessageDto::getContent)
+                .reduce((first, second) -> second) // Get the last one
+                .orElse(""); // Or return empty if no user message found
         }
         return "";
     }
@@ -230,11 +242,10 @@ public class ChatController {
 
 ## Key Points
 
-1.  **Return Native `ChatMessageContent`**: The recommended approach is to return the `com.microsoft.semantickernel.services.chatcompletion.ChatMessageContent<?>` object (or `List<>`) directly serialized as JSON. The frontend handles parsing.
-2.  **Simplified Backend Logic**: No need to manually create specific DTOs or Maps for the response structure if using Semantic Kernel; leverage the native SK types.
-3.  **Frontend Responsibility**: The frontend (`ApiChatService.ts`) is responsible for extracting the needed fields (`AuthorRole`, `AuthorName`, `Content`) from the potentially richer `ChatMessageContent` structure.
-4.  **`AuthorName`**: Ensure `AuthorName` is set in `ChatMessageContent` (e.g., using `ChatMessageTextContent.builder().withAuthorName(...)`) for multi-agent scenarios.
-5.  **Streaming**: For streaming, serialize and send each `ChatMessageContent` object as an individual SSE `data:` event.
-6.  **Non-SK Alternative**: If not using Semantic Kernel, implement the [minimal JSON format](../response-formats.md#alternative-approach-minimal-json-format-non-semantic-kernel) using `Map<String, Object>` or custom DTOs.
+1.  **Match Frontend Needs**: Focus on providing `content`, `authorRole`, and `authorName` (for multi-agent) in the JSON response objects.
+2.  **`authorName` Location**: Decide whether `authorName` will be at the root of the message object or nested within `metadata`. Ensure consistency.
+3.  **Flexibility**: The frontend doesn't strictly require the exact schema shown in the example, only the key fields mentioned above. Other fields (`innerContent`, `items`, `encoding`, etc.) are ignored by the current `ApiChatService`.
+4.  **Serialization**: Use standard Java JSON libraries (like Jackson, shown here with `ObjectMapper` and `Map`) or define specific DTO classes for your responses.
+5.  **Streaming**: For the `/stream` endpoint, ensure each message object is correctly serialized to JSON and sent as an SSE `data:` event, followed by `\n\n`.
 
-This Semantic Kernel-centric approach simplifies the Java backend implementation significantly.
+This approach ensures compatibility with the Chat UI frontend while giving you flexibility in your Java backend implementation.

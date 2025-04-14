@@ -30,33 +30,24 @@ export class TimeoutError extends Error {
   }
 }
 
-// --- Interface for Potential API Response (Inspired by ChatMessageContent) ---
-
-// Represents potential content items within the response
-interface ApiResponseContentItem {
-  $type?: string; // Type identifier (e.g., "TextContent")
-  Text?: string;  // Text content (C# uses 'Text')
-  // Add other potential item types if needed (e.g., ImageContent)
-}
-
-// Represents the structure of a single object within the API response array
-// Combines fields from C#, Java, Python ChatMessageContent relevant to the UI
+// --- Interface for Actual API Response ---
 interface ApiResponseContent {
-  // Role Information
-  Role: { Label: string } | string; // Can be object (C# style) or string (simpler)
+  // Primary content field
+  content?: string; 
+  
+  // Role information (e.g., "ASSISTANT", "USER")
+  authorRole?: string; 
 
-  // Author Information (optional, required for multi-agent)
-  AuthorName?: string; // C# style
-  name?: string;       // Python style
+  // Author Name (Required for multi-agent, location may vary)
+  authorName?: string; // Check root level first
 
-  // Content Information (prioritize Content, fallback to Items)
-  Content?: string;    // C# convenience property
-  Items?: ApiResponseContentItem[]; // Standard container for content items
+  // Metadata object (Optional, may contain authorName or other data)
+  metadata?: { 
+    authorName?: string; // Check metadata second
+    [key: string]: any; // Allow other metadata fields
+  };
 
-  // Optional API-specific fields
-  ConversationId?: string; 
-
-  // Allow other potential fields from the full ChatMessageContent
+  // Allow other potential top-level fields from the API
   [key: string]: any; 
 }
 
@@ -289,11 +280,11 @@ export class ApiChatService implements IChatService {
               const apiResponse: ApiResponseContent = JSON.parse(dataString);
               const message = this.convertToMessage(apiResponse);
 
-              // Validate required fields for multi-agent (AuthorName/name and content)
+              // Validate required fields for multi-agent (content and extracted agentName)
               if (message.content && message.agentName) { 
                 messages.push(message);
               } else {
-                console.warn('Skipping invalid SSE data object (missing content or author):', apiResponse);
+                console.warn('Skipping invalid SSE data object (missing content or authorName):', apiResponse);
               }
             } catch (e) {
               console.error('Error parsing SSE data JSON:', e, dataString);
@@ -334,59 +325,45 @@ export class ApiChatService implements IChatService {
     return data
       .map(apiResponse => this.convertToMessage(apiResponse)) // Convert first
       .filter(message => {
-        // Validate required fields for multi-agent (AuthorName/name and content)
+        // Validate required fields for multi-agent (content and extracted agentName)
         const isValid = message.content && message.agentName;
-        if(!isValid) console.warn('Skipping invalid object in batch response (missing content or author):', message); // Log the converted message for easier debug
+        // Log the *converted* message if invalid for easier debugging
+        if(!isValid) console.warn('Skipping invalid object in batch response (missing content or authorName):', message);
         return isValid;
       });
   }
   
   /**
-   * Converts a potential API response object (inspired by ChatMessageContent) 
-   * into a UI Message object, extracting the essential fields.
+   * Converts an actual API response object into a UI Message object,
+   * extracting the essential fields based on the current schema.
    */
   private convertToMessage(apiResponse: ApiResponseContent): Message {
      // --- Extract Role ---
-     // Role should always be 'assistant' from the API perspective for UI display
-     const role: Role = 'assistant'; 
+     // Use authorRole, default to 'assistant' if missing/invalid
+     let role: Role = 'assistant'; // Default
+     if (apiResponse.authorRole?.toUpperCase() === 'USER') {
+       role = 'user';
+     } else if (apiResponse.authorRole?.toUpperCase() === 'ASSISTANT') {
+       role = 'assistant';
+     } // Add other roles like 'system' if needed
 
-     // --- Extract Author Name ---
-     // Check C# 'AuthorName' first, then Python 'name'
-     const agentName = apiResponse.AuthorName || apiResponse.name; 
+     // --- Extract Author Name (for Multi-Agent) ---
+     // Check root-level `authorName` first, then `metadata.authorName`
+     const agentName = apiResponse.authorName || apiResponse.metadata?.authorName;
 
      // --- Extract Content ---
-     let content = '';
-     // 1. Prioritize direct 'Content' property (common in C# ChatMessageContent)
-     if (typeof apiResponse.Content === 'string' && apiResponse.Content.trim() !== '') {
-       content = apiResponse.Content;
-     } 
-     // 2. Fallback to finding the first text item in the 'Items' array
-     else if (Array.isArray(apiResponse.Items)) {
-       // Find the first item that has a 'Text' property with a non-empty string value
-       const textItem = apiResponse.Items.find(
-         item => item && typeof item.Text === 'string' && item.Text.trim() !== ''
-       );
-       if (textItem && textItem.Text) {
-         content = textItem.Text;
-       } else {
-         // Log if Items exist but no suitable TextContent found
-         console.warn("No suitable text content found in API response items:", apiResponse.Items);
-       }
-     } else {
-       // Log if neither Content nor Items could provide text
-       console.warn("Could not extract text content from API response:", apiResponse);
+     // Use the top-level `content` field directly
+     const content = apiResponse.content || ''; // Default to empty string if missing
+     if (!apiResponse.content) {
+        console.warn("Missing 'content' field in API response:", apiResponse);
      }
-
-     // --- Extract Conversation ID (Optional) ---
-     // const conversationId = apiResponse.ConversationId; // Can be stored if needed elsewhere
 
      return {
        id: uuidv4(), // Generate ID client-side
        content: content.trim(), // Ensure content is trimmed
        role: role, 
-       agentName: agentName, // Use extracted AuthorName/name if present
+       agentName: agentName, // Use extracted agentName if present
        timestamp: this.formatTimestamp(), // Generate timestamp client-side
-       // conversationId: conversationId 
      };
    }
   

@@ -7,12 +7,18 @@
     - ✅ Updated `docs/api/examples/csharp.md` for native SK returns.
     - ✅ Updated `docs/api/examples/java.md` for native SK returns.
     - ✅ Updated `docs/api/examples/python.md` for native SK returns.
-- **Final Documentation Cleanup & Standardization** ✨: Update diagrams and other docs based on API changes.
+- **Final Documentation Cleanup & Standardization** ✨:
+  - ✅ Update diagrams and other docs based on API changes.
+  - ✅ **Populate `docs/architecture/`:** Recreate relevant diagrams from Memory Bank into standalone files in the main documentation folder.
 - **Add Unit Tests for responsive behavior** (Medium Priority) 🧪
 - **Document Component API** (Medium Priority) 📝
 - **Implement additional accessibility improvements** (Medium Priority) ♿️
 
 ## Recent Activities
+- **Completed Architecture Documentation in `docs/architecture/`:** 🏗️
+  - Recreated 11 key architecture diagrams from the Memory Bank into standalone files.
+  - Added `docs/architecture/README.md` linking to the new diagrams.
+  - Updated diagram reference in `memory-bank/systemPatterns.md` for OpenTelemetry.
 - **Updated API Documentation & Examples for Semantic Kernel Focus:**
     - Refactored `ApiChatService.ts` to handle richer `ChatMessageContent` structure directly.
     - Updated `response-formats.md` to recommend returning native SK `ChatMessageContent` objects and provide minimal format as alternative.
