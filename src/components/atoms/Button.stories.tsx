@@ -1,17 +1,26 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import Button from './Button';
-import { Send, Save, ArrowRight } from 'lucide-react';
+import { Send, Save, ArrowRight, Loader2 } from 'lucide-react';
+import { ThemeProvider } from '../providers/ThemeProvider';
+import React from 'react';
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
 const meta = {
   title: 'Atoms/Button', // Group under 'Atoms' in Storybook hierarchy
   component: Button,
+  decorators: [
+    (Story) => (
+      <ThemeProvider>
+        <Story />
+      </ThemeProvider>
+    ),
+  ],
   parameters: {
     // Optional parameter to center the component in the Canvas.
     layout: 'centered',
     docs: {
       description: {
-        component: 'Button component using Material UI with custom theming support. Supports primary, secondary, and outlined variants.',
+        component: 'Button component using MUI\'s LoadingButton with custom styling and theme support.',
       },
     },
   },
@@ -21,94 +30,108 @@ const meta = {
   // More on argTypes: https://storybook.js.org/docs/api/argtypes
   argTypes: {
     variant: {
-      control: { type: 'select' }, // Use select control for variants
-      options: ['primary', 'secondary', 'outlined'],
-      description: 'Button variant - primary (pink), secondary (blue), or outlined',
+      control: { type: 'select' },
+      options: ['contained', 'outlined', 'text'],
+      description: 'Button variant',
+    },
+    color: {
+      control: { type: 'select' },
+      options: ['primary', 'secondary', 'info', 'warning', 'error', 'success', 'inherit'],
+      description: 'Button color based on theme palette',
     },
     size: {
       control: { type: 'select' },
-      options: ['sm', 'md', 'lg'],
-      description: 'Button size - small, medium, or large',
+      options: ['small', 'medium', 'large'],
+      description: 'Button size',
     },
     children: {
-      control: 'text', // Allow editing button text
-      description: 'Button content',
-    },
-    onClick: { 
-      action: 'clicked',
-      description: 'Function to call when button is clicked',
-    },
-    disabled: {
-      control: 'boolean',
-      description: 'Disable the button',
-    },
-    startIcon: {
-      description: 'Icon to display at the start of the button',
-    },
-    endIcon: {
-      description: 'Icon to display at the end of the button',
-    },
-    fullWidth: {
-      control: 'boolean',
-      description: 'Make the button take the full width of its container',
-    },
-    className: {
       control: 'text',
-      description: 'Additional CSS class names',
-    }
+      description: 'Button content (node or text)',
+    },
+    onClick: { action: 'clicked', description: 'Click handler' },
+    disabled: { control: 'boolean', description: 'Disable the button' },
+    loading: { control: 'boolean', description: 'Show loading indicator' },
+    startIcon: { control: 'object', description: 'Icon at the start' },
+    endIcon: { control: 'object', description: 'Icon at the end' },
+    fullWidth: { control: 'boolean', description: 'Span full width' },
+    className: { control: 'text', description: 'Additional CSS classes' },
+    sx: { control: 'object', description: 'MUI sx prop for style overrides' },
   },
 } satisfies Meta<typeof Button>;
 
 export default meta;
-type Story = StoryObj<typeof Button>;
+type Story = StoryObj<typeof meta>;
 
 // More on writing stories with args: https://storybook.js.org/docs/writing-stories/args
 
 // Primary Button Story
 export const Primary: Story = {
   args: {
-    variant: 'primary',
-    children: 'Primary Button',
+    variant: 'contained',
+    color: 'primary',
+    size: 'medium',
+    children: 'Button',
+    disabled: false,
+    loading: false,
+    fullWidth: false,
   },
 };
 
 // Secondary Button Story
-export const Secondary: Story = {
+export const SecondaryColor: Story = {
   args: {
-    variant: 'secondary',
-    children: 'Secondary Button',
+    ...Primary.args,
+    color: 'secondary',
+    children: 'Secondary Color',
+  },
+};
+
+export const SuccessColor: Story = {
+  args: {
+    ...Primary.args,
+    color: 'success',
+    children: 'Success Color',
+  },
+};
+
+export const ErrorColor: Story = {
+  args: {
+    ...Primary.args,
+    color: 'error',
+    children: 'Error Color',
   },
 };
 
 // Outlined Button Story
 export const Outlined: Story = {
   args: {
+    ...Primary.args,
     variant: 'outlined',
     children: 'Outlined Button',
+  },
+};
+
+export const Text: Story = {
+  args: {
+    ...Primary.args,
+    variant: 'text',
+    children: 'Text Button',
   },
 };
 
 // Button Size Variants
 export const Small: Story = {
   args: {
-    variant: 'primary',
-    size: 'sm',
+    ...Primary.args,
+    size: 'small',
     children: 'Small Button',
-  },
-};
-
-export const Medium: Story = {
-  args: {
-    variant: 'primary',
-    size: 'md',
-    children: 'Medium Button',
   },
 };
 
 export const Large: Story = {
   args: {
-    variant: 'primary',
-    size: 'lg',
+    ...Primary.args,
+    size: 'large',
     children: 'Large Button',
   },
 };
@@ -116,51 +139,60 @@ export const Large: Story = {
 // State Variants
 export const Disabled: Story = {
   args: {
-    variant: 'primary',
+    ...Primary.args,
     children: 'Disabled Button',
     disabled: true,
+  },
+};
+
+export const Loading: Story = {
+  args: {
+    ...Primary.args,
+    children: 'Loading...',
+    loading: true,
   },
 };
 
 // Button with Icons
 export const WithStartIcon: Story = {
   args: {
-    variant: 'primary',
-    children: 'Send Message',
+    ...Primary.args,
+    children: 'Send',
     startIcon: <Send size={16} />,
   },
 };
 
 export const WithEndIcon: Story = {
   args: {
-    variant: 'secondary',
-    children: 'Next Step',
+    ...Primary.args,
+    color: 'secondary',
+    children: 'Next',
     endIcon: <ArrowRight size={16} />,
   },
 };
 
-export const IconOnly: Story = {
+export const LoadingWithIcon: Story = {
   args: {
-    variant: 'primary',
-    children: <Save size={20} />,
-    size: 'sm',
+    ...Primary.args,
+    children: 'Saving',
+    loading: true,
+    loadingPosition: 'start',
+    startIcon: <Save size={16} />,
   },
 };
 
 // Responsive Example
-export const FullWidth: Story = {
+export const FullWidthResponsive: Story = {
   args: {
-    variant: 'primary',
-    children: 'Full Width Button',
+    ...Primary.args,
+    children: 'Full Width (Resize Viewport)',
     fullWidth: true,
   },
   parameters: {
-    viewport: {
-      defaultViewport: 'mobile1',
-    },
+    viewport: { defaultViewport: 'responsive' },
   },
   render: (args) => (
-    <div style={{ width: '100%', maxWidth: '300px' }}>
+    <div style={{ width: '100%', border: '1px dashed grey', padding: '10px' }}>
       <Button {...args} />
     </div>
   ),
@@ -173,6 +205,8 @@ export const ThemeColorIntegration: Story = {
       <div>
         <h3 style={{ marginBottom: '8px' }}>Primary Variant</h3>
         <div style={{ display: 'flex', gap: '8px' }}>
+          <Button variant="contained" color="primary">Normal</Button>
+          <Button variant="contained" color="primary" disabled>Disabled</Button>
           <Button variant="primary">Normal</Button>
           <Button variant="primary" disabled>Disabled</Button>
         </div>

@@ -94,18 +94,67 @@
 - Each component MUST have corresponding Storybook stories
 - Stories must accurately reflect current component implementation
 - Stories should follow hierarchical organization matching atomic design principles
+- **File Naming:** Use the format `ComponentName.stories.tsx`.
+- **Structure:** Follow a standard structure: Imports, Meta definition, Template function (if needed), Primary story, Variant stories.
+- **Decorators:** Consistently use decorators for essential providers (`ThemeProvider`, `ServiceProvider`, `ChatProvider`) to ensure components render correctly within the Storybook environment.
+- **Data Mocking:** Use static, representative mock data directly within story files for clarity and simplicity. Avoid complex mocking libraries unless necessary.
 - Component stories must demonstrate:
   - All supported variants and states
-  - Proper theme integration in both light and dark mode
-  - Responsive behavior with mobile-specific stories
+  - Proper theme integration in both light and dark mode (Use theme switcher addon)
+  - **Theme Integration:** Ensure stories correctly utilize Storybook theme addons (like `storybook-dark-mode` or similar) to sync with the toolbar toggle and reflect the application's `ThemeProvider` behavior.
+  - Responsive behavior with mobile-specific stories (Use viewport addon)
   - Integration with other components where relevant
 - Use consistent render patterns across similar components
-- Include documentation on prop usage in both JSDoc comments and story descriptions
+- Include documentation on prop usage in both JSDoc comments and story descriptions.
+- **Args/Controls:** Define args explicitly for key props rather than relying solely on auto-generation. Ensure controls are intuitive.
+- **Interactions:** For components with significant user interactions, consider adding Storybook interaction tests (`play` function) to verify behavior.
+- **Accessibility:** Enable and check the Storybook accessibility addon (`@storybook/addon-a11y`) for all stories to catch basic violations.
 - Always test theme switching within stories to ensure proper styling
 - When using the Message interface, ensure proper structure with role, content, and timestamp
 - Multi-agent stories should demonstrate proper agent identification and color assignments
 - For responsive components, create specific mobile viewport stories
 - Update stories when component interfaces or behavior changes
+
+### Component-Specific Storybook Guidelines
+
+#### Molecule Component Stories
+- **Composition Showcase:** Clearly demonstrate how atomic components are composed together to form the molecule.
+- **Internal State:** Showcase how the molecule manages its internal state, if applicable.
+- **Interaction Patterns:** Demonstrate interaction patterns between the composed atomic components.
+- **Event Propagation:** Show how events are handled and propagated from the molecule to parent components.
+- **Controlled vs. Uncontrolled:** Provide stories for both controlled and uncontrolled usage patterns when applicable.
+- **Mock Handlers:** Implement mock handlers (e.g., `onClick`, `onChange`) that log actions to the Storybook Actions panel.
+- **Responsive Variants:** Include specific stories that demonstrate responsive adaptations for different viewport sizes.
+- **Theme Variations:** Show how the molecule's appearance changes with theme variations.
+- **Edge Cases:** Include stories that demonstrate edge cases such as empty states, overflow conditions, or error states.
+
+#### Organism Component Stories
+- **Complex Composition:** Show how molecules and atoms are composed to form the more complex organism.
+- **Context Integration:** Demonstrate integration with relevant context providers (e.g., ThemeProvider, ChatProvider).
+- **Data Flow Visualization:** Illustrate data flow within the organism and to/from external components.
+- **State Management:** Showcase how the organism manages more complex state (including derived state).
+- **Interaction Patterns:** Provide comprehensive stories that demonstrate complex interaction patterns.
+- **Loading States:** Include stories that demonstrate all possible loading states and transitions.
+- **Error Handling:** Show how errors are handled and displayed within the organism.
+- **Mock Service Integration:** Demonstrate integration with mock services when applicable.
+- **Responsive Layout Changes:** Showcase significant layout changes that occur at different breakpoints.
+- **Accessibility Features:** Highlight specific accessibility features implemented in the organism.
+- **Performance Considerations:** Document any performance optimizations made in the component.
+
+#### Template Component Stories
+- **Full Page Layout:** Demonstrate the complete page layout with realistic content.
+- **Component Composition:** Show how organisms, molecules, and atoms are composed to form the template.
+- **Navigation Patterns:** Illustrate navigation patterns and user flows within the template.
+- **Context Integration:** Demonstrate integration with all required context providers.
+- **Service Integration:** Show integration with multiple services and data sources.
+- **Complete User Flows:** Provide stories that demonstrate complete user flows and interactions.
+- **State Management:** Showcase how the template manages and coordinates state across multiple components.
+- **Responsive Design:** Demonstrate comprehensive responsive design adaptations across multiple breakpoints.
+- **Application State:** Show different application states (e.g., authenticated, unauthenticated, admin view).
+- **Error Boundaries:** Demonstrate error boundary implementation and recovery mechanisms.
+- **Loading Sequences:** Show loading sequences and skeleton screens where applicable.
+- **Performance Optimizations:** Document performance optimizations such as code splitting, lazy loading, or memoization.
+- **Accessibility Patterns:** Highlight comprehensive accessibility patterns implemented in the template.
 
 ## Feature Development Process
 1. Review architectureDiagrams.md to understand affected components

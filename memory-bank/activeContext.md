@@ -1,20 +1,37 @@
 # Active Context
 
 ## Current Focus
+- **Update Storybook Stories** (High Priority / Current Focus) 📚
+    - Ensure all stories (`*.stories.tsx`) accurately reflect current component implementations.
+    - Verify adherence to `.cursorrules` guidelines (props, states, themes, responsiveness).
+    - ✅ Update Atom stories (`Button`, `Input`, `MarkdownRenderer`)
+    - [ ] Update Molecule stories
+    - [ ] Update Organism stories
+    - [ ] Update Template stories
 - ✅ **API Response Format Update (Semantic Kernel Focus):**
     - ✅ Refactored `ApiChatService.ts` to parse richer `ChatMessageContent`-inspired responses.
     - ✅ Updated `docs/api/response-formats.md` to prioritize native SK returns.
     - ✅ Updated `docs/api/examples/csharp.md` for native SK returns.
     - ✅ Updated `docs/api/examples/java.md` for native SK returns.
     - ✅ Updated `docs/api/examples/python.md` for native SK returns.
-- **Final Documentation Cleanup & Standardization** ✨:
-  - ✅ Update diagrams and other docs based on API changes.
-  - ✅ **Populate `docs/architecture/`:** Recreate relevant diagrams from Memory Bank into standalone files in the main documentation folder.
+- ✅ **Final Documentation Cleanup & Standardization** ✨
+    - ✅ Reviewed and ensured all documentation adheres to GFM guidelines.
+    - ✅ Ensured `systemPatterns.md` aligns with diagrams in `docs/architecture/`.
 - **Add Unit Tests for responsive behavior** (Medium Priority) 🧪
 - **Document Component API** (Medium Priority) 📝
 - **Implement additional accessibility improvements** (Medium Priority) ♿️
 
 ## Recent Activities
+- **Updated Storybook Implementation Guidelines in `.cursorrules`**: Added specific rules for file naming, structure, decorators, mocking, controls, interactions, accessibility, and theme toggle integration.
+- **Updated Atom Component Stories (`Button`, `Input`, `MarkdownRenderer`)**:
+    - Refactored `Button.tsx` to use MUI `LoadingButton` and standard props.
+    - Installed `@mui/lab` dependency.
+    - Updated `Button.stories.tsx`, `Input.stories.tsx`, `MarkdownRenderer.stories.tsx` to:
+        - Add `ThemeProvider` decorator.
+        - Align `argTypes` and stories with component props.
+        - Improve structure and adhere to `.cursorrules`.
+        - Correct `ThemeProvider` import path after discovering its location in `src/components/providers/`.
+    - Verified Storybook server runs without critical errors after changes.
 - **Completed Architecture Documentation in `docs/architecture/`:** 🏗️
   - Recreated 11 key architecture diagrams from the Memory Bank into standalone files.
   - Added `docs/architecture/README.md` linking to the new diagrams.
@@ -103,6 +120,8 @@
   - Included additional diagrams for theming, environment config, and other systems
   - Optimized diagrams for dark mode accessibility with proper contrast
 - **Enhanced error handling in the API services:** ✅ Added custom errors, improved messages, handled status codes, implemented timeouts, and enhanced stream processing.
+- **Completed Final Documentation Cleanup & Standardization:** ✨ Ensured all project documentation is consistent, adheres to GFM guidelines, and accurately reflects the current architecture.
+- Initiated review and update process for Storybook stories to align with current components and guidelines.
 
 ## Decisions & Considerations
 - Using Material UI's responsive utilities like useMediaQuery for consistent breakpoints

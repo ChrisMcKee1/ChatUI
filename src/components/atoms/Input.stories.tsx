@@ -1,10 +1,19 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { Input } from './Input';
 import { useState } from 'react';
+import { ThemeProvider } from '../providers/ThemeProvider';
+import React from 'react';
 
 const meta = {
   title: 'Atoms/Input',
   component: Input,
+  decorators: [
+    (Story) => (
+      <ThemeProvider>
+        <Story />
+      </ThemeProvider>
+    ),
+  ],
   parameters: {
     layout: 'centered',
     docs: {
@@ -182,9 +191,7 @@ export const Number: Story = {
 // Interactive example
 export const Interactive: Story = {
   render: () => {
-    // @ts-ignore - useState is not recognized in static Story type
     const [value, setValue] = useState('');
-    // @ts-ignore - useState is not recognized in static Story type
     const [error, setError] = useState('');
     
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -235,7 +242,7 @@ export const ThemeIntegration: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Demonstrates how inputs adapt to the current theme',
+        story: 'Demonstrates how inputs appear with different states. Theme switching (light/dark) is controlled via the Storybook toolbar addon, thanks to the ThemeProvider decorator.',
       },
     },
   },

@@ -1,8 +1,8 @@
 # Progress: ChatUI
 
 ## Overall Status
-- **Phase:** Final Polish & Documentation
-- **Status:** Mostly Complete ✅
+- **Phase:** Final Polish
+- **Status:** Feature Complete ✅ / Final Polish Tasks Pending
 - **Key Completed Features:**
     - Core Chat Functionality (Standard & Multi-Agent)
     - Full API Integration (Mock, Real, Streaming)
@@ -21,17 +21,24 @@
     - ✅ OpenTelemetry implementation with Azure Monitor (simplified implementation)
     - ✅ API Response Format Update (Prioritizing Semantic Kernel `ChatMessageContent`)
     - ✅ Refactored Frontend API Service (`ApiChatService.ts`) for New Response Format
+    - ✅ **Final Documentation Cleanup & Standardization** ✨
 - **Key Remaining Tasks:**
-    - **Final Documentation Cleanup & Standardization**: ✨
-        - [ ] Update `systemPatterns.md`
-        - [x] Review `architectureDiagrams.md` (Adding new diagram)
+    - ~~Final Documentation Cleanup & Standardization**: ✨~~
+        - ~[ ] Update `systemPatterns.md`~
+        - ~[x] Review `architectureDiagrams.md` (Adding new diagram)~
     - Add Unit Tests (Responsive Behavior) (Medium Priority) 🧪
     - Document Component API (Medium Priority) 📝
     - Implement Additional Accessibility Improvements (Medium Priority) ♿️
+    - **Update Storybook Stories** (High Priority / Current Focus) 📚
 
 ## Detailed To-Do List
 
 ### High Priority
+- **Update Storybook Stories**: 📚
+  - [x] Review and update Atom stories (`src/components/atoms/**/*.stories.tsx`)
+  - [ ] Review and update Molecule stories (`src/components/molecules/**/*.stories.tsx`)
+  - [ ] Review and update Organism stories (`src/components/organisms/**/*.stories.tsx`)
+  - [ ] Review and update Template stories (`src/components/templates/**/*.stories.tsx`)
 - ✅ **Populate `docs/architecture/` with Diagrams**: 🏗️
   - [x] Create standalone markdown files for key architecture diagrams.
   - [x] Update README for easy navigation.
@@ -82,6 +89,7 @@
 - Write comprehensive documentation (See Component API Docs above)
 
 ## Storybook Rebuild Plan
+*(Note: Previous rebuild marked complete, but re-evaluating due to outdated stories)*
 
 **Motivation**:
 The current Storybook implementation does not match the current component implementations, lacks proper documentation, and does not demonstrate responsive behavior or theme integration.
@@ -104,6 +112,11 @@ The current Storybook implementation does not match the current component implem
 - [x] Input Component Stories
   - Update to reflect MUI TextField integration
   - Add stories for all input states (error, disabled, etc.)
+  - Document props and usage
+
+- [x] MarkdownRenderer Component Stories
+  - Update to ensure theme integration via decorator
+  - Verify GFM feature demonstrations
   - Document props and usage
 
 **Molecular Components**:
@@ -154,7 +167,8 @@ The current Storybook implementation does not match the current component implem
   - Document props and usage
 
 **Current Status**:
-The Storybook rebuild is complete! ✅ All component stories have been updated to match the current implementation, demonstrate responsive behavior, and provide proper documentation. 🎉
+~The Storybook rebuild is complete! ✅ All component stories have been updated to match the current implementation, demonstrate responsive behavior, and provide proper documentation. 🎉~
+**Status**: Atom stories updated. Molecule, Organism, and Template stories require review and updating.
 
 **Next Steps**:
 1. Run the Storybook to verify all components render correctly

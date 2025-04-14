@@ -2,10 +2,18 @@ import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { Box } from '@mui/material';
+import { ThemeProvider } from '../providers/ThemeProvider';
 
 const meta: Meta<typeof MarkdownRenderer> = {
   title: 'Atoms/MarkdownRenderer',
   component: MarkdownRenderer,
+  decorators: [
+    (Story) => (
+      <ThemeProvider>
+        <Story />
+      </ThemeProvider>
+    ),
+  ],
   parameters: {
     layout: 'centered',
   },
@@ -204,7 +212,7 @@ console.log('Hello, world!');
 export const Responsive: Story = {
   parameters: {
     viewport: {
-      defaultViewport: 'mobile1',
+      defaultViewport: 'responsive',
     },
   },
   args: {
