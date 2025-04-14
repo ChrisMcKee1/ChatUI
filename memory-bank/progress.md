@@ -39,7 +39,7 @@
   - [ ] Review and update Molecule stories (`src/components/molecules/**/*.stories.tsx`)
     - [x] Update `MessageBubble.stories.tsx`
     - [x] Update `ChatInput.stories.tsx`
-    - [ ] Update `ThemeToggle.stories.tsx`
+    - [x] Update `ThemeToggle.stories.tsx`
     - [ ] Update `AgentToggle.stories.tsx`
     - [ ] Update `ChatMessagePanel.stories.tsx`
   - [ ] Review and update Organism stories (`src/components/organisms/**/*.stories.tsx`)

@@ -8,7 +8,8 @@
     - 🔄 Update Molecule stories
         - ✅ Updated `MessageBubble.stories.tsx` with ThemeProvider decorator, improved documentation, and new stories for markdown support and theme variations.
         - ✅ Updated `ChatInput.stories.tsx` with ThemeProvider decorator, improved documentation, and new stories for interaction patterns.
-        - [ ] Update remaining Molecule stories (`ThemeToggle.stories.tsx`, `AgentToggle.stories.tsx`, `ChatMessagePanel.stories.tsx`)
+        - ✅ Updated `ThemeToggle.stories.tsx` with improved documentation, component composition demonstration, and interactive examples.
+        - [ ] Update remaining Molecule stories (`AgentToggle.stories.tsx`, `ChatMessagePanel.stories.tsx`)
     - [ ] Update Organism stories
     - [ ] Update Template stories
 - ✅ **API Response Format Update (Semantic Kernel Focus):**
@@ -25,6 +26,13 @@
 - **Implement additional accessibility improvements** (Medium Priority) ♿️
 
 ## Recent Activities
+- **Updated ThemeToggle.stories.tsx**:
+    - Fixed ThemeProvider import path (using the correct provider from components directory)
+    - Added detailed component composition demonstration showing atomic elements
+    - Enhanced interactive example with click tracking and theme state display
+    - Added comprehensive documentation describing component relationships
+    - Replaced generic Box components with Paper for better visual hierarchy
+    - Renamed "BothStates" to "ThemeVariations" for consistency with other stories
 - **Updated ChatInput.stories.tsx**: 
     - Added ThemeProvider decorator to ensure proper theme integration
     - Enhanced documentation with more detailed descriptions
