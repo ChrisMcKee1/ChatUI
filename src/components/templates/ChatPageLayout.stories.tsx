@@ -4,7 +4,7 @@ import { ChatPageLayout } from './ChatPageLayout';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { ChatHistory } from '@/components/organisms/ChatHistoryPanel';
 import { AgentMode } from '@/components/molecules/AgentToggle';
-import { Message, Role } from '@/components/molecules/ChatMessagePanel';
+import { Message } from '@/components/molecules/ChatMessagePanel';
 import { Box, Typography, Paper, Stack, Divider, useMediaQuery, useTheme as useMuiTheme } from '@mui/material';
 import { ChatProvider } from '@/context/ChatContext';
 import { ServiceProvider } from '@/services/ServiceProvider';
@@ -13,6 +13,9 @@ import { ChatInputArea } from '@/components/organisms/ChatInputArea';
 import { MessageBubble } from '@/components/molecules/MessageBubble';
 import { v4 as uuidv4 } from 'uuid';
 import { MessageSquare, History, Send, Bot, UserCircle2 } from 'lucide-react';
+
+// Define Role type locally since it's not exported from ChatMessagePanel
+type Role = 'user' | 'assistant' | 'system';
 
 // Mock message data
 const mockMessages: Message[] = [
@@ -318,7 +321,7 @@ const MockChatProvider = ({
   return (
     <ThemeProvider>
       <ServiceProvider>
-        <ChatProvider value={mockContextValue}>
+        <ChatProvider>
           {children}
         </ChatProvider>
       </ServiceProvider>
@@ -682,10 +685,10 @@ export const ResponsiveAdaptations: Story = {
             
             <Typography variant="subtitle2">Breakpoint Adaptations:</Typography>
             <Box component="ul" sx={{ pl: 2, m: 0 }}>
-              <li><strong>Desktop (>900px)</strong>: Persistent drawer, full spacing, standard controls</li>
+              <li><strong>Desktop ({'>'}900px)</strong>: Persistent drawer, full spacing, standard controls</li>
               <li><strong>Tablet (600-900px)</strong>: Persistent drawer (narrower), reduced padding</li>
-              <li><strong>Mobile (<600px)</strong>: Temporary drawer, compact controls, optimized spacing</li>
-              <li><strong>Small Mobile (<360px)</strong>: Further reduced sizing, minimal UI elements</li>
+              <li><strong>Mobile ({'<'}600px)</strong>: Temporary drawer, compact controls, optimized spacing</li>
+              <li><strong>Small Mobile ({'<'}360px)</strong>: Further reduced sizing, minimal UI elements</li>
             </Box>
           </Stack>
         </Paper>
