@@ -37,6 +37,11 @@
 - **Update Storybook Stories**: 📚
   - [x] Review and update Atom stories (`src/components/atoms/**/*.stories.tsx`)
   - [ ] Review and update Molecule stories (`src/components/molecules/**/*.stories.tsx`)
+    - [x] Update `MessageBubble.stories.tsx`
+    - [ ] Update `ChatInput.stories.tsx`
+    - [ ] Update `ThemeToggle.stories.tsx`
+    - [ ] Update `AgentToggle.stories.tsx`
+    - [ ] Update `ChatMessagePanel.stories.tsx`
   - [ ] Review and update Organism stories (`src/components/organisms/**/*.stories.tsx`)
   - [ ] Review and update Template stories (`src/components/templates/**/*.stories.tsx`)
 - ✅ **Populate `docs/architecture/` with Diagrams**: 🏗️

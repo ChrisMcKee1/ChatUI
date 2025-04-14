@@ -5,7 +5,9 @@
     - Ensure all stories (`*.stories.tsx`) accurately reflect current component implementations.
     - Verify adherence to `.cursorrules` guidelines (props, states, themes, responsiveness).
     - ✅ Update Atom stories (`Button`, `Input`, `MarkdownRenderer`)
-    - [ ] Update Molecule stories
+    - 🔄 Update Molecule stories
+        - ✅ Updated `MessageBubble.stories.tsx` with ThemeProvider decorator, improved documentation, and new stories for markdown support and theme variations.
+        - [ ] Update remaining Molecule stories
     - [ ] Update Organism stories
     - [ ] Update Template stories
 - ✅ **API Response Format Update (Semantic Kernel Focus):**
@@ -22,6 +24,14 @@
 - **Implement additional accessibility improvements** (Medium Priority) ♿️
 
 ## Recent Activities
+- **Updated Cursor Rules with Component-Specific Storybook Guidelines**: Added detailed guidelines for Molecule, Organism, and Template components in Storybook, covering composition, state management, interaction patterns, responsiveness, and more.
+- **Updated MessageBubble.stories.tsx**: 
+    - Added ThemeProvider decorator to ensure proper theme integration
+    - Added new story variants including markdown rendering demo
+    - Enhanced documentation with more detailed descriptions
+    - Added a specific ThemeVariations story to demonstrate theme adaptability
+    - Improved mobile view examples with additional responsive demos
+    - Added more comprehensive descriptions to showcase component composition and architecture
 - **Updated Storybook Implementation Guidelines in `.cursorrules`**: Added specific rules for file naming, structure, decorators, mocking, controls, interactions, accessibility, and theme toggle integration.
 - **Updated Atom Component Stories (`Button`, `Input`, `MarkdownRenderer`)**:
     - Refactored `Button.tsx` to use MUI `LoadingButton` and standard props.

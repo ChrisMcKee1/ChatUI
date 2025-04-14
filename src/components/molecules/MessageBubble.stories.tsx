@@ -3,27 +3,37 @@ import React from 'react';
 import { Box, useMediaQuery, useTheme } from '@mui/material';
 import { MessageBubble } from './MessageBubble';
 import { Message } from './ChatMessagePanel';
+import { ThemeProvider } from '../providers/ThemeProvider';
+import { actions } from '@storybook/addon-actions';
 
-// No custom decorator needed - the Storybook theme provider will handle themes
+// This story uses ThemeProvider decorator to handle proper theme context
 const meta: Meta<typeof MessageBubble> = {
   component: MessageBubble,
   title: 'Molecules/MessageBubble',
+  decorators: [
+    (Story) => (
+      <ThemeProvider>
+        <Story />
+      </ThemeProvider>
+    ),
+  ],
   parameters: {
     layout: 'centered',
     docs: {
       description: {
-        component: 'Message bubble component that displays chat messages with proper styling based on the sender (user or assistant). Supports multi-agent messages with distinct colors per agent.',
+        component: 'Message bubble component that displays chat messages with proper styling based on the sender (user or assistant). Supports multi-agent messages with distinct colors per agent. This molecule component composes atoms together to create a complete message display with avatar, content area, and timestamp.',
       },
     },
   },
   tags: ['autodocs'],
   argTypes: {
     message: {
-      description: 'The complete Message object with content, role, and other properties',
+      description: 'The complete Message object with content, role, timestamp, and optional agent information',
+      control: 'object',
     },
     className: {
       control: 'text',
-      description: 'Additional CSS class names',
+      description: 'Additional CSS class names for styling customization',
     },
   },
 };
@@ -32,7 +42,7 @@ export default meta;
 
 type Story = StoryObj<typeof MessageBubble>;
 
-// Create message object helpers
+// Helper functions to create message objects for consistent story usage
 const createUserMessage = (content: string, timestamp = '12:34 PM'): Message => ({
   id: 'user-msg-' + Date.now(),
   content,
@@ -48,6 +58,7 @@ const createAssistantMessage = (content: string, timestamp = '12:35 PM', agentNa
   ...(agentName && { agentName }),
 });
 
+// Basic user message story
 export const UserMessage: Story = {
   args: {
     message: createUserMessage('This is a user message. It should display on the right side with a user-themed background.'),
@@ -55,12 +66,13 @@ export const UserMessage: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'A message sent by the user, displayed on the right side with user theme colors.',
+        story: 'A message sent by the user, displayed on the right side with user theme colors. Shows composition of avatar, message bubble, and timestamp elements.',
       },
     },
   },
 };
 
+// Basic assistant message story
 export const AssistantMessage: Story = {
   args: {
     message: createAssistantMessage('This is a response from the assistant. It shows on the left side with an assistant-themed background.'),
@@ -68,12 +80,27 @@ export const AssistantMessage: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'A message from the AI assistant, displayed on the left side with assistant theme colors.',
+        story: 'A message from the AI assistant, displayed on the left side with assistant theme colors. Shows the standard layout for assistant responses.',
       },
     },
   },
 };
 
+// Demonstrate markdown support in messages
+export const WithMarkdownContent: Story = {
+  args: {
+    message: createAssistantMessage('# Markdown Support\n\nThe MessageBubble supports **rich** *formatting* through markdown:\n\n- Lists\n- **Bold text**\n- *Italic text*\n- `Code snippets`\n\n```javascript\nconst hello = "world";\nconsole.log(hello);\n```\n\n> Blockquotes are also supported'),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Demonstrates the MessageBubble\'s markdown rendering capabilities, showcasing how it composes with the MarkdownRenderer atom component.',
+      },
+    },
+  },
+};
+
+// Demonstrate long message handling
 export const LongMessage: Story = {
   args: {
     message: createAssistantMessage('This is a much longer message that demonstrates how the bubble handles multiple lines of text. It should wrap appropriately and maintain readability. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.'),
@@ -81,12 +108,13 @@ export const LongMessage: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Demonstrates how the message bubble handles long text with proper wrapping.',
+        story: 'Demonstrates how the message bubble handles long text with proper wrapping. Tests edge case handling and overflow management.',
       },
     },
   },
 };
 
+// Demonstrate empty state
 export const WithoutTimestamp: Story = {
   args: {
     message: {
@@ -97,12 +125,13 @@ export const WithoutTimestamp: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Message with no timestamp displayed.',
+        story: 'Message with no timestamp displayed, showing how the component handles optional elements gracefully.',
       },
     },
   },
 };
 
+// Demonstrate agent-specific styling
 export const AgentMessage: Story = {
   args: {
     message: createAssistantMessage('This message is from a specific agent and uses a distinct color based on the agent name.', '12:36 PM', 'ResearchAgent'),
@@ -110,7 +139,7 @@ export const AgentMessage: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Message from a specific agent with a distinct color based on the agent name.',
+        story: 'Message from a specific agent with a distinct color based on the agent name. Shows how the component manages different visual styles for various agents.',
       },
     },
   },
@@ -124,7 +153,7 @@ export const MobileView: Story = {
     },
     docs: {
       description: {
-        story: 'Shows how the message bubble adapts to smaller mobile screens.',
+        story: 'Shows how the message bubble adapts to smaller mobile screens. The component uses responsive design to adjust padding, font size, and avatar size based on screen width.',
       },
     },
   },
@@ -133,16 +162,21 @@ export const MobileView: Story = {
       <MessageBubble 
         message={createUserMessage('This is how a message looks on mobile screens with reduced padding and smaller avatar.')} 
       />
+      <Box mt={2}>
+        <MessageBubble 
+          message={createAssistantMessage('The assistant response also adapts to the smaller screen size.')} 
+        />
+      </Box>
     </Box>
   ),
 };
 
-// Multi-agent conversation
+// Multi-agent conversation to demonstrate color assignment
 export const MultiAgentConversation: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Demonstrates a conversation with multiple agents, each with a distinct color.',
+        story: 'Demonstrates a conversation with multiple agents, each with a distinct color. Shows how the component maintains consistent color assignments throughout a conversation.',
       },
     },
   },
@@ -170,7 +204,7 @@ export const ResponsiveConversation: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Shows how a conversation adapts to different screen sizes.',
+        story: 'Shows how a conversation adapts to different screen sizes. Demonstrates the responsive behavior across mobile, tablet, and desktop viewports.',
       },
     },
   },
@@ -208,4 +242,42 @@ export const ResponsiveConversation: Story = {
       </Box>
     );
   }
+};
+
+// Theme variation demonstration
+export const ThemeVariations: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: 'Demonstrates how the MessageBubble appears in both light and dark themes. The story uses the ThemeProvider to show the component adapting to theme changes.',
+      },
+    },
+  },
+  render: () => (
+    <Box sx={{ width: '100%', maxWidth: '600px', display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Box>
+        <MessageBubble 
+          message={createUserMessage('This is how user messages look with the current theme.')} 
+        />
+      </Box>
+      <Box>
+        <MessageBubble 
+          message={createAssistantMessage('Assistant messages adjust their colors based on the theme mode.')} 
+        />
+      </Box>
+      <Box>
+        <MessageBubble 
+          message={createAssistantMessage('Each agent has a distinct color that is visible in both light and dark modes.', '12:40 PM', 'AnalyticsAgent')} 
+        />
+      </Box>
+      <Box>
+        <MessageBubble 
+          message={createAssistantMessage('The colors ensure good contrast and readability regardless of theme.', '12:41 PM', 'DesignAgent')} 
+        />
+      </Box>
+      <Box sx={{ fontSize: '0.8rem', opacity: 0.7, textAlign: 'center', mt: 2 }}>
+        Try toggling the theme in Storybook to see how the components adapt
+      </Box>
+    </Box>
+  ),
 }; 
