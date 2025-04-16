@@ -1,186 +1,74 @@
 # Active Context
 
 ## Current Focus
-- **Update Storybook Stories** (High Priority / Current Focus) 📚
-    - Ensure all stories (`*.stories.tsx`) accurately reflect current component implementations.
-    - Verify adherence to `.cursorrules` guidelines (props, states, themes, responsiveness).
-    - ✅ Update Atom stories (`Button`, `Input`, `MarkdownRenderer`)
-    - 🔄 Update Molecule stories
-        - ✅ Updated `MessageBubble.stories.tsx` with ThemeProvider decorator, improved documentation, and new stories for markdown support and theme variations.
-        - ✅ Updated `ChatInput.stories.tsx` with ThemeProvider decorator, improved documentation, and new stories for interaction patterns.
-        - ✅ Updated `ThemeToggle.stories.tsx` with improved documentation, component composition demonstration, and interactive examples.
-        - ✅ Updated `AgentToggle.stories.tsx` with ThemeProvider decorator, interactive state tracking, and component composition demonstration.
-        - [ ] Update remaining Molecule story (`ChatMessagePanel.stories.tsx`)
-    - [ ] Update Organism stories
-    - [ ] Update Template stories
-- ✅ **API Response Format Update (Semantic Kernel Focus):**
-    - ✅ Refactored `ApiChatService.ts` to parse richer `ChatMessageContent`-inspired responses.
-    - ✅ Updated `docs/api/response-formats.md` to prioritize native SK returns.
-    - ✅ Updated `docs/api/examples/csharp.md` for native SK returns.
-    - ✅ Updated `docs/api/examples/java.md` for native SK returns.
-    - ✅ Updated `docs/api/examples/python.md` for native SK returns.
-- ✅ **Final Documentation Cleanup & Standardization** ✨
-    - ✅ Reviewed and ensured all documentation adheres to GFM guidelines.
-    - ✅ Ensured `systemPatterns.md` aligns with diagrams in `docs/architecture/`.
-- **Add Unit Tests for responsive behavior** (Medium Priority) 🧪
+- **Add Unit Tests for responsive behavior** (Medium Priority / Next Focus) 🧪
 - **Document Component API** (Medium Priority) 📝
 - **Implement additional accessibility improvements** (Medium Priority) ♿️
 
 ## Recent Activities
-- **Updated ThemeToggle.stories.tsx**:
-    - Fixed ThemeProvider import path (using the correct provider from components directory)
-    - Added detailed component composition demonstration showing atomic elements
-    - Enhanced interactive example with click tracking and theme state display
-    - Added comprehensive documentation describing component relationships
-    - Replaced generic Box components with Paper for better visual hierarchy
-    - Renamed "BothStates" to "ThemeVariations" for consistency with other stories
-- **Updated ChatInput.stories.tsx**: 
-    - Added ThemeProvider decorator to ensure proper theme integration
-    - Enhanced documentation with more detailed descriptions
-    - Added new InteractionPatterns story to demonstrate event handling
-    - Fixed ThemeVariations story to show various states
-    - Improved story examples with visual guides and better organization
-    - Added comprehensive descriptions to showcase component composition and usage
-- **Updated Cursor Rules with Component-Specific Storybook Guidelines**: Added detailed guidelines for Molecule, Organism, and Template components in Storybook, covering composition, state management, interaction patterns, responsiveness, and more.
-- **Updated MessageBubble.stories.tsx**: 
-    - Added ThemeProvider decorator to ensure proper theme integration
-    - Added new story variants including markdown rendering demo
-    - Enhanced documentation with more detailed descriptions
-    - Added a specific ThemeVariations story to demonstrate theme adaptability
-    - Improved mobile view examples with additional responsive demos
-    - Added more comprehensive descriptions to showcase component composition and architecture
-- **Updated Storybook Implementation Guidelines in `.cursorrules`**: Added specific rules for file naming, structure, decorators, mocking, controls, interactions, accessibility, and theme toggle integration.
-- **Updated Atom Component Stories (`Button`, `Input`, `MarkdownRenderer`)**:
-    - Refactored `Button.tsx` to use MUI `LoadingButton` and standard props.
-    - Installed `@mui/lab` dependency.
-    - Updated `Button.stories.tsx`, `Input.stories.tsx`, `MarkdownRenderer.stories.tsx` to:
-        - Add `ThemeProvider` decorator.
-        - Align `argTypes` and stories with component props.
-        - Improve structure and adhere to `.cursorrules`.
-        - Correct `ThemeProvider` import path after discovering its location in `src/components/providers/`.
-    - Verified Storybook server runs without critical errors after changes.
+- **Completed Conditional Tool Message Display Feature:** 🛠️ ✅
+    - Updated data structures, services, context, UI components, Storybook, and documentation.
+- **Fixed `MessageBubble` Issues:**
+    - Corrected conditional rendering logic to properly hide/show `tool` messages.
+    - Ensured distinct styling for `tool` messages and assistant avatars.
+- **Completed Storybook Refactoring for All Components:** 🎉
+    - Updated and verified stories for Atoms, Molecules, Organisms, and Templates.
+    - Ensured adherence to `.cursorrules` Storybook guidelines.
+- **Committed and Pushed Storybook Updates:** Successfully pushed refactored stories.
+- **Updated Cursor Rules with Component-Specific Storybook Guidelines**: Added detailed guidelines.
 - **Completed Architecture Documentation in `docs/architecture/`:** 🏗️
-  - Recreated 11 key architecture diagrams from the Memory Bank into standalone files.
-  - Added `docs/architecture/README.md` linking to the new diagrams.
-  - Updated diagram reference in `memory-bank/systemPatterns.md` for OpenTelemetry.
-- **Updated API Documentation & Examples for Semantic Kernel Focus:**
-    - Refactored `ApiChatService.ts` to handle richer `ChatMessageContent` structure directly.
-    - Updated `response-formats.md` to recommend returning native SK `ChatMessageContent` objects and provide minimal format as alternative.
-    - Updated C#, Java, and Python API examples to show returning native SK objects, simplifying backend logic.
-- **Implemented OpenTelemetry with Azure Monitor Integration:**
-    - Set up OpenTelemetry SDK for Azure Application Insights
-    - Removed Vercel OpenTelemetry in favor of direct Azure Monitor integration
-    - Configured auto-instrumentation for HTTP requests
-    - Implemented server-side only instrumentation to improve performance
-    - Updated OpenTelemetry dependencies to compatible versions
-    - Added proper resource attributes and shutdown handling
-    - Updated webpack configuration for Azure Monitor compatibility
-    - Added comprehensive documentation for OpenTelemetry implementation
-- **Completed Full Project Review & Documentation Update:**
-    - Reviewed all Memory Bank files and `.cursorrules`.
-    - Updated `progress.md` to reflect completed tasks (Storybook, API Error Handling) and reorganized for clarity.
-    - Added new documentation style guideline to `.cursorrules`.
-- **Fixed layout and container sizing issues:**
-  - Optimized container layout to utilize 100% of available space
-  - Fixed text size control positioning in the top-right corner
-  - Improved empty state centering with reliable flexbox layout
-  - Removed maxWidth constraints that limited container width
-  - Added appropriate margins (95%) for better visual balance
-  - Hid scrollbars while maintaining scrolling functionality
-  - Made text size button larger for better usability
-- **Completed message box text size/resolution improvement and markdown support:**
-  - Implemented responsive text sizing with fluid typography
-  - Added UI density controls for text size adjustment with localStorage persistence
-  - Enhanced visual contrast for better readability in both light and dark themes
-  - Implemented markdown support using micromark and GFM extensions
-  - Created MarkdownRenderer atomic component with theme integration
-  - Enhanced MessageBubble to use the MarkdownRenderer
-  - Added Storybook stories to demonstrate the functionality
-- Completed responsive design for small and very small screens:
-  - Added dynamic sizing and spacing in MessageBubble for different screen sizes
-  - Created compact versions of AgentToggle and ThemeToggle components
-  - Implemented responsive padding and font sizes throughout the UI
-  - Added fine-tuned breakpoints for extra small screens (under 360px)
-  - Optimized ChatHistoryPanel with better responsive layout and sizing
-  - Finalized edge case handling for various screen sizes
-- Improved loading state visual feedback:
-  - Added animated loading indicators with fade transitions
-  - Implemented contextual loading messages based on agent mode
-  - Added secondary loading message with descriptive text
-  - Enhanced visual styling of loading indicators for better visibility
-- **Completed Storybook rebuild:** ✅ Updated all stories to match current implementation, added responsive/theming demos, and improved documentation.
-- **Established GitHub-flavored Markdown (GFM) guidelines for documentation:**
-  - Added standardized rules for Mermaid diagrams in documentation
-  - Established conventions for checkbox task lists, emoji usage, and footnotes
-  - Defined document structure hierarchy and code block formatting
-  - Created guidelines for table formatting and link styling
-  - Incorporated rules for YAML frontmatter when appropriate
-  - Enforced consistent markdown practices across all documentation files
-- Implemented auto-scrolling for chat messages:
-  - Added automatic scrolling to show the latest message
-  - Optimized scrolling behavior for streaming responses
-  - Used MutationObserver to detect content changes during streaming
-  - Implemented smooth scrolling for regular updates and immediate scrolling during streaming
-- Reorganized component structure for better maintainability
-- Updated Storybook stories to match current component implementations
-- Completed API service implementations:
-  - Implemented ApiChatService with support for standard and multi-agent chat modes
-  - Implemented ApiHistoryService with full CRUD operations
-  - Added streaming support for multi-agent responses using Server-Sent Events
-  - Configured environment variables for different API endpoints and modes
-- **Enhanced deployment environment configuration with dual approach:**
-  - Documented build-time configuration using GitHub Secrets + .env generation
-  - Added Azure App Settings configuration for runtime variables in production
-  - Implemented GitHub workflow for build-time variables via .env file generation
-  - Created configureAppSettings.yml workflow for managing Azure App Settings
-  - Clarified separation between build-time and runtime environment variables
-  - Added comprehensive documentation for both approaches
-  - **Configured Next.js to ignore ESLint and TypeScript errors during builds**
-  - **Updated GitHub workflow with workflow_dispatch trigger for manual testing**
-  - **Removed API references since we're using separate deployments for backend**
-  - **Updated GitHub Secrets to use mock services for development deployment**
-- Enhanced state management in ChatContext for improved reliability
-- **Created comprehensive architecture diagrams to visualize the system structure:**
-  - Added component architecture diagram showing atomic design hierarchy
-  - Created service architecture diagram illustrating service layer and integrations
-  - Added data flow diagram to visualize message and request processing
-  - Included additional diagrams for theming, environment config, and other systems
-  - Optimized diagrams for dark mode accessibility with proper contrast
-- **Enhanced error handling in the API services:** ✅ Added custom errors, improved messages, handled status codes, implemented timeouts, and enhanced stream processing.
-- **Completed Final Documentation Cleanup & Standardization:** ✨ Ensured all project documentation is consistent, adheres to GFM guidelines, and accurately reflects the current architecture.
-- Initiated review and update process for Storybook stories to align with current components and guidelines.
+    - Recreated 11 key architecture diagrams.
+    - Updated diagram references.
+- **Updated API Documentation & Examples for Semantic Kernel Focus:** ✅
+- **Implemented OpenTelemetry with Azure Monitor Integration:** ✅
+- **Completed Full Project Review & Documentation Update:** ✅
+- **Fixed layout and container sizing issues:** ✅
+- **Completed message box text size/resolution improvement and markdown support:** ✅
+- **Completed responsive design for small and very small screens:** ✅
+- **Improved loading state visual feedback:** ✅
+- **Established GitHub-flavored Markdown (GFM) guidelines for documentation:** ✅
+- **Implemented auto-scrolling for chat messages:** ✅
+- **Reorganized component structure for better maintainability:** ✅
+- **Updated Storybook stories to match current component implementations:** ✅
+- **Completed API service implementations:** ✅
+- **Enhanced deployment environment configuration with dual approach:** ✅
+- **Created comprehensive architecture diagrams to visualize the system structure:** ✅
+- **Enhanced error handling in the API services:** ✅
 
 ## Decisions & Considerations
-- Using Material UI's responsive utilities like useMediaQuery for consistent breakpoints
-- Implementing compact mode for UI components to better support small screens
-- Using fade transitions for loading states to improve perceived performance
-- Using MutationObserver for detecting DOM changes during streaming responses
-- Differentiating between smooth scrolling (normal updates) and immediate scrolling (streaming)
-- Multi-agent responses are represented as an array of `Message` objects
-- Theme files are now organized in a dedicated directory for better structure
-- Using functional updates for state management to ensure atomic updates
-- **Following an "architecture first" approach where diagrams are reviewed before implementation**
-- **Ensuring architecture diagrams are kept up to date as the system evolves**
-- **Implementing OpenTelemetry to gain better insights into application performance and user behavior**
-- **Using OpenTelemetry's vendor-neutral approach to ensure flexibility with observability backends**
-- **Rebuilding Storybook stories to align with current component implementations and architecture**
-- **Ensuring consistent theming in Storybook that matches the application**
-- **Using Next.js build configuration to ignore linting and type errors during deployment**
-- **Using mock services for development deployments to avoid dependencies on external APIs**
-- **Separating frontend and backend deployments for better modularity and independent scaling**
-- **Documentation Style**: Embracing energetic, clear, concise GFM with well-placed emojis for all future documentation. 😊
-- **Current State**: Application is considered feature-complete for this phase, stable, and deployed. Focus shifts to observability and final polish (testing, documentation, accessibility).
-- **API Response Format Strategy:** Prioritize backend simplicity for Semantic Kernel users by recommending the return of native `ChatMessageContent` objects. The frontend `ApiChatService` will handle parsing the necessary fields from this richer structure. Non-SK users should adhere to the documented minimal format.
+- **Tool Message Visibility**: Implemented with a toggle in the header, default hidden.
+- **Tool Message Styling**: Implemented with distinct neutral background and "Tool" label.
+- **Following Phased Plan**: Completed all phases for tool message visibility.
+- **Architecture First**: Diagrams reviewed and updated.
+- Using Material UI's responsive utilities.
+- Implementing compact mode for UI components.
+- Using fade transitions for loading states.
+- Using MutationObserver for streaming scroll detection.
+- Differentiating scrolling behaviors.
+- Multi-agent responses handled correctly.
+- Themes organized in dedicated directory.
+- Using functional state updates.
+- Ensured architecture diagrams are up to date.
+- Implemented OpenTelemetry with Azure Monitor.
+- Storybook stories rebuilt and aligned.
+- Consistent theming in Storybook verified.
+- Next.js build ignores lint/type errors for deployment.
+- Mock services used for dev deployments.
+- Separate frontend/backend deployments.
+- **Documentation Style**: Energetic, clear, concise GFM with emojis. 😊
+- **Current State**: Application is feature-complete for this phase, stable, and deployed. Focus shifts to testing, API documentation, and accessibility.
+- **API Response Format Strategy:** Prioritizing Semantic Kernel `ChatMessageContent` return type for backend simplicity.
 
 ## Open Questions
+- How to best represent complex JSON content within the `TOOL` message bubble? (Current: `<pre>`, future enhancement possible)
 - What additional loading state enhancements would improve user experience? (Lower priority)
 - How can we further optimize the chat history panel for mobile devices? (Lower priority)
 - Should we implement scroll position memory when switching between chats? (Lower priority)
 - Should we implement end-to-end tests for the application? (Future consideration)
 - How can we better integrate architecture diagrams into the development workflow? (Ongoing process)
-- **Which OpenTelemetry backend is most suitable for our needs (Jaeger, Zipkin, etc.)?** (Needs decision)
-- **Should we implement custom instrumentation for specific critical paths in our application?** (Needs decision)
+- **Which OpenTelemetry backend is most suitable for our needs (Jaeger, Zipkin, etc.)?** (Needs decision - Current: Azure Monitor)
+- **Should we implement custom instrumentation for specific critical paths?** (Needs decision - Currently using auto-instrumentation + basic manual)
 - **How can we balance comprehensive telemetry with minimal performance impact?** (Needs research/testing)
 - How can we automate testing of component states using Storybook? (Future consideration)
-- How should we address the type mismatches between Button component and its stories? (Lower priority/Investigate if causing issues)
 - What's the best approach to handle linting rules in a collaborative development environment? (Lower priority)
+- How can we improve the display of very long messages or code blocks in `MessageBubble`? (Future enhancement)

@@ -145,6 +145,27 @@ This document outlines the key architectural and design patterns used in the Cha
   - Requires specific fields like `Role`, `Content`/`Items`. `AuthorName` needed for multi-agent minimal format.
 - **Frontend Parsing:**
   - `ApiChatService` (`src/services/ApiChatService.ts`) handles both formats.
+- **Tool Message Handling**:
+  - The `Message` interface includes `authorRole: 'TOOL'` and optional `toolCall: ToolCall[]` for `ASSISTANT` messages.
+  - `ApiChatService` parses these fields from the API response.
+
+## Conditional Tool Message Display Pattern 🛠️
+*(Refer to: [Diagram 1: Component Architecture](architectureDiagrams.md#1-component-architecture-atomic-design), [Diagram 3: State Management and Data Flow](architectureDiagrams.md#3-state-management-and-data-flow), [Diagram 4: Message Processing Flow](architectureDiagrams.md#4-message-processing-flow))*
+- **Goal**: Allow users to optionally view tool execution details (calls and results) within the chat history.
+- **State Management**:
+  - `ChatContext` (`src/context/ChatContext.tsx`) holds a boolean state `showToolMessages` (default: `false`).
+  - A `toggleToolMessageVisibility` function in the context updates this state.
+- **UI Components**:
+  - `ToolMessageToggle` (Molecule - `src/components/molecules/ToolMessageToggle/ToolMessageToggle.tsx`): A UI control (Switch with label and icon) placed in `ChatHeader` to trigger `toggleToolMessageVisibility`.
+  - `MessageBubble` (Molecule - `src/components/molecules/MessageBubble.tsx`): 
+    - Consumes `showToolMessages` state from `ChatContext`.
+    - Conditionally renders messages with `authorRole: 'TOOL'` *only if* `showToolMessages` is true.
+    - Conditionally renders an indicator (e.g., a small icon or label) on `ASSISTANT` messages containing `toolCall` *only if* `showToolMessages` is true.
+- **Styling**:
+  - `TOOL` messages are styled with a distinct, neutral background (theme-aware), a "Tool" label, and an appropriate icon (e.g., Terminal) for clear identification when visible.
+  - The display of tool content (like JSON) uses a `<pre>` tag for basic formatting. Further enhancement for complex structures is possible.
+- **Service Layer Integration**:
+  - `ApiChatService` (`src/services/ApiChatService.ts`) parses `TOOL` roles and `toolCall` / `toolCallId` fields from the API response (both native SK and minimal formats) and maps them to the `Message` interface.
 
 ## OpenTelemetry Observability Patterns
 *(Refer to: [Diagram 2: Application Architecture](architectureDiagrams.md#2-application-architecture))*

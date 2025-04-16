@@ -1,18 +1,29 @@
 'use client';
 
-import { Box, Typography, SxProps, Theme, IconButton, Menu, MenuItem } from '@mui/material';
+import { Box, Typography, SxProps, Theme, IconButton, Menu, MenuItem, Tooltip } from '@mui/material';
 import { MessageBubble, Role } from '@/components/molecules/MessageBubble';
 import { MessageSquare, Type } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
+import { useChatContext } from '@/context/ChatContext';
 import { useEffect, useRef, useState } from 'react';
+
+// Define the ToolCall type based on the API response structure
+export interface ToolCall {
+  id: string;
+  pluginName?: string; // Optional based on example
+  functionName?: string; // Optional based on example
+  arguments?: Record<string, any>; // Use Record<string, any> for flexibility
+}
 
 export interface Message {
   id: string;
   content: string;
-  role: Role;
+  role: Role | 'tool'; // Changed 'TOOL' to 'tool'
   timestamp?: string;
   agentIdentifier?: string;
   agentName?: string;
+  toolCall?: ToolCall[]; // Optional array of tool calls for ASSISTANT messages
+  toolCallId?: string; // Optional ID linking a TOOL message to a call
 }
 
 export interface ChatMessagePanelProps {
@@ -32,12 +43,10 @@ export const ChatMessagePanel = ({
   isLoading = false,
 }: ChatMessagePanelProps) => {
   const { theme, isDarkMode } = useTheme();
-  // Create a ref for the messages container to enable auto-scrolling
+  const { showToolMessages } = useChatContext();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  // Add state for text size preference
   const [textSize, setTextSize] = useState<TextSizeOption>('medium');
-  // Add state for the text size menu
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   
@@ -49,16 +58,23 @@ export const ChatMessagePanel = ({
     }
   }, []);
   
-  // Filter messages to only show user and assistant messages
-  // System and tool messages are not displayed
-  const visibleMessages = messages.filter(message => 
-    message.role === 'user' || message.role === 'assistant'
-  ).map(message => {
-    // If it's an assistant message with agentIdentifier or agentName, ensure content doesn't start with [Agent]
+  // Filter messages based on role and showToolMessages state
+  const visibleMessages = messages.filter(message => {
+    // Always show user and assistant messages
+    if (message.role === 'user' || message.role === 'assistant') {
+      return true;
+    }
+    // Only show tool messages if showToolMessages is true
+    if (message.role === 'tool' && showToolMessages) {
+      return true;
+    }
+    // Exclude system messages and hidden tool messages
+    return false;
+  }).map(message => {
+    // Clean up potential agent prefix from assistant messages
     if (message.role === 'assistant') {
       const agentId = message.agentName || message.agentIdentifier;
       if (agentId) {
-        // Check if the content starts with [AgentName Agent] and remove it if it does
         const agentPrefix = `[${agentId} Agent] `;
         if (message.content.startsWith(agentPrefix)) {
           return {
@@ -163,23 +179,25 @@ export const ChatMessagePanel = ({
           zIndex: 10,
         }}
       >
-        <IconButton
-          onClick={handleClick}
-          size="medium"
-          aria-controls={open ? 'text-size-menu' : undefined}
-          aria-haspopup="true"
-          aria-expanded={open ? 'true' : undefined}
-          sx={{ 
-            bgcolor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
-            '&:hover': {
-              bgcolor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
-            },
-            padding: '10px',
-            borderRadius: '8px',
-          }}
-        >
-          <Type size={24} color={isDarkMode ? '#fff' : '#000'} />
-        </IconButton>
+        <Tooltip title={`Text Size: ${textSize}`}>
+          <IconButton
+            onClick={handleClick}
+            size="medium"
+            aria-controls={open ? 'text-size-menu' : undefined}
+            aria-haspopup="true"
+            aria-expanded={open ? 'true' : undefined}
+            sx={{ 
+              bgcolor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+              '&:hover': {
+                bgcolor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+              },
+              padding: '10px',
+              borderRadius: '8px',
+            }}
+          >
+            <Type size={24} color={isDarkMode ? '#fff' : '#000'} />
+          </IconButton>
+        </Tooltip>
         <Menu
           id="text-size-menu"
           anchorEl={anchorEl}

@@ -3,6 +3,7 @@ import Button from './Button';
 import { Send, Save, ArrowRight, Loader2 } from 'lucide-react';
 import { ThemeProvider } from '../providers/ThemeProvider';
 import React from 'react';
+import { userEvent, within, expect } from '@storybook/test'; // Import testing utilities
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
 const meta = {
@@ -74,6 +75,21 @@ export const Primary: Story = {
     disabled: false,
     loading: false,
     fullWidth: false,
+  },
+  // Add play function for interaction testing
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    // Get the button element
+    const button = canvas.getByRole('button', { name: /Button/i });
+    
+    // Simulate user click
+    await userEvent.click(button);
+    
+    // Assertion: Check if the onClick handler was called (if provided)
+    // Note: Storybook's action logger implicitly checks this when `onClick` is defined in argTypes
+    // We can add more explicit checks if needed, e.g., asserting element state changes
+    // Example: If clicking toggled a state, we could check for that change.
+    // await expect(button).toHaveAttribute('data-clicked', 'true'); // Example assertion
   },
 };
 
@@ -200,6 +216,10 @@ export const FullWidthResponsive: Story = {
 
 // Theme Color Integration Example
 export const ThemeColorIntegration: Story = {
+  args: {
+    ...Primary.args,
+    children: 'Theme Integration',
+  },
   render: () => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <div>
@@ -207,24 +227,24 @@ export const ThemeColorIntegration: Story = {
         <div style={{ display: 'flex', gap: '8px' }}>
           <Button variant="contained" color="primary">Normal</Button>
           <Button variant="contained" color="primary" disabled>Disabled</Button>
-          <Button variant="primary">Normal</Button>
-          <Button variant="primary" disabled>Disabled</Button>
+          <Button variant="contained" color="primary">Contained Primary</Button>
+          <Button variant="contained" color="primary" disabled>Contained Disabled</Button>
         </div>
       </div>
       <div>
         <h3 style={{ marginBottom: '8px' }}>Secondary Variant</h3>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <Button variant="secondary">Normal</Button>
-          <Button variant="secondary" disabled>Disabled</Button>
+          <Button variant="contained" color="secondary">Contained Secondary</Button>
+          <Button variant="contained" color="secondary" disabled>Contained Disabled</Button>
         </div>
       </div>
       <div>
         <h3 style={{ marginBottom: '8px' }}>Outlined Variant</h3>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <Button variant="outlined">Normal</Button>
-          <Button variant="outlined" disabled>Disabled</Button>
+          <Button variant="outlined" color="primary">Outlined Primary</Button>
+          <Button variant="outlined" color="primary" disabled>Outlined Disabled</Button>
         </div>
       </div>
     </div>
   ),
-}; 
+};

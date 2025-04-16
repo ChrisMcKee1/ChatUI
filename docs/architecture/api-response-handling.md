@@ -1,20 +1,37 @@
-# API Communication Flow (Actual Response Format)
+# API Communication Flow (Response Formats)
 
-This diagram illustrates how the frontend (`ApiChatService`) interacts with the backend API and handles the actual JSON response format.
+This diagram illustrates how the frontend (`ApiChatService`) interacts with the backend API and handles the two primary response approaches: native Semantic Kernel objects or a minimal fallback format.
 
 ```mermaid
 %%{init: {'theme':'dark'}}%%
 sequenceDiagram
     participant FE as Frontend (ApiChatService)
     participant BE as Backend API
+    participant SK as Semantic Kernel (Recommended)
     
     FE->>BE: POST /chat or /multi-agent-chat/... (Request with messages)
-    BE->>BE: Process request, generate response
-    BE-->>FE: Response (Actual JSON Format - see example below)
-    FE->>FE: Parse 'content' and 'authorRole' from response object(s)
-    FE->>FE: Attempt to find 'authorName' (e.g., in metadata or root) for multi-agent
-    FE->>FE: Construct UI Message object(s)
+    
+    alt Backend Uses Semantic Kernel (Recommended)
+        BE->>SK: Process request, generate ChatMessageContent
+        SK-->>BE: Return native ChatMessageContent object(s)
+        BE-->>FE: Response (JSON Serialized ChatMessageContent)
+        Note over FE: Parses Role, AuthorName/name, Content/Items[Text],
+        Note over FE: and ToolCalls/ToolContent properties.
+        FE->>FE: Construct UI Message object(s)
+    else Backend Does NOT Use Semantic Kernel
+        BE->>BE: Process request, manually build response
+        BE-->>FE: Response (Minimal JSON Format)
+        Note over FE: Parses Role, AuthorName, Items[Text] or Content.
+        Note over FE: Tool info must map to Items with specific $type if used.
+        FE->>FE: Construct UI Message object(s)
+    end
 ```
+
+## Key Points
+- **Semantic Kernel Priority:** Returning native `ChatMessageContent` objects (serialized) is the recommended approach for backend simplicity and richer data.
+- **Frontend Parsing:** `ApiChatService` is designed to parse the necessary fields (Role, AuthorName/name, Content/Items[Text], tool calls/content) from the native `ChatMessageContent` structure.
+- **Minimal Format:** If not using SK, the backend must adhere to the defined minimal format (see `docs/api/response-formats.md`). `AuthorName` is required for multi-agent, and tool information needs careful mapping within the `Items` array.
+- **UI Message Construction:** The frontend service always constructs the internal `Message` object (with `id`, `timestamp`, etc.) used by the UI, regardless of the API format received.
 
 ## Example API Response Structure
 

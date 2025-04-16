@@ -23,6 +23,7 @@ flowchart TD
         M4[ThemeToggle]
         M5[ChatHistoryItem]
         M6[NewChatButton]
+        M7[ToolMessageToggle]
     end
     
     subgraph Atoms
@@ -34,6 +35,7 @@ flowchart TD
         A6[Fade]
         A7[Lucide Icons]
         A8[Spinner]
+        A9[Switch]
     end
     
     TPL --> O1
@@ -43,6 +45,7 @@ flowchart TD
     
     O1 --> M3
     O1 --> M4
+    O1 --> M7
     O2 --> M5
     O2 --> M6
     O3 --> M2
@@ -70,6 +73,10 @@ flowchart TD
     
     M6 --> A1
     M6 --> A7
+    
+    M7 --> A9
+    M7 --> A2
+    M7 --> A7
     
     style Atoms fill:#0277bd,stroke:#01579b,color:#ffffff
     style Molecules fill:#388e3c,stroke:#1b5e20,color:#ffffff

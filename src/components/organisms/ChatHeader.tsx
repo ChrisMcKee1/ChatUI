@@ -4,7 +4,8 @@ import { Box, Typography, AppBar, Toolbar, Tooltip, IconButton } from '@mui/mate
 import { ThemeToggle } from '@/components/molecules/ThemeToggle';
 import { AgentToggle, AgentMode } from '@/components/molecules/AgentToggle';
 import { useTheme } from '@/context/ThemeContext';
-import { Plus } from 'lucide-react';
+import { useChatContext } from '@/context/ChatContext';
+import { Plus, Eye, EyeOff } from 'lucide-react';
 import { getAppName } from '@/utils/environment';
 
 export interface ChatHeaderProps {
@@ -47,6 +48,8 @@ export const ChatHeader = ({
 }: ChatHeaderProps) => {
   // Get theme directly from context - this ensures we react to theme changes
   const { theme, isDarkMode } = useTheme();
+  // Get tool message state from ChatContext
+  const { showToolMessages, toggleToolMessageVisibility } = useChatContext();
   
   // Use theme colors with fallbacks - directly within render to ensure reactivity
   const primaryColor = theme?.colors?.primary || '#ff6188';
@@ -151,7 +154,28 @@ export const ChatHeader = ({
               <Plus size={isSmallScreen ? 18 : 20} color={primaryColor} />
             </IconButton>
           </Tooltip>
-          <ThemeToggle compact={isSmallScreen} />
+          <Tooltip title={showToolMessages ? "Hide Tool Messages" : "Show Tool Messages"}>
+            <IconButton 
+              onClick={toggleToolMessageVisibility} 
+              size={isSmallScreen ? "small" : "medium"}
+              aria-label={showToolMessages ? "Hide tool messages" : "Show tool messages"}
+              sx={{ 
+                color: theme?.colors?.textSecondary,
+                bgcolor: isDarkMode ? 'grey.800' : 'grey.100',
+                p: isSmallScreen ? 0.75 : 1,
+                '&:hover': {
+                  bgcolor: isDarkMode ? 'grey.700' : 'grey.200',
+                },
+              }}
+            >
+              {showToolMessages ? <EyeOff size={isSmallScreen ? 18 : 20} /> : <Eye size={isSmallScreen ? 18 : 20} />}
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Toggle theme">
+            <Box component="span">
+              <ThemeToggle compact={isSmallScreen} />
+            </Box>
+          </Tooltip>
         </Box>
       </Toolbar>
     </AppBar>

@@ -1,6 +1,6 @@
 # State Management and Data Flow
 
-This diagram illustrates how user interactions flow through context providers and services to update application state.
+This diagram illustrates how application state is managed and flows between contexts, services, and external systems in response to user interactions.
 
 ```mermaid
 %%{init: {'theme':'dark'}}%%
@@ -12,6 +12,7 @@ flowchart TD
         DeleteChat[Delete Chat]
         ToggleAgent[Toggle Agent Mode]
         ToggleTheme[Toggle Theme]
+        ToggleToolVisibility[Toggle Tool Visibility]
     end
     
     subgraph Context["Context Providers"]
@@ -31,6 +32,7 @@ flowchart TD
         AgentMode[Agent Mode]
         Loading[Loading State]
         Theme[Theme State]
+        ShowToolMsgs[Show Tool Messages State]
     end
     
     subgraph External["External Systems"]
@@ -44,6 +46,7 @@ flowchart TD
     DeleteChat -->|Triggers| ChatCtx
     ToggleAgent -->|Triggers| ChatCtx
     ToggleTheme -->|Triggers| ThemeCtx
+    ToggleToolVisibility -->|Triggers| ChatCtx
     
     ChatCtx -->|Uses| ChatSvc
     ChatCtx -->|Uses| HistorySvc
@@ -57,6 +60,7 @@ flowchart TD
     ChatCtx -->|Updates| ActiveChat
     ChatCtx -->|Updates| AgentMode
     ChatCtx -->|Updates| Loading
+    ChatCtx -->|Updates| ShowToolMsgs
     ThemeCtx -->|Updates| Theme
     
     style User_Interactions fill:#1565c0,stroke:#0d47a1,color:#ffffff

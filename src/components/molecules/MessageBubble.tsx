@@ -1,33 +1,29 @@
 'use client';
 
 import React from 'react';
-import { Avatar, Box, Typography, useMediaQuery, useTheme as useMuiTheme } from '@mui/material';
-import { User, Bot } from 'lucide-react';
+import { Avatar, Box, Typography, useMediaQuery, useTheme as useMuiTheme, Paper } from '@mui/material';
+import { User, Bot, Terminal, Wrench } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
+import { useChatContext } from '@/context/ChatContext';
 import { useState, useEffect } from 'react';
-import { Message } from './ChatMessagePanel'; // Import the Message type
+import { Message } from './ChatMessagePanel';
 import { MarkdownRenderer } from '@/components/atoms/MarkdownRenderer';
 import { TextSizeOption } from './ChatMessagePanel';
 
 export type Role = 'user' | 'assistant' | 'system' | 'tool';
 
 export interface MessageBubbleProps {
-  message: Message & { textSize?: TextSizeOption }; // Extend the Message type to include textSize
+  message: Message & { textSize?: TextSizeOption };
   className?: string;
 }
 
 // Default fallback colors - matching the AgentToggle component colors
 const DEFAULT_USER_COLOR = '#ffd866'; // Warning color (yellow/orange) for user avatar
 const DEFAULT_ASSISTANT_COLOR = '#78dce8';   // Secondary color (light blue) for assistant avatar
-const DEFAULT_INFO_COLOR = '#a9dc76'; // Success/Info color (green)
-const DEFAULT_ERROR_COLOR = '#ff6188'; // Error color (pink/red)
-
-const DEFAULT_USER_BG_DARK = 'rgba(255, 216, 102, 0.2)'; // Semi-transparent yellow in dark mode
-const DEFAULT_USER_BG_LIGHT = 'rgba(255, 216, 102, 0.3)'; // More vibrant yellow in light mode
-const DEFAULT_ASSISTANT_BG_DARK = 'rgba(120, 220, 232, 0.2)'; // Semi-transparent blue in dark mode
-const DEFAULT_ASSISTANT_BG_LIGHT = 'rgba(120, 220, 232, 0.3)'; // More vibrant blue in light mode
 const DEFAULT_TEXT_DARK = '#fcfcfa';
 const DEFAULT_TEXT_LIGHT = '#2c292d';
+const DEFAULT_TOOL_BG_DARK = 'rgba(80, 80, 80, 0.2)'; // Darker subtle grey
+const DEFAULT_TOOL_BG_LIGHT = 'rgba(200, 200, 200, 0.2)'; // Lighter subtle grey
 
 // Helper function to convert hex to rgb
 function hexToRgb(hex: string) {
@@ -43,191 +39,188 @@ function hexToRgb(hex: string) {
   return `${r}, ${g}, ${b}`;
 }
 
+// Helper function to adjust hex color brightness
+function adjustHexColor(hex: string, amount: number): string {
+  try {
+    hex = hex.replace('#', '');
+    let r = parseInt(hex.substring(0, 2), 16);
+    let g = parseInt(hex.substring(2, 4), 16);
+    let b = parseInt(hex.substring(4, 6), 16);
+
+    r = Math.max(0, Math.min(255, r + amount));
+    g = Math.max(0, Math.min(255, g + amount));
+    b = Math.max(0, Math.min(255, b + amount));
+
+    const rr = r.toString(16).padStart(2, '0');
+    const gg = g.toString(16).padStart(2, '0');
+    const bb = b.toString(16).padStart(2, '0');
+
+    return `#${rr}${gg}${bb}`;
+  } catch (e) {
+    console.error("Failed to adjust hex color:", e);
+    return hex; // Return original color on error
+  }
+}
+
+// Helper function to attempt JSON parsing and pretty-printing
+function tryFormatJson(content: string): string {
+  try {
+    const jsonObject = JSON.parse(content);
+    // If parsing succeeds, stringify with indentation
+    return JSON.stringify(jsonObject, null, 2);
+  } catch (error) {
+    // If parsing fails, return the original content
+    return content;
+  }
+}
+
 // Create a map to track agent color assignments and used colors
-// Using a module-level variable to persist between renders
-// This ensures consistent colors throughout the chat session
 const agentColorAssignments: Record<string, string> = {};
 const usedColors = new Set<string>();
 let nextColorIndex = 0;
 
-const agentBackgrounds = (color: string, isDarkMode: boolean) => {
-  // Adjusted alpha values for better visibility and contrast
-  const alpha = isDarkMode ? 0.9 : 0.4; // Less transparency in light mode for better contrast
-  return `rgba(${hexToRgb(color)}, ${alpha})`;
-};
-
-export const MessageBubble = ({
-  message, // Use the whole message object
-  className = '',
-}: MessageBubbleProps) => {
-  const { theme, isDarkMode } = useTheme();
-  const [timeAgo, setTimeAgo] = useState(message.timestamp || '');
-  const muiTheme = useMuiTheme();
-  
-  // Add breakpoint checks for responsive design
-  const isXsScreen = useMediaQuery(muiTheme.breakpoints.down('sm'));
-  const isSmScreen = useMediaQuery(muiTheme.breakpoints.between('sm', 'md'));
-  
-  // Extract properties from the message object
-  const { content, role, agentName, agentIdentifier, textSize = 'medium' } = message;
-  
-  // Use agentName if available, otherwise fall back to agentIdentifier
-  const agentId = agentName || agentIdentifier;
-
-  // Reserve user color - this should never be assigned to any agent
-  const userColor = theme?.colors?.warning || DEFAULT_USER_COLOR;
-  
-  // Get theme-based colors for agent assignment - excluding the user color
-  // These colors are directly from the theme files, with an emphasis on 
-  // colors designed for visual distinction
+// Function to get or assign a color for an agent (Restored)
+const getAgentColor = (agentName: string, theme: any, userColor: string): string => {
+  if (agentColorAssignments[agentName]) {
+    return agentColorAssignments[agentName];
+  }
   const themeColorPool = [
     theme?.colors?.secondary || '#78dce8',   // Light blue
     theme?.colors?.success || '#a9dc76',     // Green
     theme?.colors?.danger || '#ff6188',      // Red/Pink
     theme?.colors?.info || '#78dce8',        // Light blue variant
     theme?.colors?.primary || '#ff6188',     // Pink/Purple
-  ].filter(color => color !== userColor); // Exclude user color
-  
-  // Add fallback colors for additional visual variety
-  // These are hardcoded based on colors from the VSCode theme files
+  ].filter(color => color !== userColor);
   const additionalColors = [
-    '#5ad4e6',  // Chart blue from theme
-    '#7bd88f',  // Chart green from theme
-    '#fc618d',  // Chart red from theme
-    '#fce566',  // Chart yellow from theme
-    '#fd9353',  // Chart orange from theme
-    '#948ae3',  // Chart purple from theme
-    '#ab9df2',  // Bracket color purple variant
-    '#ff8f7e',  // Orange/salmon variant
-    '#66d9ef',  // Bright cyan
-    '#ae81ff',  // Lavender
-  ].filter(color => color !== userColor); // Exclude user color
-  
-  // Combine the theme colors with additional colors, removing duplicates
+    '#5ad4e6', '#7bd88f', '#fc618d', '#fce566', '#fd9353', 
+    '#948ae3', '#ab9df2', '#ff8f7e', '#66d9ef', '#ae81ff',
+  ].filter(color => color !== userColor);
   const combinedColorPool = Array.from(new Set([...themeColorPool, ...additionalColors]));
 
-  // Function to get or assign a color for an agent
-  const getAgentColor = (agentName: string): string => {
-    // If we already assigned a color to this agent, use it
-    if (agentColorAssignments[agentName]) {
-      return agentColorAssignments[agentName];
+  let color = '';
+  for (let i = 0; i < combinedColorPool.length; i++) {
+    const candidateColor = combinedColorPool[(nextColorIndex + i) % combinedColorPool.length];
+    if (!usedColors.has(candidateColor)) {
+      color = candidateColor;
+      nextColorIndex = (nextColorIndex + i + 1) % combinedColorPool.length;
+      break;
     }
-    
-    // Find a color that hasn't been used yet if possible
-    let color = '';
-    
-    // First try to find unused colors
-    for (let i = 0; i < combinedColorPool.length; i++) {
-      const candidateColor = combinedColorPool[(nextColorIndex + i) % combinedColorPool.length];
-      if (!usedColors.has(candidateColor) && candidateColor !== userColor) {
-        color = candidateColor;
-        nextColorIndex = (nextColorIndex + i + 1) % combinedColorPool.length;
-        break;
-      }
-    }
-    
-    // If all colors have been used, fall back to cycling through them
-    if (!color) {
-      color = combinedColorPool[nextColorIndex % combinedColorPool.length];
-      nextColorIndex++;
-    }
-    
-    // Store the assignment for future use and mark as used
-    agentColorAssignments[agentName] = color;
-    usedColors.add(color);
-    
-    return color;
-  };
+  }
+  if (!color) {
+    color = combinedColorPool[nextColorIndex % combinedColorPool.length];
+    nextColorIndex = (nextColorIndex + 1) % combinedColorPool.length;
+  }
+  agentColorAssignments[agentName] = color;
+  usedColors.add(color);
+  return color;
+};
 
-  // Get base theme colors with fallbacks
-  const warningColor = userColor; // Use the reserved user color
+export const MessageBubble = ({
+  message,
+  className = '',
+}: MessageBubbleProps) => {
+  const { theme, isDarkMode } = useTheme();
+  const { showToolMessages } = useChatContext();
+  const [timeAgo, setTimeAgo] = useState(message.timestamp || '');
+  const muiTheme = useMuiTheme();
+  
+  const { content, role, agentName, agentIdentifier, textSize = 'medium', toolCall } = message;
+  
+  // Destructure message props earlier for use in calculations
+  const isXsScreen = useMediaQuery(muiTheme.breakpoints.down('sm'));
+  const isSmScreen = useMediaQuery(muiTheme.breakpoints.between('sm', 'md'));
+  
+  // --- Determine message type and agent info (Moved up) ---
+  const agentId = agentName || agentIdentifier;
+  const userColor = theme?.colors?.info || DEFAULT_USER_COLOR;
   const secondaryColor = theme?.colors?.secondary || DEFAULT_ASSISTANT_COLOR;
   
-  // Determine if this is a user message
   const isUserMessage = role === 'user';
-  
-  // Determine background and text color based on role and agent
-  let bubbleBgColor = '';
-  // Always use black text
-  const textColor = '#222';
-  let avatarBgColor = '';
-  // Adjust icon color based on mode and background for better contrast
-  let avatarIconColor = '#222';
+  const isToolMessage = role === 'tool';
+  const isAssistantPerformingToolCall = role === 'assistant' && toolCall && showToolMessages;
 
-  if (isUserMessage) {
-    bubbleBgColor = isDarkMode 
-      ? agentBackgrounds(warningColor, true) || DEFAULT_USER_BG_DARK
-      : agentBackgrounds(warningColor, false) || DEFAULT_USER_BG_LIGHT;
-    avatarBgColor = warningColor;
-    // Ensure the avatar icon is clearly visible
-    avatarIconColor = isDarkMode ? '#222' : '#222';
-  } else if (role === 'assistant') {
-    if (agentId) {
-      // Get a consistent color for this agent from our theme-based pool
-      const agentColor = getAgentColor(agentId);
-      bubbleBgColor = agentBackgrounds(agentColor, isDarkMode);
-      avatarBgColor = agentColor;
-      // Calculate luminance to determine if we need white or black icon
-      const luminance = calculateLuminance(agentColor);
-      avatarIconColor = luminance > 0.5 ? '#222' : '#fff';
-    } else {
-      // Default assistant style when no agent is specified
-      bubbleBgColor = isDarkMode 
-        ? agentBackgrounds(secondaryColor, true) || DEFAULT_ASSISTANT_BG_DARK
-        : agentBackgrounds(secondaryColor, false) || DEFAULT_ASSISTANT_BG_LIGHT;
-      avatarBgColor = secondaryColor;
-      // Calculate luminance to determine if we need white or black icon
-      const luminance = calculateLuminance(secondaryColor);
-      avatarIconColor = luminance > 0.5 ? '#222' : '#fff';
-    }
-  } else {
-    // Handle system/tool messages (using secondary color as default)
-    bubbleBgColor = isDarkMode 
-      ? agentBackgrounds(secondaryColor, true)
-      : agentBackgrounds(secondaryColor, false);
-    avatarBgColor = secondaryColor;
-    // Calculate luminance to determine if we need white or black icon
-    const luminance = calculateLuminance(secondaryColor);
-    avatarIconColor = luminance > 0.5 ? '#222' : '#fff';
+  // Use theme text color primarily, fallback for consistency
+  const textColor = theme?.colors?.textPrimary || (isDarkMode ? DEFAULT_TEXT_DARK : DEFAULT_TEXT_LIGHT);
+  
+  // Determine label text ONLY for assistant messages with an agent ID (and not a tool call indicator)
+  const agentLabel = !isUserMessage && !isToolMessage && agentId && !isAssistantPerformingToolCall ? agentId : '';
+  
+  // Moved hook after all variable declarations that might be used as dependencies
+  useEffect(() => {
+    setTimeAgo(message.timestamp || '');
+  }, [message.timestamp]); // Dependencies remain the same, but variables are declared above
+
+  // --- Conditional Rendering based on Role and Visibility ---
+  if (
+    role === 'system' || 
+    (role === 'tool' && !showToolMessages) ||
+    (role === 'assistant' && toolCall && !showToolMessages)
+  ) {
+    return null;
   }
+
+  let bubbleBgColor = '';
+  let avatarBgColor = '';
+  let avatarIconColor = '';
 
   // Helper function to calculate color luminance (brightness)
   function calculateLuminance(hexColor: string): number {
-    // Convert hex to RGB
     const rgb = hexToRgb(hexColor).split(',').map(Number);
-    
-    // Calculate relative luminance using the formula for sRGB
-    // L = 0.2126 * R + 0.7152 * G + 0.0722 * B (where R, G, B are in [0,1])
     return (0.2126 * (rgb[0]/255)) + (0.7152 * (rgb[1]/255)) + (0.0722 * (rgb[2]/255));
   }
   
-  // Get font family with fallback
-  const fontFamily = theme?.typography?.fontFamily || 'system-ui, sans-serif';
-  const fontWeight = theme?.typography?.fontWeight?.normal || '400';
-  const textSecondary = theme?.colors?.textSecondary || '#939293';
-  
-  // Determine label text for assistant messages
-  const agentLabel = !isUserMessage ? (agentId || 'Assistant') : '';
-  
-  useEffect(() => {
-    // Use the passed timestamp directly for now
-    setTimeAgo(message.timestamp || '');
-  }, [message.timestamp]);
-
-  // Don't render system messages for now (or style them differently)
-  if (role === 'system' || role === 'tool') {
-     // Optionally render system messages differently or not at all
-     // For now, just return null
-     return null;
-  }
-
-  // Determine the max width based on screen size
-  const getMaxWidth = () => {
-    if (isXsScreen) return '95%'; // Wider bubbles on very small screens
-    if (isSmScreen) return '85%'; // Slightly narrower on small screens
-    return '80%'; // Default for larger screens
+  // Refined helper to get contrasting text color using fixed light/dark defaults
+  const getContrastColor = (bgColor: string, isDarkMode: boolean) => {
+    try {
+      // Determine if background is light or dark based on luminance
+      const luminance = calculateLuminance(bgColor);
+      // Choose the default text color that provides better contrast
+      return luminance > 0.55 ? DEFAULT_TEXT_LIGHT : DEFAULT_TEXT_DARK;
+    } catch (e) {
+      // Fallback if luminance calculation fails
+      return isDarkMode ? DEFAULT_TEXT_DARK : DEFAULT_TEXT_LIGHT;
+    }
   };
 
+  if (isUserMessage) {
+    // Darken avatar and bubble in dark mode for better contrast with light text
+    avatarBgColor = isDarkMode ? adjustHexColor(userColor, -65) : adjustHexColor(userColor, 50);
+    bubbleBgColor = avatarBgColor; // Darker bubble in light mode
+    avatarIconColor = getContrastColor(avatarBgColor, isDarkMode);
+  } else if (role === 'assistant') {
+    const assistantDefaultColor = secondaryColor;
+    let baseAssistantColor = assistantDefaultColor;
+    if (agentId) {
+      baseAssistantColor = getAgentColor(agentId, theme, userColor);
+    }
+    // Darken avatar and bubble in dark mode
+    avatarBgColor = isDarkMode ? adjustHexColor(baseAssistantColor, -85) : adjustHexColor(baseAssistantColor, 85);
+    bubbleBgColor = avatarBgColor; // Darker bubble in light mode
+    avatarIconColor = getContrastColor(avatarBgColor, isDarkMode);
+  } else if (isToolMessage) {
+    // Use a subtle background derived from theme surface or fallback rgba
+    bubbleBgColor = theme?.colors?.surfaceBackground ? 
+                        (isDarkMode ? theme.colors.surfaceBackground : theme.colors.surfaceBackground) :
+                        (isDarkMode ? DEFAULT_TOOL_BG_DARK : DEFAULT_TOOL_BG_LIGHT);
+    avatarBgColor = bubbleBgColor;
+    // Use the primary text color calculated earlier
+    avatarIconColor = textColor;
+  }
+  
+  const fontFamily = theme?.typography?.fontFamily || 'system-ui, sans-serif';
+  const fontWeight = theme?.typography?.fontWeight?.normal || '400';
+  
+  const getMaxWidth = () => {
+    if (isXsScreen) return '95%';
+    if (isSmScreen) return '85%'; 
+    return '80%';
+  };
+
+  // Calculate adjusted timestamp color
+  const baseTimestampColor = theme?.colors?.textSecondary || '#888888'; // Mid-grey fallback
+  const adjustedTimestampColor = adjustHexColor(baseTimestampColor, isDarkMode ? 50 : -40);
+
+  // Main render
   return (
     <Box
       className={className}
@@ -236,84 +229,128 @@ export const MessageBubble = ({
         flexDirection: 'column',
         maxWidth: '100%',
         width: '100%',
-        gap: 1.5,
-        alignItems: isUserMessage ? 'flex-end' : 'flex-start', // Align based on sender
+        gap: 0.5, // Reduced gap slightly
+        alignItems: isUserMessage ? 'flex-end' : 'flex-start',
       }}
     >
-      {/* Show agent label for assistant messages */}
-      {!isUserMessage && agentLabel && (
+      {/* Show agent label ONLY for assistant messages with an agent ID */}
+      {agentLabel && (
         <Typography
           component="div"
           variant="caption"
           sx={{
             fontWeight: 'bold',
-            color: avatarBgColor,
-            ml: isUserMessage ? 0 : 7, // Align with message bubble
-            mb: -1,
+            color: isDarkMode ? avatarBgColor : adjustHexColor(avatarBgColor, -70),
+            textAlign: 'left',
+            pl: isUserMessage ? 0 : '52px', // Align with avatar start
+            pr: isUserMessage ? '52px' : 0, 
+            mb: 0.5, // Add small margin below label
           }}
         >
           {agentLabel}
         </Typography>
       )}
-      <Box
-        sx={{
-          display: 'flex',
-          gap: 2,
-          alignItems: 'flex-start',
-          flexDirection: isUserMessage ? 'row-reverse' : 'row', // Reverse order for user messages
-          maxWidth: getMaxWidth(), // Dynamic width based on screen size
-          // Add responsive padding
-          px: isXsScreen ? 1 : 0,
-        }}
-      >
-        <Avatar
+
+      {/* Main Bubble Row */}
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, width: '100%', justifyContent: isUserMessage ? 'flex-end' : 'flex-start' }}>
+        {/* Avatar for Assistant, Tool, or Assistant+ToolCall */}
+        {!isUserMessage && (
+          <Avatar sx={{ bgcolor: avatarBgColor, width: 36, height: 36, mt: 0.5 }}>
+            {isToolMessage ? 
+              <Terminal size={18} color={textColor} /> : 
+              isAssistantPerformingToolCall ?
+                <Wrench size={18} color={avatarIconColor} /> :
+                <Bot size={18} color={avatarIconColor} />
+            }
+          </Avatar>
+        )}
+        
+        {/* Message Content Paper */}
+        <Paper
+          elevation={1}
           sx={{
-            bgcolor: avatarBgColor,
-            width: isXsScreen ? 32 : 36, // Slightly smaller avatar on mobile
-            height: isXsScreen ? 32 : 36,
+            bgcolor: bubbleBgColor,
+            color: textColor,
+            p: { xs: 1.5, sm: 2 },
+            borderRadius: 3,
+            maxWidth: getMaxWidth(),
+            overflowWrap: 'break-word',
+            wordBreak: 'break-word',
+            hyphens: 'auto',
+            fontFamily: fontFamily,
+            fontWeight: fontWeight,
+            position: 'relative', // For potential absolute positioning inside
           }}
         >
-          {isUserMessage ? (
-            <User size={isXsScreen ? 16 : 18} color={avatarIconColor} />
-          ) : (
-            <Bot size={isXsScreen ? 16 : 18} color={avatarIconColor} />
+          {/* Tool Message Label */} 
+          {isToolMessage && (
+            <Typography variant="overline" sx={{ display: 'block', mb: 1, opacity: 0.7, fontWeight: 'bold', lineHeight: 1.2 }}>
+              Tool Response
+            </Typography>
           )}
-        </Avatar>
-        <Box
-          sx={{
-            flex: '1 1 auto',
-            overflow: 'hidden',
-            fontSize: isXsScreen ? '0.8125rem' : '0.875rem', // Smaller font on mobile
-            color: textColor, // Use determined text color
-            backgroundColor: bubbleBgColor, // Use determined background color
-            borderRadius: '0.75rem',
-            p: isXsScreen ? 1.5 : 2, // Less padding on mobile
-            boxShadow: 1,
-            borderTopRightRadius: isUserMessage ? 0 : '0.75rem', // Adjust bubble shape
-            borderTopLeftRadius: isUserMessage ? '0.75rem' : 0,  // Adjust bubble shape
-          }}
-        >
-          <MarkdownRenderer
-            content={content}
-            textSize={textSize} // Use the textSize from the message prop
-            maxWidth="100%"
-          />
-        </Box>
+          
+          {/* Enhanced Tool Call Indicator for Assistant */} 
+          {isAssistantPerformingToolCall && toolCall && (
+            <Box sx={{
+              mb: 1,
+              p: 1.5,
+              bgcolor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)', 
+              borderRadius: 1.5,
+              fontSize: '0.8rem',
+              opacity: 0.9
+             }}>
+              <Typography variant="caption" component="div" sx={{ fontWeight: 'bold', mb: 0.5 }}>Tool Call:</Typography>
+              {toolCall.map((call, index) => (
+                <Box key={call.id || index} sx={{ mb: index < toolCall.length - 1 ? 1 : 0 }}>
+                  <Typography variant="caption" component="div" sx={{ fontWeight: '500'}}>
+                    {call.pluginName || 'UnknownPlugin'}.{call.functionName || 'unknownFunction'}
+                  </Typography>
+                  {call.arguments && Object.keys(call.arguments).length > 0 && (
+                    <Typography component="pre" variant="caption" sx={{ mt: 0.5, pl: 1, whiteSpace: 'pre-wrap', wordBreak: 'break-all', m: 0, fontSize: '0.75rem' }}>
+                       {JSON.stringify(call.arguments, null, 2)}
+                    </Typography>
+                  )}
+                </Box>
+              ))}
+            </Box>
+          )}
+
+          {/* Main Content - No longer wrapped */} 
+          {isToolMessage ? (
+            <MarkdownRenderer 
+              // Format content as JSON if possible, otherwise use raw content
+              content={`\`\`\`json\n${tryFormatJson(content)}\n\`\`\``} 
+              textSize={textSize} 
+            />
+          ) : (
+            content ? <MarkdownRenderer content={content} textSize={textSize} /> : null
+          )}
+          
+          {/* Timestamp */} 
+          {timeAgo && (
+            <Typography
+              variant="caption"
+              component="div"
+              sx={{
+                mt: 1,
+                textAlign: 'right',
+                fontSize: '0.7rem',
+                opacity: 0.99,
+                color: adjustedTimestampColor, // Use dynamically adjusted color
+              }}
+            >
+              {timeAgo}
+            </Typography>
+          )}
+        </Paper>
+        
+        {/* Avatar for User */}
+        {isUserMessage && (
+          <Avatar sx={{ bgcolor: avatarBgColor, width: 36, height: 36, mt: 0.5 }}>
+            <User size={18} color={avatarIconColor} />
+          </Avatar>
+        )}
       </Box>
-      <Typography
-        component="div"
-        variant="caption"
-        sx={{
-          alignSelf: isUserMessage ? 'flex-end' : 'flex-start',
-          color: textSecondary,
-          mt: -1,
-          mx: isXsScreen ? 1 : 1.5, // Less margin on mobile
-          fontWeight: 'medium',
-          fontSize: isXsScreen ? '0.65rem' : '0.7rem', // Smaller font on mobile
-        }}
-      >
-        {timeAgo}
-      </Typography>
     </Box>
   );
 }; 

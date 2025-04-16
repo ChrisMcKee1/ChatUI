@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { TextField, Box, IconButton } from '@mui/material';
+import { TextField, Box, IconButton, Tooltip } from '@mui/material';
 import { Send } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 
@@ -122,35 +122,39 @@ export const ChatInput = ({
           top: 'auto',
           transform: 'none'
         }}>
-          <IconButton
-            onClick={handleSendMessage}
-            disabled={disabled || !message.trim()}
-            aria-label="Send message"
-            sx={{
-              width: 40,
-              height: 40,
-              borderRadius: '50%',
-              backgroundColor: isDarkMode 
-                ? `rgba(${hexToRgb(primaryColor)}, 0.8)`
-                : primaryColor,
-              color: 'white',
-              '&:hover': {
-                backgroundColor: isDarkMode 
-                  ? `rgba(${hexToRgb(primaryColor)}, 1)`
-                  : `rgba(${hexToRgb(primaryColor)}, 0.9)`,
-              },
-              '&.Mui-disabled': {
-                backgroundColor: isDarkMode 
-                  ? 'rgba(255, 255, 255, 0.12)'
-                  : 'rgba(0, 0, 0, 0.12)',
-                color: isDarkMode 
-                  ? 'rgba(255, 255, 255, 0.3)'
-                  : 'rgba(0, 0, 0, 0.26)',
-              }
-            }}
-          >
-            <Send size={20} color="white" />
-          </IconButton>
+          <Tooltip title="Send message (Enter)" placement="top">
+            <Box component="span">
+              <IconButton
+                onClick={handleSendMessage}
+                disabled={disabled || !message.trim()}
+                aria-label="Send message"
+                sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: '50%',
+                  backgroundColor: isDarkMode 
+                    ? `rgba(${hexToRgb(primaryColor)}, 0.8)`
+                    : primaryColor,
+                  color: 'white',
+                  '&:hover': {
+                    backgroundColor: isDarkMode 
+                      ? `rgba(${hexToRgb(primaryColor)}, 1)`
+                      : `rgba(${hexToRgb(primaryColor)}, 0.9)`,
+                  },
+                  '&.Mui-disabled': {
+                    backgroundColor: isDarkMode 
+                      ? 'rgba(255, 255, 255, 0.12)'
+                      : 'rgba(0, 0, 0, 0.12)',
+                    color: isDarkMode 
+                      ? 'rgba(255, 255, 255, 0.3)'
+                      : 'rgba(0, 0, 0, 0.26)',
+                  }
+                }}
+              >
+                <Send size={20} color="white" />
+              </IconButton>
+            </Box>
+          </Tooltip>
         </Box>
       </Box>
     </Box>

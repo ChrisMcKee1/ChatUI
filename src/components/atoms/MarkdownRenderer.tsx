@@ -27,9 +27,9 @@ export const MarkdownRenderer = ({
   
   // Get theme colors and typography with fallbacks
   const fontFamily = theme?.typography?.fontFamily || 'system-ui, sans-serif';
-  // Force text color to black regardless of theme
-  const textColor = '#222';
-  const codeBackground = isDarkMode ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.05)';
+  // Inherit text color from parent (MessageBubble)
+  // Use a subtle background for code, slightly different from parent background
+  const codeBackground = isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)';
   
   // Process the markdown content with GFM support
   const htmlContent = micromark(content, {
@@ -74,9 +74,13 @@ export const MarkdownRenderer = ({
       borderRadius: '0.5em',
       overflowX: 'auto',
       margin: '1em 0',
+      whiteSpace: 'pre-wrap',
+      wordWrap: 'break-word',
       '& code': {
         backgroundColor: 'transparent',
         padding: 0,
+        whiteSpace: 'pre-wrap',
+        wordWrap: 'break-word',
       }
     },
     '& blockquote': {
@@ -138,7 +142,7 @@ export const MarkdownRenderer = ({
       sx={{
         fontFamily,
         fontSize: getFontSize(),
-        color: textColor,
+        // Color is inherited from parent
         maxWidth,
         ...markdownStyles,
       }}

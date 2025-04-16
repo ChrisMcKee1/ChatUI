@@ -42,14 +42,14 @@ export const AgentToggle = ({
     return `${r}, ${g}, ${b}`;
   }
   
-  // Get theme colors with fallbacks
-  const warningColor = theme?.colors?.warning || '#ffd866'; // Yellow/orange
+  // Get theme colors with fallbacks - ALIGNED WITH MessageBubble.tsx
+  const standardModeColor = theme?.colors?.warning || '#ffd866'; // User message color (Warning/Yellow)
   const secondaryColor = theme?.colors?.secondary || '#78dce8'; // Light blue
   
   // Create semi-transparent colors for button backgrounds
   const chatBgColor = isDarkMode 
-    ? `rgba(${hexToRgb(warningColor)}, 0.9)` 
-    : `rgba(${hexToRgb(warningColor)}, 0.6)`;
+    ? `rgba(${hexToRgb(standardModeColor)}, 0.6)` // Use standardModeColor
+    : `rgba(${hexToRgb(standardModeColor)}, 0.8)`; // Use standardModeColor
   
   const agentModeBgColor = isDarkMode 
     ? `rgba(${hexToRgb(secondaryColor)}, 0.9)` 

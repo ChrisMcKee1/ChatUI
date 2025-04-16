@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { Message } from '@/components/molecules/ChatMessagePanel';
+import { Message, ToolCall } from '@/components/molecules/ChatMessagePanel';
 import { Role } from '@/components/molecules/MessageBubble';
 import { AgentMode } from '@/components/molecules/AgentToggle';
 import { IChatService, ChatMessage } from './IChatService';
@@ -35,7 +35,7 @@ interface ApiResponseContent {
   // Primary content field
   content?: string; 
   
-  // Role information (e.g., "ASSISTANT", "USER")
+  // Role information (e.g., "ASSISTANT", "USER", "TOOL")
   authorRole?: string; 
 
   // Author Name (Required for multi-agent, location may vary)
@@ -43,9 +43,13 @@ interface ApiResponseContent {
 
   // Metadata object (Optional, may contain authorName or other data)
   metadata?: { 
+    id?: string; // Add id for tool calls
     authorName?: string; // Check metadata second
     [key: string]: any; // Allow other metadata fields
   };
+
+  // Tool call information (Optional, for ASSISTANT messages)
+  toolCall?: ToolCall[];
 
   // Allow other potential top-level fields from the API
   [key: string]: any; 
@@ -150,7 +154,7 @@ export class ApiChatService implements IChatService {
   /**
    * Handles standard mode API calls
    */
-  private async handleStandardMode(apiUrl: string, payload: Record<string, unknown>, signal: AbortSignal): Promise<Message> {
+  private async handleStandardMode(apiUrl: string, payload: Record<string, unknown>, signal: AbortSignal): Promise<Message | Message[]> {
     try {
       // Make the API call
       const response = await fetch(apiUrl, {
@@ -164,24 +168,27 @@ export class ApiChatService implements IChatService {
       
       await this.handleErrorResponse(response); // Centralized error handling
       
-      // Parse the response data (expecting an array with one item)
+      // Parse the response data (expecting an array)
       const data: ApiResponseContent[] = await response.json().catch(() => {
         throw new ChatApiError('Failed to parse API response JSON.', response.status);
       });
       
-      // Validate the expected structure (array with one item)
-      if (!Array.isArray(data) || data.length !== 1 || !data[0]) {
-        console.warn('Unexpected response format for standard mode (expected array with one object):', data);
+      // Validate the expected structure (array)
+      if (!Array.isArray(data)) { 
+        console.error('Unexpected response format for standard mode (expected array):', data);
         throw new ChatApiError('Received response in an unexpected format.', response.status);
       }
       
-      // Convert the first (and only) response object to a UI Message
-      const message = this.convertToMessage(data[0]);
-      if (!message.content) {
-         console.error('Failed to extract content from standard mode response:', data[0]);
-         throw new ChatApiError('Could not extract message content from API response.', response.status);
+      // Convert the response objects to UI Messages
+      const messages = data.map(item => this.convertToMessage(item)).filter(msg => !!msg.content || msg.role === 'tool' || msg.toolCall); // Changed 'TOOL' to 'tool'
+      
+      if (messages.length === 0) {
+          console.error('Failed to extract any valid messages from standard mode response:', data);
+          throw new ChatApiError('Could not extract any valid messages from API response.', response.status);
       }
-      return message;
+      
+      // Standard mode *might* return multiple messages now (user, tool_call, tool_response, final_assistant)
+      return messages;
 
     } catch (error) {
       // AbortError is handled in sendMessage
@@ -248,68 +255,64 @@ export class ApiChatService implements IChatService {
   
   /**
    * Process a multi-agent streaming response
+   * NOTE: This assumes the stream sends complete JSON objects per event for tool calls/results,
+   * similar to the batch response structure. If the stream sends partial tool data,
+   * this parsing logic will need significant adjustments.
    */
   private async processMultiAgentStream(body: ReadableStream<Uint8Array>, signal: AbortSignal): Promise<Message[]> {
+    const messages: Message[] = [];
     const reader = body.getReader();
     const decoder = new TextDecoder();
-    const messages: Message[] = [];
     let buffer = '';
-    
+
     try {
       while (true) {
-        // Abort check before read
-        if (signal.aborted) throw new Error('Stream processing was aborted');
-        const { value, done } = await reader.read();
-        if (done) break;
-        // Abort check after read
-        if (signal.aborted) throw new Error('Stream processing was aborted');
-        
+        const { done, value } = await reader.read();
+        if (done || signal.aborted) break;
+
         buffer += decoder.decode(value, { stream: true });
         
         // Process buffer line by line for SSE events
-        let boundary = buffer.indexOf('\n\n');
-        while (boundary !== -1) {
-          const eventString = buffer.substring(0, boundary);
-          buffer = buffer.substring(boundary + 2);
+        let eolIndex;
+        while ((eolIndex = buffer.indexOf('\n\n')) >= 0) {
+          const eventBlock = buffer.substring(0, eolIndex);
+          buffer = buffer.substring(eolIndex + 2);
           
-          if (eventString.trim().startsWith('data:')) {
-            const dataString = eventString.replace(/^data: /, '').trim();
-            if (dataString === '[HEARTBEAT]') continue; // Skip heartbeats
-            
-            try {
-              const apiResponse: ApiResponseContent = JSON.parse(dataString);
-              const message = this.convertToMessage(apiResponse);
-
-              // Validate required fields for multi-agent (content and extracted agentName)
-              if (message.content && message.agentName) { 
-                messages.push(message);
-              } else {
-                console.warn('Skipping invalid SSE data object (missing content or authorName):', apiResponse);
-              }
-            } catch (e) {
-              console.error('Error parsing SSE data JSON:', e, dataString);
+          const lines = eventBlock.split('\n');
+          let eventData = '';
+          for (const line of lines) {
+            if (line.startsWith('data:')) {
+              eventData += line.substring(5).trim();
             }
           }
-          boundary = buffer.indexOf('\n\n');
+
+          if (eventData) {
+            try {
+              const parsedData: ApiResponseContent = JSON.parse(eventData);
+              const message = this.convertToMessage(parsedData);
+              // Only add messages with content or tool-related info
+              if (message.content || message.role === 'tool' || message.toolCall) { // Changed 'TOOL' to 'tool'
+                messages.push(message);
+              }
+            } catch (parseError) {
+              console.error('Failed to parse stream event data:', eventData, parseError);
+              // Decide how to handle parse errors - skip, throw, etc.
+            }
+          }
         }
       }
-      
-      // Process any remaining buffer content if needed (usually not necessary for SSE)
-      return messages;
-    } catch (error) {
-      // AbortError is handled in sendMessage
-      if (error instanceof ChatApiError) {
-        throw error;
-      }
-      console.error('Error processing multi-agent stream:', error);
-      // Return any messages processed so far, or throw if none
-      if (messages.length > 0) return messages;
-      // Don't re-wrap ChatApiError
-      throw new ChatApiError('Error processing streaming response.', (error instanceof ChatApiError) ? error.status : 0);
+    } catch (streamError) {
+        console.error('Error reading stream:', streamError);
+        throw new NetworkError('Error processing streamed response.');
     } finally {
-      // Ensure the reader is released
-      reader.releaseLock();
+        reader.releaseLock();
     }
+
+    if (signal.aborted) {
+        throw new Error('Stream processing aborted.');
+    }
+    
+    return messages;
   }
   
   /**
@@ -317,55 +320,57 @@ export class ApiChatService implements IChatService {
    */
   private processMultiAgentBatchResponse(data: ApiResponseContent[]): Message[] {
     if (!Array.isArray(data)) {
-      console.warn('Unexpected non-array response format for multi-agent batch mode:', data);
-      // Pass status 0 for non-HTTP errors during processing
-      throw new ChatApiError('Received response in an unexpected format.', 0);
+      console.warn('Unexpected response format for multi-agent batch (expected array):', data);
+      throw new ChatApiError('Received multi-agent response in an unexpected format.', 0);
     }
-    
-    return data
-      .map(apiResponse => this.convertToMessage(apiResponse)) // Convert first
-      .filter(message => {
-        // Validate required fields for multi-agent (content and extracted agentName)
-        const isValid = message.content && message.agentName;
-        // Log the *converted* message if invalid for easier debugging
-        if(!isValid) console.warn('Skipping invalid object in batch response (missing content or authorName):', message);
-        return isValid;
-      });
+    return data.map(item => this.convertToMessage(item)).filter(msg => !!msg.content || msg.role === 'tool' || msg.toolCall); // Changed 'TOOL' to 'tool'
   }
   
   /**
-   * Converts an actual API response object into a UI Message object,
-   * extracting the essential fields based on the current schema.
+   * Converts the raw API response content into the UI Message format.
+   * Handles different roles and extracts necessary fields.
    */
   private convertToMessage(apiResponse: ApiResponseContent): Message {
-     // --- Extract Role ---
-     // Use authorRole, default to 'assistant' if missing/invalid
-     let role: Role = 'assistant'; // Default
-     if (apiResponse.authorRole?.toUpperCase() === 'USER') {
-       role = 'user';
-     } else if (apiResponse.authorRole?.toUpperCase() === 'ASSISTANT') {
-       role = 'assistant';
-     } // Add other roles like 'system' if needed
+    let role: Role | 'tool' = 'assistant'; // Default to assistant
+    const upperCaseRole = apiResponse.authorRole?.toUpperCase();
 
-     // --- Extract Author Name (for Multi-Agent) ---
-     // Check root-level `authorName` first, then `metadata.authorName`
-     const agentName = apiResponse.authorName || apiResponse.metadata?.authorName;
+    if (upperCaseRole === 'USER') {
+      role = 'user';
+    } else if (upperCaseRole === 'ASSISTANT') {
+      role = 'assistant';
+    } else if (upperCaseRole === 'TOOL') {
+      role = 'tool';
+    } 
+    // Add handling for 'SYSTEM' if needed in the future
+    
+    // Extract agent name (prefer root, fallback to metadata)
+    const agentName = apiResponse.authorName || apiResponse.metadata?.authorName;
+    
+    // Extract content (handle potential non-string content for TOOL role)
+    let content = '';
+    if (typeof apiResponse.content === 'string') {
+      content = apiResponse.content;
+    } else if (role === 'tool' && apiResponse.content !== null && apiResponse.content !== undefined) {
+      // If it's a TOOL message and content is not null/undefined, stringify it
+      try {
+        content = JSON.stringify(apiResponse.content, null, 2); // Pretty print JSON
+      } catch (e) {
+        console.error("Failed to stringify TOOL content:", apiResponse.content);
+        content = String(apiResponse.content); // Fallback to simple string conversion
+      }
+    }
 
-     // --- Extract Content ---
-     // Use the top-level `content` field directly
-     const content = apiResponse.content || ''; // Default to empty string if missing
-     if (!apiResponse.content) {
-        console.warn("Missing 'content' field in API response:", apiResponse);
-     }
-
-     return {
-       id: uuidv4(), // Generate ID client-side
-       content: content.trim(), // Ensure content is trimmed
-       role: role, 
-       agentName: agentName, // Use extracted agentName if present
-       timestamp: this.formatTimestamp(), // Generate timestamp client-side
-     };
-   }
+    return {
+      id: uuidv4(),
+      role: role,
+      content: content,
+      timestamp: this.formatTimestamp(),
+      agentName: role === 'assistant' || role === 'tool' ? agentName : undefined,
+      agentIdentifier: role === 'assistant' || role === 'tool' ? agentName : undefined,
+      toolCall: role === 'assistant' ? apiResponse.toolCall : undefined,
+      toolCallId: role === 'tool' ? apiResponse.metadata?.id : undefined,
+    };
+  }
   
   /**
    * Centralized check for non-OK HTTP responses.

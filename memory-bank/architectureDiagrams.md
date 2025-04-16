@@ -2,6 +2,8 @@
 
 This file contains Mermaid diagrams that visualize the architecture of the Chat UI application. These diagrams provide technical stakeholders with a clear understanding of system structure and flow.
 
+**NOTE:** Diagrams are up-to-date as of the completion of the Conditional Tool Message Display feature.
+
 ## 1. Component Architecture (Atomic Design)
 
 ```mermaid
@@ -25,6 +27,7 @@ flowchart TD
         M4[ThemeToggle]
         M5[ChatHistoryItem]
         M6[NewChatButton]
+        M7[ToolMessageToggle]
     end
     
     subgraph Atoms
@@ -36,6 +39,7 @@ flowchart TD
         A6[Fade]
         A7[Lucide Icons]
         A8[Spinner]
+        A9[Switch]
     end
     
     TPL --> O1
@@ -45,6 +49,7 @@ flowchart TD
     
     O1 --> M3
     O1 --> M4
+    O1 --> M7
     O2 --> M5
     O2 --> M6
     O3 --> M2
@@ -72,6 +77,10 @@ flowchart TD
     
     M6 --> A1
     M6 --> A7
+
+    M7 --> A9
+    M7 --> A2
+    M7 --> A7
     
     style Atoms fill:#0277bd,stroke:#01579b,color:#ffffff
     style Molecules fill:#388e3c,stroke:#1b5e20,color:#ffffff
@@ -182,6 +191,7 @@ flowchart TD
         DeleteChat[Delete Chat]
         ToggleAgent[Toggle Agent Mode]
         ToggleTheme[Toggle Theme]
+        ToggleToolVisibility[Toggle Tool Visibility]
     end
     
     subgraph Context["Context Providers"]
@@ -201,6 +211,7 @@ flowchart TD
         AgentMode[Agent Mode]
         Loading[Loading State]
         Theme[Theme State]
+        ShowToolMsgs[Show Tool Messages State]
     end
     
     subgraph External["External Systems"]
@@ -214,6 +225,7 @@ flowchart TD
     DeleteChat -->|Triggers| ChatCtx
     ToggleAgent -->|Triggers| ChatCtx
     ToggleTheme -->|Triggers| ThemeCtx
+    ToggleToolVisibility -->|Triggers| ChatCtx
     
     ChatCtx -->|Uses| ChatSvc
     ChatCtx -->|Uses| HistorySvc
@@ -227,6 +239,7 @@ flowchart TD
     ChatCtx -->|Updates| ActiveChat
     ChatCtx -->|Updates| AgentMode
     ChatCtx -->|Updates| Loading
+    ChatCtx -->|Updates| ShowToolMsgs
     ThemeCtx -->|Updates| Theme
     
     style User_Interactions fill:#1565c0,stroke:#0d47a1,color:#ffffff
@@ -244,7 +257,7 @@ flowchart TD
 %%{init: {'theme':'dark'}}%%
 sequenceDiagram
     participant User
-    participant UI as UI Components
+    participant UI as UI Components (MessageBubble)
     participant ChatCtx as ChatContext
     participant ChatSvc as ChatService
     participant HistorySvc as HistoryService
@@ -263,25 +276,26 @@ sequenceDiagram
     alt Standard Mode
         ChatCtx->>ChatSvc: sendMessage(userMessage)
         ChatSvc->>API: POST /chat with message
-        API-->>ChatSvc: Minimal Response (Items[].Text)
-        ChatSvc-->>ChatCtx: Return constructed Message object
+        API-->>ChatSvc: Response (incl. ASSISTANT & TOOL roles, toolCall)
+        ChatSvc-->>ChatCtx: Return constructed Message object(s)
     else Multi-Agent Mode
         ChatCtx->>ChatSvc: sendMultiAgentMessage(userMessage)
         alt Streaming
             ChatCtx->>ChatSvc: sendMultiAgentMessage(userMessage)
             ChatSvc->>API: POST /multi-agent-chat/stream with message
-            API-->>ChatSvc: Stream of SSE events (each with Minimal Response format)
+            API-->>ChatSvc: Stream of SSE events (each with Message Content)
             ChatSvc-->>ChatCtx: Stream constructed Message objects
         else Batch
             ChatCtx->>ChatSvc: sendMultiAgentMessage(userMessage)
             ChatSvc->>API: POST /multi-agent-chat/batch with message
-            API-->>ChatSvc: Array of Minimal Responses (Items[].Text, AuthorName)
+            API-->>ChatSvc: Array of Message Contents
             ChatSvc-->>ChatCtx: Return array of constructed Message objects
         end
     end
     
     ChatCtx->>ChatCtx: Add constructed Message(s) to state
-    ChatCtx->>UI: Update with response
+    ChatCtx->>ChatCtx: Read showToolMessages state
+    ChatCtx->>UI: Update with response (conditionally show TOOL msgs/indicators)
     
     ChatCtx->>HistorySvc: saveMessages(chatId, messages)
     

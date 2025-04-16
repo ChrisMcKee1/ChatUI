@@ -13,7 +13,8 @@ import {
   Drawer, 
   IconButton,
   useMediaQuery,
-  useTheme as useMuiTheme
+  useTheme as useMuiTheme,
+  Tooltip
 } from '@mui/material';
 import { ChevronLeft, ChevronRight, Menu, History } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
@@ -265,28 +266,30 @@ export const ChatHistoryPanel = ({
 
   // Toggle button to show when drawer is closed
   const toggleButton = !open && (
-    <IconButton
-      onClick={handleToggle}
-      size="small"
-      aria-label="open history panel"
-      sx={{
-        position: 'absolute',
-        left: 10,
-        top: 16,
-        bgcolor: isDarkMode ? 'grey.800' : 'white',
-        color: isDarkMode ? 'grey.300' : 'grey.700',
-        boxShadow: 2,
-        zIndex: 1199, // Just below drawer's z-index
-        p: 1.5,
-        ml: 1,
-        '&:hover': {
-          bgcolor: isDarkMode ? 'grey.700' : 'grey.100',
-          color: isDarkMode ? 'white' : 'grey.900',
-        }
-      }}
-    >
-      <Menu size={20} />
-    </IconButton>
+    <Tooltip title="Open History Panel" placement="right">
+      <IconButton
+        onClick={handleToggle}
+        size="small"
+        aria-label="open history panel"
+        sx={{
+          position: 'absolute',
+          left: 10,
+          top: 16,
+          bgcolor: isDarkMode ? 'grey.800' : 'white',
+          color: isDarkMode ? 'grey.300' : 'grey.700',
+          boxShadow: 2,
+          zIndex: 1199, // Just below drawer's z-index
+          p: 1.5,
+          ml: 1,
+          '&:hover': {
+            bgcolor: isDarkMode ? 'grey.700' : 'grey.100',
+            color: isDarkMode ? 'white' : 'grey.900',
+          }
+        }}
+      >
+        <Menu size={20} />
+      </IconButton>
+    </Tooltip>
   );
   
   return (

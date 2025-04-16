@@ -11,6 +11,7 @@ A modern React chat application using Next.js that interacts with both standard 
 - Light and dark themes with custom color schemes
 - Chat history management
 - Responsive design for mobile and desktop
+- Optional display of underlying tool/function call messages 🛠️
 - OpenTelemetry instrumentation for observability
 
 ## Tech Stack

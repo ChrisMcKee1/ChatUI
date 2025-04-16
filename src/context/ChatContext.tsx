@@ -22,9 +22,11 @@ interface ChatState {
   activeChatId: string | null;
   agentMode: AgentMode;
   isLoading: boolean;
+  showToolMessages: boolean;
 }
 
-interface ChatContextType extends ChatState {
+// Export the context type
+export interface ChatContextType extends ChatState {
   sendMessage: (content: string) => Promise<void>;
   createNewChat: (title?: string) => Promise<string>;
   selectChat: (chatId: string) => Promise<void>;
@@ -32,6 +34,7 @@ interface ChatContextType extends ChatState {
   setAgentMode: (mode: AgentMode) => void;
   abortRequest: () => void;
   clearMessages: () => void;
+  toggleToolMessageVisibility: () => void;
 }
 
 const initialState: ChatState = {
@@ -40,6 +43,7 @@ const initialState: ChatState = {
   activeChatId: null,
   agentMode: 'standard',
   isLoading: false,
+  showToolMessages: false,
 };
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -381,8 +385,14 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     }));
   }, [chatService]);
   
-  // Create the context value
-  const contextValue: ChatContextType = {
+  // Toggle the visibility of tool messages
+  const toggleToolMessageVisibility = useCallback(() => {
+    trackUserAction('toggle_tool_messages', { 'visibility': !state.showToolMessages });
+    setState(prevState => ({ ...prevState, showToolMessages: !prevState.showToolMessages }));
+  }, [state.showToolMessages]);
+  
+  // Prepare the context value
+  const contextValue = {
     ...state,
     sendMessage,
     createNewChat,
@@ -391,6 +401,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     setAgentMode,
     abortRequest,
     clearMessages,
+    toggleToolMessageVisibility,
   };
   
   return (
