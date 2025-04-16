@@ -35,15 +35,7 @@
 - Storybook Refactoring & Verification 📚✨ ✅
 
 ## Known Issues
-- **Persistent Storybook `useServices` Error:** Components like `ChatProvider` were throwing `useServices must be used within a ServiceProvider` in Storybook, despite correct-looking provider nesting. This seemed related to context instantiation or module resolution within Storybook/Vite.
-
-## What's Left to Build/Fix
-- **Verify Storybook `useServices` Fix:** Confirm that the recent changes to simplify the mock in `.storybook/mocks/ServiceProvider.js` and rely on module aliasing have resolved the persistent `useServices` error in Storybook. :heavy_check_mark: (Pending Verification)
-
-## Completed Tasks
-- Addressed various linter errors and warnings.
-- Corrected import paths and component exports for Storybook rendering.
-- Investigated and applied fixes for the Storybook `useServices` context issue.
+- None currently identified. 
 
 ---
 

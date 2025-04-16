@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { Box, Typography, useTheme as useMuiTheme, useMediaQuery, IconButton, Menu, MenuItem, Tooltip, SxProps, Theme } from '@mui/material';
+import { Box, Typography, SxProps, Theme, IconButton, Menu, MenuItem, Tooltip } from '@mui/material';
 import { MessageBubble, Role } from '@/components/molecules/MessageBubble';
 import { MessageSquare, Type } from 'lucide-react';
-import { useChatContext } from '@/context/ChatContext';
 import { useTheme } from '@/context/ThemeContext';
+import { useChatContext } from '@/context/ChatContext';
+import { useEffect, useRef, useState } from 'react';
 
 // Define the ToolCall type based on the API response structure
 export interface ToolCall {
@@ -22,7 +22,7 @@ export interface Message {
   timestamp?: string;
   agentIdentifier?: string;
   agentName?: string;
-  toolCall?: ToolCall[]; // Corrected type to use ToolCall interface
+  toolCall?: ToolCall[]; // Optional array of tool calls for ASSISTANT messages
   toolCallId?: string; // Optional ID linking a TOOL message to a call
 }
 
@@ -36,22 +36,19 @@ export interface ChatMessagePanelProps {
 // Text size options for UI density control
 export type TextSizeOption = 'small' | 'medium' | 'large';
 
-const ChatMessagePanel: React.FC<ChatMessagePanelProps> = ({
+export const ChatMessagePanel = ({
   messages,
   className = '',
   sx = {},
   isLoading = false,
-}) => {
+}: ChatMessagePanelProps) => {
+  const { theme, isDarkMode } = useTheme();
   const { showToolMessages } = useChatContext();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [textSize, setTextSize] = useState<TextSizeOption>('medium');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const muiTheme = useMuiTheme();
-  
-  const isDarkMode = muiTheme.palette.mode === 'dark'; // Use MUI theme mode
   
   // Check if a stored preference exists and use it
   useEffect(() => {
@@ -91,14 +88,14 @@ const ChatMessagePanel: React.FC<ChatMessagePanelProps> = ({
   });
   
   // Function to scroll to the bottom of the chat
-  const scrollToBottom = useCallback((behavior: 'smooth' | 'auto' = 'smooth') => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollIntoView({ 
-        behavior: behavior,
+  const scrollToBottom = (immediate = false) => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ 
+        behavior: immediate || isLoading ? 'auto' : 'smooth',
         block: 'end'
       });
     }
-  }, []);
+  };
 
   // Add auto-scroll behavior
   useEffect(() => {
@@ -162,13 +159,15 @@ const ChatMessagePanel: React.FC<ChatMessagePanelProps> = ({
       ref={containerRef}
       className={className}
       sx={{
-        ...sx,
-        flexGrow: 1,
-        overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
+        flexGrow: 1,
+        height: '100%', // Change from 100vh to 100% to fit parent container
+        width: '100%',
+        bgcolor: isDarkMode ? 'grey.900' : 'grey.50',
+        overflow: 'hidden',
         position: 'relative',
-        bgcolor: isDarkMode ? muiTheme.palette.grey[900] : muiTheme.palette.grey[50],
+        ...sx
       }}
     >
       {/* Text size adjustment control */}
@@ -243,7 +242,6 @@ const ChatMessagePanel: React.FC<ChatMessagePanelProps> = ({
             left: 0,
             right: 0,
             bottom: 0,
-            px: 2,
           }}
         >
           <Box
@@ -270,14 +268,14 @@ const ChatMessagePanel: React.FC<ChatMessagePanelProps> = ({
             >
               <MessageSquare 
                 size={48} 
-                color={isDarkMode ? muiTheme.palette.text.secondary : muiTheme.palette.grey[500]}
+                color={isDarkMode ? '#888' : '#555'} 
                 strokeWidth={1.5}
               />
             </Box>
-            <Typography variant="h6" sx={{ mb: 2, color: isDarkMode ? muiTheme.palette.text.primary : muiTheme.palette.grey[900] }}>
+            <Typography variant="h6" sx={{ mb: 2, color: isDarkMode ? 'white' : 'grey.900' }}>
               No messages yet
             </Typography>
-            <Typography variant="body2" sx={{ color: isDarkMode ? muiTheme.palette.text.secondary : muiTheme.palette.grey[600] }}>
+            <Typography variant="body2" sx={{ color: isDarkMode ? 'grey.400' : 'grey.600' }}>
               Start the conversation by typing a message below.
             </Typography>
           </Box>
@@ -313,6 +311,4 @@ const ChatMessagePanel: React.FC<ChatMessagePanelProps> = ({
       )}
     </Box>
   );
-};
-
-export default ChatMessagePanel; 
+}; 

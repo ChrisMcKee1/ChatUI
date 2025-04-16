@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
 import { Message } from '@/components/molecules/ChatMessagePanel';
 import { ChatHistory } from '@/components/organisms/ChatHistoryPanel';
 import { IChatService, ChatMessage } from '@/services/IChatService';
@@ -76,17 +76,35 @@ const mockHistoryService: IHistoryService = {
   }
 };
 
-// THIS IS THE KEY CHANGE:
-// Export a function with the same name that ChatProvider imports
-// This will override the real useServices in Storybook
+// Create a mock that uses the same name as the real ServiceContext
+// This tricks the useServices hook into finding our mock implementation
+const ServiceContext = createContext<{
+  chatService: IChatService;
+  historyService: IHistoryService;
+}>({
+  chatService: mockChatService,
+  historyService: mockHistoryService
+});
+
+// This hook name must match the real one
 export const useServices = () => {
-  return {
-    chatService: mockChatService,
-    historyService: mockHistoryService
-  };
+  const context = useContext(ServiceContext);
+  if (!context) {
+    throw new Error('useServices must be used within a ServiceProvider');
+  }
+  return context;
 };
 
-// Simple pass-through provider component for use in story decorators
+// Create a mock service provider component
 export const MockServiceProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  return <>{children}</>;
+  return (
+    <ServiceContext.Provider
+      value={{
+        chatService: mockChatService,
+        historyService: mockHistoryService
+      }}
+    >
+      {children}
+    </ServiceContext.Provider>
+  );
 }; 

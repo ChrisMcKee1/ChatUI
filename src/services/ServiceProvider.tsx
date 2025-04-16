@@ -6,15 +6,13 @@ import { IHistoryService } from './IHistoryService';
 import { ServiceFactory } from './ServiceFactory';
 import { MockHistoryService } from './MockHistoryService'; // Import Mock for SSR fallback type check
 
-// Export the type so it can be used by MockServiceProvider
-export interface ServiceContextType {
+interface ServiceContextType {
   chatService: IChatService;
   historyService: IHistoryService;
 }
 
 // Create the context with a default undefined value
-// Export the context so it can be used by the Mock Provider
-export const ServiceContext = createContext<ServiceContextType | undefined>(undefined);
+const ServiceContext = createContext<ServiceContextType | undefined>(undefined);
 
 // Create a hook for using the services
 export const useServices = (): ServiceContextType => {

@@ -1,6 +1,7 @@
 import React from 'react';
 import { LoadingButton, LoadingButtonProps } from '@mui/lab';
-// Removed unused MuiButton, CircularProgress, styled
+import { ButtonProps as MuiButtonProps } from '@mui/material'; // Keep for potential sx type reference if needed
+// Remove theme context import and constants, rely on MUI theme
 
 /**
  * Props for the Button component.

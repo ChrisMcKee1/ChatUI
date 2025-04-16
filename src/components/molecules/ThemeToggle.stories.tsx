@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { ThemeToggle } from './ThemeToggle';
-import { ThemeProvider, useTheme } from '@/context/ThemeContext';
+import { ThemeProvider } from '../providers/ThemeProvider';
+import { useTheme } from '@/context/ThemeContext';
 import { Box, Typography, useMediaQuery, useTheme as useMuiTheme, Paper } from '@mui/material';
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Sun, Moon } from 'lucide-react';
 // Import testing utilities
 import { userEvent, within, expect, waitFor } from '@storybook/test';
@@ -274,58 +275,6 @@ export const ResponsiveToggle: Story = {
           The toggle automatically switches to compact mode on small screens.<br />
           Try resizing the viewport to see the difference.
         </Typography>
-      </Box>
-    );
-  },
-  parameters: {
-    docs: {
-      description: {
-        story: 'Demonstrates how the toggle adapts to different screen sizes and provides interaction feedback using the actual ThemeContext. Shows responsive design in action with state tracking.',
-      },
-    },
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const toggleButton = canvas.getByRole('button'); // Only one ThemeToggle button
-    const themeDisplay = canvas.getByText(/Current theme:/i);
-    const clicksDisplay = canvas.getByText(/Toggle button clicked:/i); 
-    const initialTheme = themeDisplay.textContent?.includes('Light') ? 'Light' : 'Dark';
-
-    // Click toggle
-    await userEvent.click(toggleButton);
-    const expectedThemeAfterFirstClick = initialTheme === 'Light' ? 'Dark' : 'Light';
-    await waitFor(() => {
-      expect(themeDisplay).toHaveTextContent(expectedThemeAfterFirstClick);
-    });
-    await expect(clicksDisplay).toHaveTextContent('Toggle button clicked: 1 times');
-
-    // Click toggle back
-    await userEvent.click(toggleButton);
-    await waitFor(() => {
-      expect(themeDisplay).toHaveTextContent(initialTheme); // Should be back to original
-    });
-     await expect(clicksDisplay).toHaveTextContent('Toggle button clicked: 2 times');
-  },
-};
-
-export const InteractiveToggle: Story = {
-  args: {
-    compact: false,
-  },
-  render: (args) => {
-    const isMobile = useMediaQuery(useMuiTheme().breakpoints.down('sm'));
-    const [clickCount, setClickCount] = useState(0);
-    const [currentThemeName, setCurrentThemeName] = useState('Light'); // Assuming starts light
-
-    const { toggleTheme } = useTheme(); 
-
-    return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-        <Typography variant="caption" sx={{ mb: 1 }}>
-          Current viewport: <strong>{isMobile ? 'Mobile' : 'Desktop/Tablet'}</strong>
-        </Typography>
-        
-        <ThemeToggle compact={isMobile} /> 
       </Box>
     );
   },

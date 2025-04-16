@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { createContext, useContext } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
 // Mock implementation of ServiceProvider for Storybook
@@ -77,18 +77,33 @@ export const ServiceFactory = {
   createHistoryService: () => mockHistoryService
 };
 
-// Create the useServices hook - SIMPLIFIED VERSION
+// Create context
+const ServiceContext = createContext({
+  chatService: mockChatService,
+  historyService: mockHistoryService
+});
+
+// Create the useServices hook
 export const useServices = () => {
-  // Return mock services directly, without using React context
-  return {
-    chatService: mockChatService,
-    historyService: mockHistoryService
-  };
+  const context = useContext(ServiceContext);
+  if (!context) {
+    throw new Error('useServices must be used within a ServiceProvider');
+  }
+  return context;
 };
 
-// Create simplified ServiceProvider component that just passes children through
+// Create ServiceProvider component
 export const ServiceProvider = ({ children }) => {
-  return children;
+  return (
+    <ServiceContext.Provider
+      value={{
+        chatService: mockChatService,
+        historyService: mockHistoryService
+      }}
+    >
+      {children}
+    </ServiceContext.Provider>
+  );
 };
 
 // Export types that might be imported
@@ -99,9 +114,6 @@ export const initialHistoryService = mockHistoryService;
 export class MockHistoryService {
   // Empty mock class
 }
-
-// Export the context for completeness (even though we're not using it)
-export const ServiceContext = { Provider: ServiceProvider };
 
 // Export any additional items needed
 export default ServiceProvider; 

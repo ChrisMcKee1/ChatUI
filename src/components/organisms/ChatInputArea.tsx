@@ -1,9 +1,8 @@
 'use client';
 
-import React from 'react';
 import { MessageSquare, Bot, Loader2 } from 'lucide-react';
-import { Box, Typography, Fade } from '@mui/material';
-import { ChatInput, ChatInputProps } from '@/components/molecules/ChatInput';
+import { Box, Typography, CircularProgress, SxProps, Theme, Fade } from '@mui/material';
+import { ChatInput } from '@/components/molecules/ChatInput';
 import { AgentMode } from '@/components/molecules/AgentToggle';
 import { useTheme } from '@/context/ThemeContext';
 
@@ -21,11 +20,12 @@ function hexToRgb(hex: string) {
   return `${r}, ${g}, ${b}`;
 }
 
-interface ChatInputAreaProps extends Pick<ChatInputProps, 'onSendMessage' | 'placeholder' | 'disabled'> {
+export interface ChatInputAreaProps {
+  onSendMessage: (message: string) => void;
   agentMode: AgentMode;
   isLoading?: boolean;
   className?: string;
-  sx?: React.CSSProperties;
+  sx?: SxProps<Theme>;
 }
 
 export const ChatInputArea = ({

@@ -3,8 +3,8 @@
 import { useCallback, useState, useEffect } from 'react';
 import { Box, useMediaQuery, useTheme as useMuiTheme } from '@mui/material';
 import { ChatHeader } from '@/components/organisms/ChatHeader';
-import { ChatHistoryPanel, ChatHistory } from '@/components/organisms/ChatHistoryPanel';
-import ChatMessagePanel, { Message } from '@/components/molecules/ChatMessagePanel';
+import { ChatHistoryPanel } from '@/components/organisms/ChatHistoryPanel';
+import { ChatMessagePanel } from '@/components/molecules/ChatMessagePanel';
 import { ChatInputArea } from '@/components/organisms/ChatInputArea';
 import { useTheme } from '@/context/ThemeContext';
 import { useChatContext } from '@/context/ChatContext';
@@ -27,11 +27,8 @@ export const ChatPageLayout = ({
     sendMessage,
     selectChat,
     setAgentMode,
-    deleteChat,
     createNewChat,
-    clearMessages,
-    toggleToolMessageVisibility,
-    showToolMessages
+    clearMessages
   } = useChatContext();
   
   const { isDarkMode } = useTheme();
@@ -121,13 +118,9 @@ export const ChatPageLayout = ({
       }}
     >
       <ChatHeader 
-        title={getAppName() || "ChatUI"}
-        currentMode={agentMode}
-        onToggleMode={setAgentMode}
+        agentMode={agentMode} 
+        onAgentModeToggle={setAgentMode}
         onNewChat={handleNewChat}
-        onToggleToolVisibility={toggleToolMessageVisibility}
-        showToolMessages={showToolMessages}
-        isLoading={isLoading}
         isSmallScreen={isSmallMobile}
         isExtraSmallScreen={isExtraSmallMobile}
       />
