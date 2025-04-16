@@ -1,10 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import React, { useState } from 'react';
-import { Box, Button, Typography, Grid, useMediaQuery, useTheme as useMuiTheme, Paper, Stack, Divider, List, ListItem, ListItemButton, ListItemText, IconButton } from '@mui/material';
+import { Box, Button, Typography, useMediaQuery, useTheme as useMuiTheme, Paper, Stack, Divider } from '@mui/material';
 import { ChatHistoryPanel, ChatHistory } from './ChatHistoryPanel';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { useTheme } from '@/context/ThemeContext';
-import { History, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ChatMode } from '@/services/IHistoryService'; // Import ChatMode
 // Import testing utilities
 import { userEvent, within, expect, waitFor } from '@storybook/test';
@@ -490,6 +489,72 @@ export const ComponentComposition: Story = {
     docs: {
       description: {
         story: 'Shows how the ChatHistoryPanel organism is composed of MUI components and custom logic. Highlights its structure, features, and context integrations.',
+      },
+    },
+  },
+};
+
+export const LoadingState: Story = {
+  args: {
+    chatHistories: [],
+    isLoading: true,
+    activeChatId: null,
+    mode: ChatMode.STANDARD,
+    onSelectChat: action('selectChat'),
+    onDeleteChat: action('deleteChat'),
+    onNewChat: action('newChat'),
+    onToggleDrawer: action('toggleDrawer'),
+    isOpen: true
+  },
+  render: (args) => {
+    // Removed unused muiTheme
+    const isMobile = useMediaQuery(useMuiTheme().breakpoints.down('sm'));
+    return (
+      <Box sx={{ width: isMobile ? '100%' : 320, height: '600px', border: '1px dashed grey' }}>
+        <ChatHistoryPanel {...args} />
+      </Box>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Demonstrates the different visual states and confirms internal component structure. Includes Standard, Loading, and Empty states. Uses mock data for representation. Note: &quot;Drawer Open&quot; / &quot;Drawer Closed&quot; states are controlled externally by the parent layout based on screen size, not a direct prop here.' // Escaped quotes
+      },
+    },
+  },
+};
+
+export const ResponsiveBehavior: Story = {
+  render: () => {
+    // Removed unused args
+    const theme = useMuiTheme(); // Use muiTheme here
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    return (
+      <Box sx={{ width: isMobile ? '100%' : 320, height: '600px', border: '1px dashed grey' }}>
+        <ChatHistoryPanel 
+          chatHistories={sampleChatHistories}
+          activeChatId={sampleChatHistories[0].id}
+          onSelectChat={(id) => {}}
+          isOpen={true}
+          onToggle={() => {}}
+          variant="persistent"
+          drawerWidth={320}
+        />
+        <Typography variant="caption" component="div" sx={{ fontSize: '10px', opacity: 0.8 }}>
+          Simulated Event: {eventLog || 'No actions yet'}
+        </Typography>
+        <Box component="ul" sx={{ m: 0, pl: 2, fontSize: '10px', opacity: 0.8 }}>
+          <li>List items adjust spacing</li>
+          <li>Drawer button may hide/show</li>
+          <li>Width adapts (controlled by parent here)</li>
+        </Box>
+      </Box>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Demonstrates the different visual states and confirms internal component structure. Includes Standard, Loading, and Empty states. Uses mock data for representation. Note: &quot;Drawer Open&quot; / &quot;Drawer Closed&quot; states are controlled externally by the parent layout based on screen size, not a direct prop here.' // Escaped quotes
       },
     },
   },

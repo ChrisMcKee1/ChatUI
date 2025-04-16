@@ -54,7 +54,6 @@ export const ChatHistoryPanel = ({
 }: ChatHistoryPanelProps) => {
   const { theme: appTheme, isDarkMode } = useTheme();
   const muiTheme = useMuiTheme();
-  const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
   const isSmallScreen = useMediaQuery(muiTheme.breakpoints.down('sm'));
   const isExtraSmallScreen = useMediaQuery('(max-width:360px)');
   

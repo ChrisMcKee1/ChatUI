@@ -300,3 +300,14 @@ export const ThemeColorIntegration: Story = {
     </div>
   ),
 };
+
+export const LoadingButton: Story = {
+  args: {
+    children: 'Loading',
+    loading: true,
+    disabled: true,
+  },
+  render: (props) => (
+    <Button {...props} />
+  ),
+};

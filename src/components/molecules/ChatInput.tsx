@@ -1,16 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { TextField, Box, IconButton, Tooltip } from '@mui/material';
+import React, { useState, useRef } from 'react';
+import { Box, TextField, IconButton, Tooltip, useTheme as useMuiTheme } from '@mui/material';
 import { Send } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
-
-// Default fallback colors - matching our theme
-const DEFAULT_PRIMARY = '#ff6188'; // Pink color
-const DEFAULT_WARNING = '#ffd866'; // Warning color (yellow/orange)
-const DEFAULT_SECONDARY = '#78dce8'; // Secondary color (light blue)
-const DEFAULT_DARK_INPUT_BG = 'rgba(255, 255, 255, 0.05)';
-const DEFAULT_LIGHT_INPUT_BG = '#ffffff';
 
 export interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -26,7 +19,9 @@ export const ChatInput = ({
   className = '',
 }: ChatInputProps) => {
   const [message, setMessage] = useState('');
-  const { theme, isDarkMode } = useTheme();
+  const { theme } = useTheme();
+  const muiTheme = useMuiTheme();
+  const isDarkMode = muiTheme.palette.mode === 'dark';
 
   // Get theme colors with proper fallbacks
   const primaryColor = theme?.colors?.primary || '#ff6188'; // Pink

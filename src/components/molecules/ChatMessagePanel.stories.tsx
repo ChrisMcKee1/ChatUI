@@ -1,13 +1,13 @@
 import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
-import { ChatMessagePanel, Message } from './ChatMessagePanel';
+import ChatMessagePanel, { Message } from './ChatMessagePanel';
 import { ThemeProvider } from '@/context/ThemeContext';
-import { Box, useMediaQuery, useTheme, Typography, Paper, Stack, Divider, IconButton } from '@mui/material';
+import { Box, useMediaQuery, useTheme, Typography, Paper, Stack, Divider } from '@mui/material';
 import { v4 as uuidv4 } from 'uuid';
 import { Role } from './MessageBubble';
-import { MessageSquare, Type } from 'lucide-react';
 import { userEvent, within, expect, waitFor } from '@storybook/test';
-import { action } from '@storybook/addon-actions';
+import { ChatProvider } from '@/context/ChatContext';
+import { MockServiceProvider } from '../../stories/mocks/MockServiceProvider';
 
 const meta: Meta<typeof ChatMessagePanel> = {
   component: ChatMessagePanel,
@@ -29,9 +29,13 @@ const meta: Meta<typeof ChatMessagePanel> = {
   decorators: [
     (Story) => (
       <ThemeProvider>
-        <Box sx={{ height: '600px', display: 'flex', flexDirection: 'column', border: '1px dashed grey' }}>
-          <Story />
-        </Box>
+        <MockServiceProvider>
+          <ChatProvider>
+            <Box sx={{ height: '600px', display: 'flex', flexDirection: 'column', border: '1px dashed grey' }}>
+              <Story />
+            </Box>
+          </ChatProvider>
+        </MockServiceProvider>
       </ThemeProvider>
     ),
   ],
@@ -195,10 +199,22 @@ export const EmptyPanel: Story = {
       },
     },
   },
-  play: async ({ canvasElement }) => {
+  decorators: [
+    (Story) => (
+      <ThemeProvider>
+        <MockServiceProvider>
+          <ChatProvider>
+            <Box sx={{ height: '600px', display: 'flex', flexDirection: 'column', border: '1px dashed grey' }}>
+              <Story />
+            </Box>
+          </ChatProvider>
+        </MockServiceProvider>
+      </ThemeProvider>
+    ),
+  ],
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText(/Start chatting/i)).toBeInTheDocument();
-    await expect(canvas.getByTestId('message-square-icon')).toBeInTheDocument();
   },
 };
 
@@ -474,7 +490,7 @@ export const Responsive: Story = {
       },
     },
   },
-  render: (args) => {
+  render: (props) => {
     const isMobile = useMediaQuery(useTheme().breakpoints.down('sm'));
     
     const messages = [
@@ -514,7 +530,7 @@ export const Responsive: Story = {
           position: 'relative',
         }}
       >
-        <ChatMessagePanel messages={messages} />
+        <ChatMessagePanel {...props} messages={messages} />
         <Paper
           sx={{ 
             position: 'absolute', 

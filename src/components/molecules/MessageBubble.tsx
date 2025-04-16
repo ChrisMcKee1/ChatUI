@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Avatar, Box, Typography, useMediaQuery, useTheme as useMuiTheme, Paper } from '@mui/material';
-import { User, Bot, Terminal, Wrench } from 'lucide-react';
+import { Avatar, Box, Typography, useMediaQuery, useTheme as useMuiTheme, Paper, IconButton, Tooltip } from '@mui/material';
+import { User, Bot, Terminal, Wrench, Check, Copy, Settings2 } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { useChatContext } from '@/context/ChatContext';
 import { useState, useEffect } from 'react';
@@ -220,6 +220,18 @@ export const MessageBubble = ({
   const baseTimestampColor = theme?.colors?.textSecondary || '#888888'; // Mid-grey fallback
   const adjustedTimestampColor = adjustHexColor(baseTimestampColor, isDarkMode ? 50 : -40);
 
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500); // Reset after 1.5 seconds
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
+  };
+
   // Main render
   return (
     <Box
@@ -341,6 +353,19 @@ export const MessageBubble = ({
             >
               {timeAgo}
             </Typography>
+          )}
+
+          {/* Copy Button */}
+          {isToolMessage && (
+            <Tooltip title={copied ? 'Copied!' : 'Copy to Clipboard'}>
+              <IconButton 
+                size="small" 
+                sx={{ ml: 0.5, color: 'text.secondary' }}
+                onClick={() => handleCopy(content)}
+              >
+                {copied ? <Check size={16} /> : <Copy size={16} />}
+              </IconButton>
+            </Tooltip>
           )}
         </Paper>
         

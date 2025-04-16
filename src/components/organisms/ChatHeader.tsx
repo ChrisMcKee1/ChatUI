@@ -8,13 +8,15 @@ import { useChatContext } from '@/context/ChatContext';
 import { Plus, Eye, EyeOff } from 'lucide-react';
 import { getAppName } from '@/utils/environment';
 
-export interface ChatHeaderProps {
-  agentMode: AgentMode;
-  onAgentModeToggle: (mode: AgentMode) => void;
+interface ChatHeaderProps {
+  title: string;
+  currentMode: AgentMode;
+  onToggleMode: (mode: AgentMode) => void;
   onNewChat: () => void;
+  onToggleToolVisibility?: () => void;
+  showToolMessages?: boolean;
+  isLoading?: boolean;
   className?: string;
-  drawerOpen?: boolean;
-  drawerWidth?: number;
   isSmallScreen?: boolean;
   isExtraSmallScreen?: boolean;
 }
@@ -36,20 +38,20 @@ const findSecondWordStart = (text: string): number => {
   return -1;
 };
 
-export const ChatHeader = ({
-  agentMode,
-  onAgentModeToggle,
+export const ChatHeader: React.FC<ChatHeaderProps> = ({
+  currentMode,
+  onToggleMode,
   onNewChat,
+  onToggleToolVisibility,
+  showToolMessages,
   className = '',
-  drawerOpen = false,
-  drawerWidth = 280,
   isSmallScreen = false,
   isExtraSmallScreen = false,
 }: ChatHeaderProps) => {
   // Get theme directly from context - this ensures we react to theme changes
   const { theme, isDarkMode } = useTheme();
   // Get tool message state from ChatContext
-  const { showToolMessages, toggleToolMessageVisibility } = useChatContext();
+  const { toggleToolMessageVisibility } = useChatContext();
   
   // Use theme colors with fallbacks - directly within render to ensure reactivity
   const primaryColor = theme?.colors?.primary || '#ff6188';
@@ -132,8 +134,8 @@ export const ChatHeader = ({
             {renderAppName()}
           </Typography>
           <AgentToggle 
-            mode={agentMode} 
-            onToggle={onAgentModeToggle} 
+            mode={currentMode} 
+            onToggle={onToggleMode} 
             compact={isSmallScreen} // Pass compact prop to make toggle smaller on small screens
           />
         </Box>
@@ -156,7 +158,7 @@ export const ChatHeader = ({
           </Tooltip>
           <Tooltip title={showToolMessages ? "Hide Tool Messages" : "Show Tool Messages"}>
             <IconButton 
-              onClick={toggleToolMessageVisibility} 
+              onClick={onToggleToolVisibility || toggleToolMessageVisibility} 
               size={isSmallScreen ? "small" : "medium"}
               aria-label={showToolMessages ? "Hide tool messages" : "Show tool messages"}
               sx={{ 

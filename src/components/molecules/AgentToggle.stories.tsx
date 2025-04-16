@@ -475,4 +475,96 @@ export const ThemeVariations: Story = {
       },
     },
   },
+};
+
+export const CompactModeToggle: Story = {
+  args: {
+    mode: 'standard',
+    onToggle: action('onToggle'),
+    compact: true,
+  },
+  render: (args) => {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const [mode, setMode] = useState<AgentMode>(args.mode || 'standard');
+
+    return (
+      <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 1, width: 'fit-content' }}>
+        <AgentToggle
+          {...args}
+          mode={mode}
+          compact={isMobile}
+          onToggle={(newMode) => {
+            action('onToggle')(newMode);
+            setMode(newMode);
+            args.onToggle(newMode);
+          }}
+        />
+        <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>
+          Current Mode: {mode}
+        </Typography>
+        <Typography variant="caption" sx={{ mt: 0.5, display: 'block' }}>
+          Compact Mode: {isMobile ? 'true' : 'false'}
+        </Typography>
+      </Box>
+    );
+  },
+  parameters: {
+    viewport: {
+      defaultViewport: 'mobile1',
+    },
+    docs: {
+      description: {
+        story:
+          'Demonstrates the toggle behavior in compact mode (typically for mobile). Use the controls panel to see the interaction play out. Note: `useMediaQuery` is mocked here for consistent testing across viewports.',
+      },
+    },
+  },
+};
+
+export const VisualStates: Story = {
+  args: {
+    mode: 'standard',
+    onToggle: action('toggled'),
+  },
+  render: () => (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, maxWidth: '500px' }}>
+      <Typography variant="h6" gutterBottom>Visual States</Typography>
+      
+      <Paper sx={{ p: 3 }} elevation={2}>
+        <Typography variant="body2" paragraph>
+          This section demonstrates standard, compact, and disabled states.
+          This is not a real interactive component in this story,
+          just visual representations.
+        </Typography>
+        
+        <Stack spacing={2}>
+          <Typography variant="subtitle2" gutterBottom>Standard Mode:</Typography>
+          <AgentToggle mode="standard" onToggle={() => {}} />
+        </Stack>
+        
+        <Stack spacing={2}>
+          <Typography variant="subtitle2" gutterBottom>Compact Mode:</Typography>
+          <AgentToggle mode="standard" onToggle={() => {}} compact />
+        </Stack>
+        
+        <Stack spacing={2}>
+          <Typography variant="subtitle2" gutterBottom>Disabled Mode:</Typography>
+          <AgentToggle mode="standard" onToggle={() => {}} />
+        </Stack>
+      </Paper>
+      
+      <Box sx={{ fontSize: '0.8rem', opacity: 0.7, textAlign: 'center', mt: 2 }}>
+        Try toggling the mode in Storybook to see how the component adapts
+      </Box>
+    </Box>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Demonstrates standard, compact, and disabled states. \nThis is not a real interactive component in this story, \njust visual representations.'
+      },
+    },
+  },
 }; 

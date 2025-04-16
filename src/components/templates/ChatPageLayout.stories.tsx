@@ -347,7 +347,7 @@ const meta: Meta<typeof ChatPageLayout> = {
     layout: 'fullscreen',
     docs: {
       description: {
-        component: 'Main layout template for the chat application. Combines all organism components (ChatHeader, ChatHistoryPanel, ChatMessagePanel, ChatInputArea) into a complete chat interface with responsive behavior for different screen sizes. This template manages the overall application layout, navigation patterns, and state coordination between components.',
+        story: 'Demonstrates the overall page layout structure, integrating the ChatHeader, ChatHistoryPanel (Drawer), ChatMessagePanel, and ChatInputArea. This story showcases the complete UI assembly. Note: Interaction logic relies on context providers included in decorators. &quot;Drawer Open&quot; state depends on viewport size by default.'
       },
     },
   },

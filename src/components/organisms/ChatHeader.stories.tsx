@@ -8,8 +8,8 @@ import { Box, Typography, Paper, Stack, Divider } from '@mui/material';
 import { AgentToggle } from '@/components/molecules/AgentToggle';
 import { ThemeToggle } from '@/components/molecules/ThemeToggle';
 import Button from '@/components/atoms/Button';
-import { Plus, Eye, EyeOff } from 'lucide-react';
-import { userEvent, within, expect, waitFor } from '@storybook/test';
+import { Plus } from 'lucide-react';
+import { userEvent, within, expect } from '@storybook/test';
 import { action } from '@storybook/addon-actions';
 
 // Create a stateful wrapper for Storybook interactions

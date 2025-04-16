@@ -1,3 +1,12 @@
+// Mock modules for Storybook
+// Provides mock implementations of modules that shouldn't be used in Storybook
+
+// This will intercept the import of useServices from ServiceProvider and replace it with our mock
+// in MockServiceProvider.tsx
+
+// We need this because the real useServices depends on browser APIs or environment variables
+// that aren't available in the Storybook environment
+
 // Mock modules that rely on Node.js specific features
 if (typeof window !== 'undefined') {
   // Define __dirname in browser context

@@ -1,37 +1,12 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import React from 'react';
-import { Box, useMediaQuery, useTheme } from '@mui/material';
+import type { Meta, StoryObj } from '@storybook/react';
+import { Box, Typography, useTheme as useMuiTheme, useMediaQuery } from '@mui/material';
 import { MessageBubble } from './MessageBubble';
 import { Message, ToolCall } from './ChatMessagePanel';
-import { ThemeProvider } from '../providers/ThemeProvider';
-import { ChatProvider, ChatContextType, useChatContext } from '@/context/ChatContext';
-import { actions } from '@storybook/addon-actions';
-// Import testing utilities
-import { userEvent, within, expect, findByText } from '@storybook/test';
+import { ThemeProvider } from '@/context/ThemeContext';
+import { ChatProvider } from '@/context/ChatContext';
+import { within, expect } from '@storybook/test';
 
-// Helper to create a wrapper that provides ChatContext with specific values
-const WithChatContextWrapper = ({ children, contextValue }: { children: React.ReactNode, contextValue: Partial<ChatContextType> }) => {
-  const initialContext = useChatContext(); // Get initial context to merge with overrides
-  return (
-    <ChatContext.Provider value={{ ...initialContext, ...contextValue }}>
-      {children}
-    </ChatContext.Provider>
-  );
-};
-
-const withChatContext = (contextValue: Partial<ChatContextType>) => (
-  (Story: React.FC) => (
-    <ThemeProvider>
-      <ChatProvider>
-        <WithChatContextWrapper contextValue={contextValue}>
-          <Story />
-        </WithChatContextWrapper>
-      </ChatProvider>
-    </ThemeProvider>
-  )
-);
-
-// This story uses ThemeProvider decorator to handle proper theme context
 const meta: Meta<typeof MessageBubble> = {
   component: MessageBubble,
   title: 'Molecules/MessageBubble',
@@ -99,12 +74,18 @@ const createAssistantMessage = (
   ...(toolCall && { toolCall }),
 });
 
-const createToolMessage = (content: string, toolCallId: string, timestamp = '12:36 PM'): Message => ({
+const createToolMessage = (
+  content: string,
+  toolCallId?: string,
+  timestamp = '12:36 PM',
+  toolCallData?: ToolCall[]
+): Message => ({
   id: 'tool-msg-' + Date.now() + Math.random(),
   content,
   role: 'tool',
   timestamp,
   toolCallId,
+  toolCall: toolCallData
 });
 
 // --- Basic Role Stories ---
@@ -262,9 +243,9 @@ export const MultiAgentConversation: Story = {
 
 const sampleToolCall: ToolCall[] = [
   {
-    id: 'tool_123',
-    functionName: 'searchWeb',
-    arguments: { query: 'latest AI advancements' }
+    id: 'call_123abc',
+    functionName: 'web_search',
+    arguments: { query: 'React best practices' }
   }
 ];
 
@@ -277,7 +258,6 @@ export const AssistantWithToolCallHidden: Story = {
       sampleToolCall
     ),
   },
-  decorators: [withChatContext({ showToolMessages: false })], // Wrap with context override
   parameters: {
     docs: {
       description: {
@@ -302,7 +282,6 @@ export const AssistantWithToolCallVisible: Story = {
       sampleToolCall
     ),
   },
-  decorators: [withChatContext({ showToolMessages: true })], // Wrap with context override
   parameters: {
     docs: {
       description: {
@@ -321,12 +300,10 @@ export const AssistantWithToolCallVisible: Story = {
 export const ToolMessageHidden: Story = {
   args: {
     message: createToolMessage(
-      '{\"results\": [\"Result 1\", \"Result 2\"]}',
-      'tool_123',
-      '1:01 PM'
+      JSON.stringify({ results: ["Result 1", "Result 2"] }),
+      'tool_123'
     ),
   },
-  decorators: [withChatContext({ showToolMessages: false })],
   parameters: {
     docs: {
       description: {
@@ -343,12 +320,10 @@ export const ToolMessageHidden: Story = {
 export const ToolMessageVisible: Story = {
   args: {
     message: createToolMessage(
-      '{\"results\": [\"Result 1\", \"Result 2\"]}',
-      'tool_123',
-      '1:01 PM'
+      JSON.stringify({ results: ["Result 1", "Result 2"] }),
+      'tool_123'
     ),
   },
-  decorators: [withChatContext({ showToolMessages: true })],
   parameters: {
     docs: {
       description: {
@@ -369,67 +344,47 @@ export const ToolMessageVisible: Story = {
 
 // --- Responsive Stories ---
 
-export const MobileView: Story = {
+// Convert render function to a component for ResponsiveBehavior
+const ResponsiveBehaviorComponent = () => {
+  const theme = useMuiTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  // isTablet removed
+  const isExtraSmall = useMediaQuery(theme.breakpoints.down(360));
+
+  let messageContent = "This message demonstrates responsive adjustments.";
+  if (isMobile) messageContent += " (Mobile view: smaller padding/avatar).";
+  if (isExtraSmall) messageContent += " (Extra small view: even more compact).";
+
+  const responsiveMessage = createUserMessage(messageContent);
+
+  return (
+    <Box sx={{ width: '100%', p: 1 }}>
+      <Typography variant="caption" sx={{ mb: 1, display: 'block', textAlign: 'center' }}>
+        Resize viewport or use Storybook controls.
+      </Typography>
+      <MessageBubble message={responsiveMessage} />
+      <Typography variant="body2" sx={{ mt: 2, textAlign: 'center', opacity: 0.7 }}>
+        Mobile: {isMobile ? 'Yes' : 'No'}, Extra Small: {isExtraSmall ? 'Yes' : 'No'}
+      </Typography>
+    </Box>
+  );
+};
+
+export const ResponsiveBehavior: Story = {
+  render: () => <ResponsiveBehaviorComponent />,
   parameters: {
     viewport: {
+      viewports: {
+        mobile1: { name: 'Small mobile', styles: { width: '360px', height: '640px' } },
+        mobile2: { name: 'Large mobile', styles: { width: '414px', height: '896px' } },
+        tablet: { name: 'Tablet', styles: { width: '768px', height: '1024px' } },
+      },
       defaultViewport: 'mobile1',
     },
     docs: {
       description: {
-        story: 'Shows how the message bubble adapts to smaller mobile screens. The component uses responsive design to adjust padding, font size, and avatar size based on screen width.',
+        story: 'Shows how the MessageBubble adapts padding, font size, and avatar size based on viewport width. Test with different Storybook viewports.'
       },
     },
-  },
-  render: () => (
-    <Box sx={{ width: '100%' }}> {/* Use 100% width within decorator padding */}
-      <MessageBubble 
-        message={createUserMessage('This is how a message looks on mobile screens with reduced padding and smaller avatar.')} 
-      />
-      <Box mt={2}>
-        <MessageBubble 
-          message={createAssistantMessage('The assistant response also adapts to the smaller screen size.')} 
-        />
-      </Box>
-    </Box>
-  ),
-};
-
-export const ResponsiveConversation: Story = {
-  parameters: {
-    docs: {
-      description: {
-        story: 'Shows how a conversation adapts to different screen sizes. Demonstrates the responsive behavior across mobile, tablet, and desktop viewports.',
-      },
-    },
-  },
-  render: () => {
-    // This is a render function component that can use hooks
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
-    
-    return (
-      <Box sx={{ 
-        width: '100%', 
-        mx: 'auto', 
-        display: 'flex', 
-        flexDirection: 'column', 
-        gap: isMobile ? 2 : 4 
-      }}>
-        {[
-          createUserMessage('Hello! How does this look on different devices?', '10:00 AM'),
-          createAssistantMessage('The MessageBubble component is fully responsive. On mobile devices, it uses smaller font sizes, reduced padding, and smaller avatars.', '10:01 AM'),
-          createUserMessage('That\'s great! What about tablets?', '10:02 AM'),
-          createAssistantMessage('On tablets, the component adjusts to provide a balanced experience between mobile and desktop views.', '10:03 AM'),
-          createUserMessage('And on desktop?', '10:04 AM'),
-          createAssistantMessage('Desktop views have optimal spacing and sizing for comfortable reading. The component also handles window resizing smoothly.', '10:05 AM'),
-        ].map((msg) => (
-          <MessageBubble
-            key={msg.id}
-            message={msg}
-          />
-        ))}
-      </Box>
-    );
   },
 };
