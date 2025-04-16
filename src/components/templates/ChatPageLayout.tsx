@@ -9,6 +9,7 @@ import { ChatInputArea } from '@/components/organisms/ChatInputArea';
 import { useTheme } from '@/context/ThemeContext';
 import { useChatContext } from '@/context/ChatContext';
 import { trackComponentRender } from '@/utils/telemetry';
+import { getAppName } from '@/utils/environment';
 
 export interface ChatPageLayoutProps {
   className?: string;
