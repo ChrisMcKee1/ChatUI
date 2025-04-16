@@ -5,6 +5,8 @@ import { AgentToggle, AgentMode } from './AgentToggle';
 import { ThemeProvider } from '../providers/ThemeProvider';
 import { MessageSquare, Bot } from 'lucide-react';
 import { action } from '@storybook/addon-actions';
+// Import testing utilities
+import { userEvent, within, expect } from '@storybook/test';
 
 // Create a stateful wrapper for Storybook interactions
 const StatefulAgentToggle = ({ initialMode = 'standard', compact = false, onModeChange = null }: { initialMode?: AgentMode, compact?: boolean, onModeChange?: ((mode: AgentMode) => void) | null }) => {
@@ -42,6 +44,12 @@ const meta = {
   ],
   parameters: {
     layout: 'centered',
+    // Add accessibility addon parameters
+    a11y: {
+      element: '#storybook-root',
+      config: { rules: [] },
+      options: {},
+    },
     docs: {
       description: {
         component: 'Toggle component for switching between standard chat and multi-agent chat modes. This molecule composes atomic components like Buttons, Icons, and Typography elements to create an interactive toggle with visual feedback. Features responsive design with compact mode for mobile screens and integrates with the theme system.',
@@ -79,8 +87,9 @@ export const StandardSelected: Story = {
   args: {
     mode: 'standard',
     onToggle: action('toggled'),
+    compact: false, // Explicitly set default for clarity
   },
-  render: () => <StatefulAgentToggle initialMode="standard" />,
+  render: (args) => <StatefulAgentToggle initialMode="standard" compact={args.compact} onModeChange={args.onToggle} />, 
   parameters: {
     docs: {
       description: {
@@ -88,20 +97,63 @@ export const StandardSelected: Story = {
       },
     },
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Check that the standard button is visually distinct (e.g., has some background)
+    // This is tricky as bgcolor is dynamic. We'll check the structure instead.
+    const standardButton = canvas.getByRole('button', { name: /Standard chat mode/i });
+    const multiAgentButton = canvas.getByRole('button', { name: /Multi-agent chat mode/i });
+
+    // Basic structural check: Ensure Standard button is present
+    await expect(standardButton).toBeInTheDocument();
+    await expect(multiAgentButton).toBeInTheDocument();
+
+    // Interact: Click Multi-Agent
+    await userEvent.click(multiAgentButton);
+    // Check state update text
+    await expect(canvas.getByText(/Current mode:/i)).toHaveTextContent('Multi-Agent Chat');
+
+    // Interact: Click Standard again
+    await userEvent.click(standardButton);
+    // Check state update text
+    await expect(canvas.getByText(/Current mode:/i)).toHaveTextContent('Standard Chat');
+  },
 };
 
 export const MultiAgentSelected: Story = {
   args: {
     mode: 'multiAgent',
     onToggle: action('toggled'),
+    compact: false, // Explicitly set default for clarity
   },
-  render: () => <StatefulAgentToggle initialMode="multiAgent" />,
+  render: (args) => <StatefulAgentToggle initialMode="multiAgent" compact={args.compact} onModeChange={args.onToggle} />,
   parameters: {
     docs: {
       description: {
         story: 'AgentToggle with the multi-agent chat mode selected. Demonstrates how the toggle looks when the multi-agent option is active. The toggle uses color and visual weight to indicate the active selection.',
       },
     },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const standardButton = canvas.getByRole('button', { name: /Standard chat mode/i });
+    const multiAgentButton = canvas.getByRole('button', { name: /Multi-agent chat mode/i });
+
+    // Basic structural check
+    await expect(standardButton).toBeInTheDocument();
+    await expect(multiAgentButton).toBeInTheDocument();
+    // Check initial state text
+    await expect(canvas.getByText(/Current mode:/i)).toHaveTextContent('Multi-Agent Chat');
+
+    // Interact: Click Standard
+    await userEvent.click(standardButton);
+    // Check state update text
+    await expect(canvas.getByText(/Current mode:/i)).toHaveTextContent('Standard Chat');
+
+    // Interact: Click Multi-Agent again
+    await userEvent.click(multiAgentButton);
+    // Check state update text
+    await expect(canvas.getByText(/Current mode:/i)).toHaveTextContent('Multi-Agent Chat');
   },
 };
 
@@ -112,7 +164,7 @@ export const CompactStandardSelected: Story = {
     onToggle: action('toggled'),
     compact: true,
   },
-  render: () => <StatefulAgentToggle initialMode="standard" compact={true} />,
+  render: (args) => <StatefulAgentToggle initialMode="standard" compact={args.compact} onModeChange={args.onToggle} />,
   parameters: {
     viewport: {
       defaultViewport: 'mobile1',
@@ -123,6 +175,23 @@ export const CompactStandardSelected: Story = {
       },
     },
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Check compact text
+    const standardButton = canvas.getByRole('button', { name: /Standard chat mode/i });
+    await expect(within(standardButton).getByText('Chat')).toBeInTheDocument();
+    
+    const multiAgentButton = canvas.getByRole('button', { name: /Multi-agent chat mode/i });
+    await expect(within(multiAgentButton).getByText('Agents')).toBeInTheDocument();
+    
+    // Check initial state text
+    await expect(canvas.getByText(/Current mode:/i)).toHaveTextContent('Standard Chat');
+
+    // Interact: Click Multi-Agent
+    await userEvent.click(multiAgentButton);
+    // Check state update text
+    await expect(canvas.getByText(/Current mode:/i)).toHaveTextContent('Multi-Agent Chat');
+  },
 };
 
 export const CompactMultiAgentSelected: Story = {
@@ -131,7 +200,7 @@ export const CompactMultiAgentSelected: Story = {
     onToggle: action('toggled'),
     compact: true,
   },
-  render: () => <StatefulAgentToggle initialMode="multiAgent" compact={true} />,
+  render: (args) => <StatefulAgentToggle initialMode="multiAgent" compact={args.compact} onModeChange={args.onToggle} />,
   parameters: {
     viewport: {
       defaultViewport: 'mobile1',
@@ -142,103 +211,96 @@ export const CompactMultiAgentSelected: Story = {
       },
     },
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Check compact text
+    const standardButton = canvas.getByRole('button', { name: /Standard chat mode/i });
+    await expect(within(standardButton).getByText('Chat')).toBeInTheDocument();
+    
+    const multiAgentButton = canvas.getByRole('button', { name: /Multi-agent chat mode/i });
+    await expect(within(multiAgentButton).getByText('Agents')).toBeInTheDocument();
+    
+    // Check initial state text
+    await expect(canvas.getByText(/Current mode:/i)).toHaveTextContent('Multi-Agent Chat');
+
+    // Interact: Click Standard
+    await userEvent.click(standardButton);
+    // Check state update text
+    await expect(canvas.getByText(/Current mode:/i)).toHaveTextContent('Standard Chat');
+  },
 };
 
-// Component composition demonstration
+// Component composition demonstration (primarily visual)
 export const ComponentComposition: Story = {
   args: {
     mode: 'standard',
     onToggle: action('toggled'),
   },
-  render: () => (
-    <Box sx={{ width: '100%', maxWidth: '500px' }}>
-      <Typography variant="h6" gutterBottom>AgentToggle Composition</Typography>
-      
-      <Paper sx={{ p: 3, mb: 3 }} elevation={2}>
-        <Typography variant="body2" paragraph>
-          The AgentToggle molecule is composed of these atomic components:
-        </Typography>
-        
-        <Box component="ul" sx={{ pl: 2, fontSize: '0.875rem', mb: 3 }}>
-          <li>MUI Button components - Provide interactive behavior and styling</li>
-          <li>Lucide icon components (MessageSquare/Bot) - Visual indicators of each mode</li>
-          <li>MUI Typography - Text labels for each option</li>
-          <li>MUI Box - Container and layout components</li>
-          <li>MUI Tooltip - Accessibility enhancement with descriptive text</li>
-        </Box>
-        
-        <Divider sx={{ my: 2 }} />
-        
-        <Stack spacing={2}>
-          <Typography variant="subtitle2" gutterBottom>Key Features:</Typography>
-          <Box component="ul" sx={{ pl: 2, fontSize: '0.875rem' }}>
-            <li>Interactive state management</li>
-            <li>Visual feedback for selected state</li>
-            <li>Responsive design with compact mode</li>
-            <li>Accessible with keyboard navigation</li>
-            <li>Theme integration with light/dark mode support</li>
-            <li>Tooltip descriptions for better usability</li>
+  render: () => {
+    // Use Stateful Wrapper to demonstrate responsiveness
+    const theme = useTheme();
+    const isCompact = useMediaQuery(theme.breakpoints.down('sm'));
+    const [mode, setMode] = useState<AgentMode>('standard');
+
+    const handleToggle = (newMode: AgentMode) => {
+      setMode(newMode);
+      action('responsive-toggled')(newMode);
+    };
+
+    return (
+      <Box sx={{ width: '100%', maxWidth: '600px', p: 2 }}>
+        <Typography variant="h6" gutterBottom>Responsive AgentToggle</Typography>
+        <Paper sx={{ p: 2, mb: 2 }} elevation={1}>
+          <Typography variant="body2" paragraph>
+            This toggle automatically switches between normal and compact mode based on screen size.
+            Try resizing the Storybook preview pane or use the viewport addon.
+          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, mt: 2 }}>
+            <AgentToggle mode={mode} onToggle={handleToggle} compact={isCompact} />
+            <Typography variant="caption">Current Mode: {mode}</Typography>
+            <Typography variant="caption">(Compact: {isCompact.toString()})</Typography>
           </Box>
-        </Stack>
-      </Paper>
-      
-      <Box sx={{ display: 'flex', gap: 3, justifyContent: 'center', mt: 3 }}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-          <Paper sx={{ p: 2, display: 'flex', justifyContent: 'center', minWidth: '80px' }} elevation={1}>
-            <MessageSquare size={18} />
-          </Paper>
-          <Typography variant="caption">Standard Chat Icon</Typography>
-        </Box>
-        
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-          <Paper sx={{ p: 2, display: 'flex', justifyContent: 'center', minWidth: '80px'  }} elevation={1}>
-            <Bot size={18} />
-          </Paper>
-          <Typography variant="caption">Multi-Agent Chat Icon</Typography>
-        </Box>
-        
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-          <Paper sx={{ p: 2, display: 'flex', justifyContent: 'center' }} elevation={1}>
-            <AgentToggle 
-              mode="standard" 
-              onToggle={() => {}} 
-            />
-          </Paper>
-          <Typography variant="caption">Complete Toggle</Typography>
-        </Box>
-      </Box>
-      
-      <Box sx={{ mt: 4 }}>
-        <Typography variant="subtitle1" gutterBottom>State Transitions:</Typography>
-        <Paper sx={{ p: 2, mb: 3 }} elevation={1}>
-          <Stack spacing={2}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="body2">Standard → Multi-Agent:</Typography>
-              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                <AgentToggle mode="standard" onToggle={() => {}} />
-                <Typography variant="body2" sx={{ mx: 1 }}>→</Typography>
-                <AgentToggle mode="multiAgent" onToggle={() => {}} />
-              </Box>
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="body2">Multi-Agent → Standard:</Typography>
-              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                <AgentToggle mode="multiAgent" onToggle={() => {}} />
-                <Typography variant="body2" sx={{ mx: 1 }}>→</Typography>
-                <AgentToggle mode="standard" onToggle={() => {}} />
-              </Box>
-            </Box>
-          </Stack>
         </Paper>
+        
+        {/* Include interaction test logic here */}
       </Box>
-    </Box>
-  ),
+    );
+  },
   parameters: {
+    viewport: { defaultViewport: 'responsive' },
     docs: {
       description: {
-        story: 'Demonstrates how the AgentToggle is composed of smaller atomic components. Shows the individual parts and how they come together to form the complete molecule, along with state transitions between modes.',
+        story: 'Demonstrates the responsive behavior of the AgentToggle. It switches to compact mode on smaller viewports. The current state and compact status are shown below the toggle. Resize the viewport to see the change.',
       },
     },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Wait for potential resizing/rendering delays in responsive mode
+    await new Promise(resolve => setTimeout(resolve, 100)); 
+
+    const standardButton = canvas.getByRole('button', { name: /Standard chat mode/i });
+    const multiAgentButton = canvas.getByRole('button', { name: /Multi-agent chat mode/i });
+
+    // Click multi-agent and check state update
+    await userEvent.click(multiAgentButton);
+    await expect(canvas.getByText(/Current Mode: multiAgent/i)).toBeInTheDocument();
+
+    // Click standard and check state update
+    await userEvent.click(standardButton);
+    await expect(canvas.getByText(/Current Mode: standard/i)).toBeInTheDocument();
+
+    // Note: Asserting the *visual* switch between compact/non-compact 
+    // based on viewport is complex in play functions. 
+    // This is better suited for visual regression testing.
+    // We can check for the presence of specific text ('Standard' vs 'Chat').
+    // This depends on the initial viewport size Storybook renders.
+    // Example (may fail depending on default viewport):
+    // try {
+    //   await expect(canvas.getByText('Standard')).toBeInTheDocument(); 
+    // } catch (e) {
+    //   await expect(canvas.getByText('Chat')).toBeInTheDocument();
+    // }
   },
 };
 

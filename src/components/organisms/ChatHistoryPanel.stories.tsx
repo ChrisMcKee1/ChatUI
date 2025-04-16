@@ -6,6 +6,9 @@ import { ThemeProvider } from '@/context/ThemeContext';
 import { useTheme } from '@/context/ThemeContext';
 import { History, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ChatMode } from '@/services/IHistoryService'; // Import ChatMode
+// Import testing utilities
+import { userEvent, within, expect, waitFor } from '@storybook/test';
+import { action } from '@storybook/addon-actions';
 
 interface StatefulChatHistoryPanelProps {
   initialOpen?: boolean;
@@ -27,12 +30,13 @@ const StatefulChatHistoryPanel = ({
   );
   
   const toggleDrawer = () => {
+    action('drawer toggled')(); // Log action
     setIsOpen(!isOpen);
   };
   
   const handleSelectChat = (chatId: string) => {
     setActiveChatId(chatId);
-    console.log(`Selected chat: ${chatId}`);
+    action('chat selected')(chatId); // Log action
   };
   
   const muiTheme = useMuiTheme();
@@ -60,7 +64,6 @@ const StatefulChatHistoryPanel = ({
       />
       <Box sx={{ 
         flexGrow: 1,
-        // Adjust margin based on drawer state and variant ONLY if not temporary
         ml: isOpen && finalVariant !== 'temporary' ? `${finalWidth}px` : 0,
         p: 2,
         transition: 'margin 225ms cubic-bezier(0.0, 0, 0.2, 1) 0ms',
@@ -71,6 +74,7 @@ const StatefulChatHistoryPanel = ({
           variant="outlined"
           onClick={toggleDrawer}
           sx={{ mb: 2 }}
+          aria-label={isOpen ? 'Close Drawer' : 'Open Drawer'}
         >
           {isOpen ? 'Close Drawer' : 'Open Drawer'}
         </Button>
@@ -114,6 +118,12 @@ const meta: Meta<typeof ChatHistoryPanel> = {
   title: 'Organisms/ChatHistoryPanel',
   parameters: {
     layout: 'fullscreen',
+    // Add accessibility addon parameters
+    a11y: {
+      element: '#storybook-root',
+      config: { rules: [] },
+      options: {},
+    },
     docs: {
       description: {
         component: 'A responsive drawer panel organism that displays chat history. It composes list item components and drawer controls. Includes support for different drawer variants (permanent, persistent, temporary), responsive sizing based on screen width, and theme integration. The panel adapts to different screen sizes and can be toggled between open and closed states.',
@@ -124,10 +134,7 @@ const meta: Meta<typeof ChatHistoryPanel> = {
   decorators: [
     (Story) => (
       <ThemeProvider>
-        {/* Use a container that simulates page layout for persistent drawers */}
-        <Box sx={{ display: 'flex', height: '600px', width: '100%', position: 'relative', overflow: 'hidden' }}>
-          <Story />
-        </Box>
+        <Story />
       </ThemeProvider>
     ),
   ],
@@ -167,7 +174,7 @@ const meta: Meta<typeof ChatHistoryPanel> = {
 
 export default meta;
 
-type Story = StoryObj<typeof ChatHistoryPanel>;
+type Story = StoryObj<typeof meta>;
 
 const sampleChatHistories: ChatHistory[] = [
   {
@@ -227,277 +234,263 @@ export const Empty: Story = {
     isOpen: true,
     variant: 'persistent',
   },
-  render: (args) => <StatefulChatHistoryPanel {...args} />,
+  // Use args directly, no need for Stateful wrapper if state isn't changing
+  // render: (args) => <StatefulChatHistoryPanel {...args} />,
   parameters: {
     docs: {
       description: {
         story: 'Empty state when no chat histories are available. Shows a helpful message and icon guiding the user.',
       },
     },
-    // Add a placeholder for the main content area specifically for this story
-    decorators: [
-      (Story) => (
-        <ThemeProvider>
-          <Box sx={{ display: 'flex', height: '600px', width: '100%', position: 'relative', overflow: 'hidden' }}>
-            <Story />
-            <Box sx={{ ml: '280px', p: 2, flexGrow: 1 }}> {/* Adjust margin based on default open state */}
-              <Paper sx={{ p: 2, border: '1px dashed grey', height: '100%' }}>
-                <Typography>Main Content Area</Typography>
-              </Paper>
-            </Box>
-          </Box>
-        </ThemeProvider>
-      ),
-    ],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Check for empty state text
+    await expect(canvas.getByText(/No chat history yet/i)).toBeInTheDocument();
+    // Check for History icon (assuming Lucide icons are identifiable)
+    // await expect(canvas.getByLabelText('History icon')).toBeInTheDocument(); // Adjust selector if needed
   },
 };
 
-export const WithHistories: Story = {
+export const WithHistory: Story = {
   args: {
     chatHistories: sampleChatHistories,
-    activeChatId: '2',
     isOpen: true,
     variant: 'persistent',
   },
-  render: (args) => <StatefulChatHistoryPanel {...args} />,
+  // render: (args) => <StatefulChatHistoryPanel {...args} />,
   parameters: {
     docs: {
       description: {
-        story: 'ChatHistoryPanel populated with sample chat histories and an active selection. Demonstrates the default appearance with multiple items.',
+        story: 'Displays a list of chat histories. Shows how items are rendered with title, last message, and timestamp.',
       },
     },
-    // Add a placeholder for the main content area specifically for this story
-    decorators: [
-      (Story) => (
-        <ThemeProvider>
-          <Box sx={{ display: 'flex', height: '600px', width: '100%', position: 'relative', overflow: 'hidden' }}>
-            <Story />
-            <Box sx={{ ml: '280px', p: 2, flexGrow: 1 }}> {/* Adjust margin based on default open state */}
-              <Paper sx={{ p: 2, border: '1px dashed grey', height: '100%' }}>
-                <Typography>Main Content Area</Typography>
-              </Paper>
-            </Box>
-          </Box>
-        </ThemeProvider>
-      ),
-    ],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Check for the first and last history item titles
+    await expect(canvas.getByText(sampleChatHistories[0].title)).toBeInTheDocument();
+    await expect(canvas.getByText(sampleChatHistories[sampleChatHistories.length - 1].title)).toBeInTheDocument();
+    // Check that the empty state text is NOT present
+    await expect(canvas.queryByText(/No chat history yet/i)).not.toBeInTheDocument();
   },
 };
 
-export const ClosedDrawer: Story = {
+export const ActiveItem: Story = {
   args: {
     chatHistories: sampleChatHistories,
-    activeChatId: '2',
-    isOpen: false,
+    activeChatId: sampleChatHistories[2].id, // Make the third item active
+    isOpen: true,
     variant: 'persistent',
   },
-  render: (args) => <StatefulChatHistoryPanel {...args} initialOpen={false} />,
+  // render: (args) => <StatefulChatHistoryPanel {...args} />,
   parameters: {
     docs: {
       description: {
-        story: 'ChatHistoryPanel in its closed state. The toggle button should be visible to reopen it.',
+        story: 'Displays chat histories with a specific item marked as active. Shows the visual styling for the selected chat.',
       },
     },
   },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const activeItem = canvas.getByText(sampleChatHistories[2].title).closest('button'); // Find the button containing the title
+    await expect(activeItem).toBeInTheDocument();
+    // Check for active state (MUI uses aria-selected="true")
+    await expect(activeItem).toHaveAttribute('aria-selected', 'true');
+  },
 };
 
-// Interactive example
+// Interactive story using the stateful wrapper
 export const Interactive: Story = {
-  render: () => <StatefulChatHistoryPanel chatHistories={sampleChatHistories} />,
-  parameters: {
-    docs: {
-      description: {
-        story: 'An interactive version where you can toggle the drawer and select different chat histories. Demonstrates the state management and interaction patterns.',
-      },
-    },
-  },
-};
-
-// Drawer Variants
-export const PersistentDrawer: Story = {
   args: {
+    // Args for controls in Storybook, wrapper provides actual props
     chatHistories: sampleChatHistories,
-    activeChatId: '1',
-    isOpen: true,
+    drawerWidth: 280,
     variant: 'persistent',
   },
-  render: (args) => <StatefulChatHistoryPanel {...args} />,
+  render: (args) => (
+    <StatefulChatHistoryPanel 
+      chatHistories={args.chatHistories} 
+      drawerWidth={args.drawerWidth}
+      variant={args.variant} // Pass variant from controls
+      initialOpen={true} // Start open for interaction
+    />
+  ),
   parameters: {
     docs: {
       description: {
-        story: 'Using the \`persistent\` variant. The drawer stays open alongside the main content until explicitly closed.',
+        story: 'Interactive ChatHistoryPanel that allows toggling the drawer and selecting chats. Demonstrates the state management and responsiveness of the component.',
       },
     },
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const mainContent = canvas.getByText(/Main content area/i);
+    const toggleButton = canvas.getByRole('button', { name: /Close Drawer/i }); // Button in main content
+    const firstHistoryItem = canvas.getByText(sampleChatHistories[0].title);
+    const thirdHistoryItem = canvas.getByText(sampleChatHistories[2].title);
+    const drawerToggleButton = canvas.getAllByRole('button', { name: /Toggle drawer/i })[0]; // Button inside drawer
+
+    // 1. Check initial state (drawer open, first item selected)
+    await expect(mainContent).toBeVisible(); // Assuming visibility changes with margin
+    await expect(firstHistoryItem.closest('button')).toHaveAttribute('aria-selected', 'true');
+
+    // 2. Select another chat item
+    await userEvent.click(thirdHistoryItem);
+    await expect(thirdHistoryItem.closest('button')).toHaveAttribute('aria-selected', 'true');
+    await expect(firstHistoryItem.closest('button')).toHaveAttribute('aria-selected', 'false');
+    await expect(mainContent.nextElementSibling).toHaveTextContent(sampleChatHistories[2].title);
+
+    // 3. Close the drawer using the button in the main content
+    await userEvent.click(toggleButton);
+    await waitFor(() => { // Wait for transition/state update
+      // Check if main content margin adjusts (may depend on variant/implementation)
+      // Or check if toggle button text changes
+      expect(canvas.getByRole('button', { name: /Open Drawer/i })).toBeInTheDocument();
+    });
+    
+    // 4. Open the drawer using the button inside the drawer (if visible)
+    // Note: This might only work for persistent/permanent variants when closed 
+    // depending on how the toggle button is implemented in the closed state.
+    // Let's assume it's accessible for the test.
+    try {
+      const openDrawerButton = await canvas.findByRole('button', { name: /Open drawer/i }); // Or ChevronRight icon
+      await userEvent.click(openDrawerButton);
+      await waitFor(() => {
+         expect(canvas.getByRole('button', { name: /Close Drawer/i })).toBeInTheDocument();
+      });
+    } catch (e) {
+      console.warn("Could not find drawer open button, might be temporary variant or hidden.");
+      // If the above fails, try opening with the main content button again
+      await userEvent.click(canvas.getByRole('button', { name: /Open Drawer/i }));
+       await waitFor(() => {
+         expect(canvas.getByRole('button', { name: /Close Drawer/i })).toBeInTheDocument();
+      });
+    }
+  },
 };
 
-export const TemporaryDrawer: Story = {
+// Responsive variations
+export const MobileView: Story = {
   args: {
     chatHistories: sampleChatHistories,
-    activeChatId: '1',
+    activeChatId: sampleChatHistories[0].id,
+    isOpen: false, // Start closed on mobile typically
+    variant: 'temporary', // Force temporary for mobile testing
+  },
+  render: (args) => (
+    <StatefulChatHistoryPanel 
+      chatHistories={args.chatHistories} 
+      initialOpen={args.isOpen} 
+      variant={args.variant}
+    />
+  ),
+  parameters: {
+    viewport: {
+      defaultViewport: 'mobile1',
+    },
+    docs: {
+      description: {
+        story: 'ChatHistoryPanel in mobile view. Automatically uses the \'temporary\' variant, appearing over content when opened.',
+      },
+    },
+  },
+   play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const openDrawerButton = canvas.getByRole('button', { name: /Open Drawer/i });
+    
+    // Check drawer is initially closed (content margin should be 0)
+    // (Exact check depends on implementation)
+    
+    // Open the drawer
+    await userEvent.click(openDrawerButton);
+    const drawer = await canvas.findByRole('dialog'); // Temporary drawer is often a dialog
+    await expect(drawer).toBeVisible();
+    await expect(within(drawer).getByText(sampleChatHistories[0].title)).toBeInTheDocument();
+
+    // Click outside or on an item to close (or use toggle button if present)
+    // Simulate clicking an item
+    await userEvent.click(within(drawer).getByText(sampleChatHistories[1].title));
+    await waitFor(() => {
+       expect(drawer).not.toBeVisible();
+    });
+  },
+};
+
+// Theme integration story
+export const ThemeIntegration: Story = {
+  args: {
+    chatHistories: sampleChatHistories,
     isOpen: true,
-    variant: 'temporary',
+    variant: 'persistent',
+    activeChatId: sampleChatHistories[1].id,
   },
-  render: (args) => <StatefulChatHistoryPanel {...args} />,
+  render: (args) => (
+    // Need a way to toggle theme *outside* the panel for the demo
+    <ThemeAwareHistoryPanel />
+  ),
   parameters: {
     docs: {
       description: {
-        story: 'Using the \`temporary\` variant. The drawer opens over the main content and closes when clicking outside or selecting an item (behavior depends on implementation). This is the default on mobile.',
+        story: 'Demonstrates how the ChatHistoryPanel adapts to light and dark themes. Use the button above the panel or the Storybook toolbar toggle to switch themes and observe changes in background, text, and selection colors.',
       },
     },
   },
+  // No play function needed, interaction is via external theme toggle
 };
 
-// Responsive Behavior
-export const MobileView: Story = {
-  render: () => <StatefulChatHistoryPanel chatHistories={sampleChatHistories} variant="persistent" />,
-  parameters: {
-    viewport: { defaultViewport: 'mobile1' },
-    docs: {
-      description: {
-        story: 'Demonstrates responsive behavior on a mobile viewport. The drawer should automatically switch to the \`temporary\` variant, and font sizes/padding are adjusted.',
-      },
-    },
-  },
-};
-
-export const VerySmallMobileView: Story = {
-  render: () => <StatefulChatHistoryPanel chatHistories={sampleChatHistories} variant="persistent" />,
-  parameters: {
-    viewport: { defaultViewport: 'mobile2' }, // Represents very small screens
-    docs: {
-      description: {
-        story: 'Demonstrates responsive behavior on a very small mobile viewport (e.g., iPhone SE). Further adjustments to font sizes, padding, and drawer width are applied.',
-      },
-    },
-  },
-};
-
-// Component Composition
+// Component Composition Story
 export const ComponentComposition: Story = {
+  args: {},
   render: () => (
     <Box sx={{ p: 3, maxWidth: '800px' }}>
       <Typography variant="h6" gutterBottom>ChatHistoryPanel Composition</Typography>
       <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
         <Typography variant="body2" paragraph>
-          The ChatHistoryPanel organism is composed primarily of MUI Drawer and List components, along with custom styling and logic:
+          The ChatHistoryPanel organism is composed of these key elements/components:
         </Typography>
-        
         <Box component="ul" sx={{ pl: 2, mb: 3 }}>
-          <li>MUI Drawer - Provides the sliding panel mechanism</li>
-          <li>MUI List, ListItem, ListItemButton, ListItemText - Used to display the chat history items</li>
-          <li>MUI Typography - For titles, messages, and timestamps</li>
-          <li>MUI IconButton (with ChevronLeft/Right icons) - For toggling the drawer</li>
-          <li>History icon - Used in the empty state</li>
-          <li>Box components - For layout and structure</li>
+          <li>MUI Drawer: Provides the sliding panel functionality and variants (permanent, persistent, temporary).</li>
+          <li>MUI Box: Used for layout and styling of the drawer header and content areas.</li>
+          <li>MUI Typography: Displays the panel title ("Chat History") and empty state message.</li>
+          <li>MUI List & ListItemButton: Renders the clickable list of chat history items.</li>
+          <li>MUI ListItemText: Displays the title, last message, and timestamp within each list item.</li>
+          <li>Lucide Icons (History, ChevronLeft/Right): Used for the empty state illustration and drawer toggle button.</li>
+          <li>Internal State: Manages the open/closed state if not controlled externally.</li>
+          <li>ThemeContext: Used for adapting colors and styles to light/dark modes.</li>
         </Box>
-        
         <Divider sx={{ my: 2 }} />
-        
         <Stack spacing={2}>
           <Typography variant="subtitle2" gutterBottom>Key Features:</Typography>
           <Box component="ul" sx={{ pl: 2 }}>
-            <li>Displays a list of past chat conversations</li>
-            <li>Highlights the currently active chat</li>
-            <li>Allows selection of different chats</li>
-            <li>Supports multiple drawer variants (persistent, temporary)</li>
-            <li>Responsive design adapts drawer variant and styling for mobile</li>
-            <li>Handles empty state gracefully</li>
-            <li>Integrates with the application theme</li>
+            <li>Displays list of past chat conversations.</li>
+            <li>Highlights the currently active chat.</li>
+            <li>Allows selection of different chats.</li>
+            <li>Responsive behavior with different drawer variants.</li>
+            <li>Toggle mechanism to open/close the drawer.</li>
+            <li>Handles empty state gracefully.</li>
+            <li>Adapts to light and dark themes.</li>
           </Box>
         </Stack>
       </Paper>
-      
-      <Stack spacing={3}>
-        <Paper sx={{ p: 2 }} elevation={1}>
-          <Typography variant="subtitle2" gutterBottom>Example List Item:</Typography>
-          <List disablePadding>
-            <ListItem disablePadding divider>
-              <ListItemButton selected sx={{ borderLeft: 4, borderColor: 'primary.main', bgcolor: 'action.selected' }}>
-                <ListItemText 
-                  primary="Sample Chat Title" 
-                  secondary="Last message preview... • 2h ago"
-                  primaryTypographyProps={{ fontWeight: 'medium' }}
-                  secondaryTypographyProps={{ noWrap: true, variant: 'caption' }}
-                />
-              </ListItemButton>
-            </ListItem>
-          </List>
-        </Paper>
-        
-        <Paper sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} elevation={1}>
-          <Typography>Toggle Control:</Typography>
-          <Box>
-            <IconButton><ChevronLeft /></IconButton>
-            <IconButton><ChevronRight /></IconButton>
-          </Box>
-        </Paper>
-
-        <Paper sx={{ p: 2, textAlign: 'center' }} elevation={1}>
-            <Typography variant="subtitle2" gutterBottom>Empty State Example:</Typography>
-            <History size={24} style={{ opacity: 0.6, marginBottom: '8px' }} />
-            <Typography variant="caption" display="block">
-                No chat history yet.
-            </Typography>
-        </Paper>
-      </Stack>
+      <Typography variant="subtitle2" sx={{ mb: 1 }}>Example Panel Structure:</Typography>
+      <Paper elevation={1} sx={{ height: '400px', overflow: 'hidden', border: '1px dashed grey' }}>
+        <ChatHistoryPanel 
+          chatHistories={sampleChatHistories.slice(0, 3)} 
+          activeChatId={sampleChatHistories[0].id}
+          onSelectChat={() => {}} 
+          isOpen={true} 
+          variant="persistent"
+        />
+      </Paper>
     </Box>
   ),
   parameters: {
-    layout: 'centered', // Use centered layout for composition
+    layout: 'centered',
     docs: {
       description: {
-        story: 'Demonstrates the internal composition of the ChatHistoryPanel, showing how MUI components like Drawer, List, and ListItemButton are used to construct the panel.',
+        story: 'Shows how the ChatHistoryPanel organism is composed of MUI components and custom logic. Highlights its structure, features, and context integrations.',
       },
     },
-    // Remove the default fullscreen decorator for this story
-    decorators: [
-        (Story) => (
-          <ThemeProvider>
-             <Story />
-          </ThemeProvider>
-        ),
-    ],
-  },
-};
-
-// Theme Integration
-export const ThemeVariations: Story = {
-  render: () => {
-    const { isDarkMode, toggleTheme } = useTheme();
-    return (
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom>Theme Integration</Typography>
-        <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
-           <Typography variant="body2" paragraph>
-             The ChatHistoryPanel adapts its appearance based on the selected theme (light or dark). Background colors, text colors, divider colors, and selection highlights adjust automatically.
-           </Typography>
-           <Button variant="outlined" onClick={toggleTheme} sx={{ mb: 2 }}>
-             Switch to {isDarkMode ? 'Light' : 'Dark'} Theme
-           </Button>
-        </Paper>
-        {/* Ensure the wrapper Box has correct display and height */}
-        <Box sx={{ display: 'flex', height: '480px' }}> {/* Adjust height as needed */}
-           {/* Pass sample histories to the stateful panel */}
-           <StatefulChatHistoryPanel chatHistories={sampleChatHistories} />
-        </Box>
-      </Box>
-    );
-  },
-  parameters: {
-    layout: 'padded', // Use padded layout for this story
-    docs: {
-      description: {
-        story: 'Demonstrates how the ChatHistoryPanel adapts to light and dark themes. Use the button to toggle the theme and observe the changes in background, text, and selection colors.',
-      },
-    },
-     // Remove the default fullscreen decorator for this story
-    decorators: [
-        (Story) => (
-          <ThemeProvider>
-             <Story />
-          </ThemeProvider>
-        ),
-    ],
   },
 }; 

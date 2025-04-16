@@ -2,12 +2,15 @@ import type { Meta, StoryObj } from '@storybook/react';
 import React, { useState } from 'react';
 import { ChatHeader } from './ChatHeader';
 import { ThemeProvider } from '@/context/ThemeContext';
+import { ChatProvider } from '@/context/ChatContext';
 import { AgentMode } from '@/components/molecules/AgentToggle';
 import { Box, Typography, Paper, Stack, Divider } from '@mui/material';
 import { AgentToggle } from '@/components/molecules/AgentToggle';
 import { ThemeToggle } from '@/components/molecules/ThemeToggle';
 import Button from '@/components/atoms/Button';
-import { Plus } from 'lucide-react';
+import { Plus, Eye, EyeOff } from 'lucide-react';
+import { userEvent, within, expect, waitFor } from '@storybook/test';
+import { action } from '@storybook/addon-actions';
 
 // Create a stateful wrapper for Storybook interactions
 const StatefulChatHeader = ({ 
@@ -26,9 +29,9 @@ const StatefulChatHeader = ({
       agentMode={mode}
       onAgentModeToggle={(newMode) => {
         setMode(newMode);
-        console.log(`Mode toggled to: ${newMode}`);
+        action('agent mode toggled')(newMode);
       }}
-      onNewChat={() => console.log('New chat requested')}
+      onNewChat={action('new chat')}
       isSmallScreen={isSmallScreen}
       isExtraSmallScreen={isExtraSmallScreen}
     />
@@ -40,6 +43,11 @@ const meta: Meta<typeof ChatHeader> = {
   title: 'Organisms/ChatHeader',
   parameters: {
     layout: 'fullscreen',
+    a11y: {
+      element: '#storybook-root',
+      config: { rules: [] },
+      options: {},
+    },
     docs: {
       description: {
         component: 'Header component for the chat application. This organism composes the AgentToggle, ThemeToggle, and New Chat button molecules/atoms to provide top-level controls and application branding. It features responsive design with adaptations for small and very small screens.',
@@ -50,7 +58,9 @@ const meta: Meta<typeof ChatHeader> = {
   decorators: [
     (Story) => (
       <ThemeProvider>
-        <Story />
+        <ChatProvider>
+          <Story />
+        </ChatProvider>
       </ThemeProvider>
     ),
   ],
@@ -93,14 +103,25 @@ const meta: Meta<typeof ChatHeader> = {
 
 export default meta;
 
-type Story = StoryObj<typeof ChatHeader>;
+type Story = StoryObj<typeof meta>;
+
+// Helper to check for common header elements
+const checkHeaderElements = async (canvasElement: HTMLElement) => {
+  const canvas = within(canvasElement);
+  await expect(canvas.getByRole('heading', { name: /ChatUI/i })).toBeInTheDocument();
+  await expect(canvas.getByRole('button', { name: /Standard chat mode/i })).toBeInTheDocument();
+  await expect(canvas.getByRole('button', { name: /Multi-agent chat mode/i })).toBeInTheDocument();
+  await expect(canvas.getByRole('button', { name: /New Chat/i })).toBeInTheDocument();
+  await expect(canvas.getByRole('button', { name: /Show tool messages/i }) || canvas.getByRole('button', { name: /Hide tool messages/i })).toBeInTheDocument();
+  await expect(canvas.getByRole('button', { name: /Toggle theme/i })).toBeInTheDocument();
+};
 
 // Basic examples
 export const StandardMode: Story = {
   args: {
     agentMode: 'standard',
-    onAgentModeToggle: (mode) => console.log(`Mode toggled to: ${mode}`),
-    onNewChat: () => console.log('New chat requested'),
+    onAgentModeToggle: action('agent mode toggled'),
+    onNewChat: action('new chat'),
   },
   parameters: {
     docs: {
@@ -109,13 +130,16 @@ export const StandardMode: Story = {
       },
     },
   },
+  play: async ({ canvasElement }) => {
+    await checkHeaderElements(canvasElement);
+  },
 };
 
 export const MultiAgentMode: Story = {
   args: {
     agentMode: 'multiAgent',
-    onAgentModeToggle: (mode) => console.log(`Mode toggled to: ${mode}`),
-    onNewChat: () => console.log('New chat requested'),
+    onAgentModeToggle: action('agent mode toggled'),
+    onNewChat: action('new chat'),
   },
   parameters: {
     docs: {
@@ -123,6 +147,9 @@ export const MultiAgentMode: Story = {
         story: 'ChatHeader with multi-agent chat mode selected. Demonstrates the appearance when multi-agent mode is active.',
       },
     },
+  },
+  play: async ({ canvasElement }) => {
+    await checkHeaderElements(canvasElement);
   },
 };
 
@@ -137,14 +164,31 @@ export const Interactive: Story = {
       },
     },
   },
+  play: async ({ canvasElement }) => {
+    await checkHeaderElements(canvasElement);
+    const canvas = within(canvasElement);
+    const standardButton = canvas.getByRole('button', { name: /Standard chat mode/i });
+    const multiAgentButton = canvas.getByRole('button', { name: /Multi-agent chat mode/i });
+    const toolToggleButton = canvas.getByRole('button', { name: /Show tool messages/i }) || canvas.getByRole('button', { name: /Hide tool messages/i });
+    const initialToolToggleLabel = toolToggleButton.getAttribute('aria-label');
+
+    await userEvent.click(multiAgentButton);
+    await userEvent.click(standardButton);
+    await userEvent.click(toolToggleButton);
+    const updatedToolToggleButton = await canvas.findByRole('button', { name: initialToolToggleLabel === 'Show tool messages' ? /Hide tool messages/i : /Show tool messages/i });
+    await expect(updatedToolToggleButton).toBeInTheDocument();
+    await userEvent.click(updatedToolToggleButton);
+    const finalToolToggleButton = await canvas.findByRole('button', { name: initialToolToggleLabel === 'Show tool messages' ? /Show tool messages/i : /Hide tool messages/i });
+    await expect(finalToolToggleButton.getAttribute('aria-label')).toBe(initialToolToggleLabel);
+  },
 };
 
 // Responsive variations
 export const MobileView: Story = {
   args: {
     agentMode: 'standard',
-    onAgentModeToggle: (mode) => console.log(`Mode toggled to: ${mode}`),
-    onNewChat: () => console.log('New chat requested'),
+    onAgentModeToggle: action('agent mode toggled'),
+    onNewChat: action('new chat'),
     isSmallScreen: true,
   },
   parameters: {
@@ -157,13 +201,19 @@ export const MobileView: Story = {
       },
     },
   },
+  play: async ({ canvasElement }) => {
+    await checkHeaderElements(canvasElement);
+    const canvas = within(canvasElement);
+    const agentToggleStandard = canvas.getByRole('button', { name: /Standard chat mode/i });
+    await expect(within(agentToggleStandard).getByText('Chat')).toBeInTheDocument();
+  },
 };
 
 export const VerySmallMobileView: Story = {
   args: {
     agentMode: 'standard',
-    onAgentModeToggle: (mode) => console.log(`Mode toggled to: ${mode}`),
-    onNewChat: () => console.log('New chat requested'),
+    onAgentModeToggle: action('agent mode toggled'),
+    onNewChat: action('new chat'),
     isSmallScreen: true,
     isExtraSmallScreen: true,
   },
@@ -176,6 +226,9 @@ export const VerySmallMobileView: Story = {
         story: 'ChatHeader optimized for very small mobile devices (isSmallScreen=true, isExtraSmallScreen=true). Shows further spacing reductions for extremely narrow viewports.',
       },
     },
+  },
+  play: async ({ canvasElement }) => {
+    await checkHeaderElements(canvasElement);
   },
 };
 

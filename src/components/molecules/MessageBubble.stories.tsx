@@ -4,21 +4,31 @@ import { Box, useMediaQuery, useTheme } from '@mui/material';
 import { MessageBubble } from './MessageBubble';
 import { Message, ToolCall } from './ChatMessagePanel';
 import { ThemeProvider } from '../providers/ThemeProvider';
-import { ChatProvider, ChatContextType } from '@/context/ChatContext';
+import { ChatProvider, ChatContextType, useChatContext } from '@/context/ChatContext';
 import { actions } from '@storybook/addon-actions';
+// Import testing utilities
+import { userEvent, within, expect, findByText } from '@storybook/test';
 
 // Helper to create a wrapper that provides ChatContext with specific values
-const withChatContext = (Story: React.FC, contextValue: Partial<ChatContextType>) => (
-  <ThemeProvider>
-    <ChatProvider>
-      {/* Override context values for the story */}
-      {/* @ts-ignore We are intentionally overriding parts of the context */}
-      <ChatContext.Provider value={{ ...useContext(ChatContext), ...contextValue }}>
-        <Story />
-      {/* @ts-ignore */}
-      </ChatContext.Provider>
-    </ChatProvider>
-  </ThemeProvider>
+const WithChatContextWrapper = ({ children, contextValue }: { children: React.ReactNode, contextValue: Partial<ChatContextType> }) => {
+  const initialContext = useChatContext(); // Get initial context to merge with overrides
+  return (
+    <ChatContext.Provider value={{ ...initialContext, ...contextValue }}>
+      {children}
+    </ChatContext.Provider>
+  );
+};
+
+const withChatContext = (contextValue: Partial<ChatContextType>) => (
+  (Story: React.FC) => (
+    <ThemeProvider>
+      <ChatProvider>
+        <WithChatContextWrapper contextValue={contextValue}>
+          <Story />
+        </WithChatContextWrapper>
+      </ChatProvider>
+    </ThemeProvider>
+  )
 );
 
 // This story uses ThemeProvider decorator to handle proper theme context
@@ -28,14 +38,22 @@ const meta: Meta<typeof MessageBubble> = {
   decorators: [
     (Story) => (
       <ThemeProvider>
-        <ChatProvider>
-          <Story />
+        <ChatProvider> { /* Default providers */}
+          <Box sx={{ p: 2, maxWidth: '600px', width: '100%' }}>
+            <Story />
+          </Box>
         </ChatProvider>
       </ThemeProvider>
     ),
   ],
   parameters: {
     layout: 'centered',
+    // Add accessibility addon parameters
+    a11y: {
+      element: '#storybook-root',
+      config: { rules: [] },
+      options: {},
+    },
     docs: {
       description: {
         component: 'Message bubble component that displays chat messages with proper styling based on the sender (user or assistant). Supports multi-agent messages with distinct colors per agent. This molecule component composes atoms together to create a complete message display with avatar, content area, and timestamp.',
@@ -57,25 +75,40 @@ const meta: Meta<typeof MessageBubble> = {
 
 export default meta;
 
-type Story = StoryObj<typeof MessageBubble>;
+type Story = StoryObj<typeof meta>;
 
 // Helper functions to create message objects for consistent story usage
 const createUserMessage = (content: string, timestamp = '12:34 PM'): Message => ({
-  id: 'user-msg-' + Date.now(),
+  id: 'user-msg-' + Date.now() + Math.random(),
   content,
   role: 'user',
   timestamp,
 });
 
-const createAssistantMessage = (content: string, timestamp = '12:35 PM', agentName?: string): Message => ({
-  id: 'assistant-msg-' + Date.now(),
+const createAssistantMessage = (
+  content: string, 
+  timestamp = '12:35 PM', 
+  agentName?: string,
+  toolCall?: ToolCall[]
+): Message => ({
+  id: 'assistant-msg-' + Date.now() + Math.random(),
   content,
   role: 'assistant',
   timestamp,
   ...(agentName && { agentName }),
+  ...(toolCall && { toolCall }),
 });
 
-// Basic user message story
+const createToolMessage = (content: string, toolCallId: string, timestamp = '12:36 PM'): Message => ({
+  id: 'tool-msg-' + Date.now() + Math.random(),
+  content,
+  role: 'tool',
+  timestamp,
+  toolCallId,
+});
+
+// --- Basic Role Stories ---
+
 export const UserMessage: Story = {
   args: {
     message: createUserMessage('This is a user message. It should display on the right side with a user-themed background.'),
@@ -87,9 +120,15 @@ export const UserMessage: Story = {
       },
     },
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Check for user avatar (assuming it might have a specific test id or class)
+    await expect(canvas.getByTestId('user-avatar')).toBeInTheDocument(); 
+    // Check content
+    await expect(canvas.getByText(/This is a user message/)).toBeInTheDocument();
+  },
 };
 
-// Basic assistant message story
 export const AssistantMessage: Story = {
   args: {
     message: createAssistantMessage('This is a response from the assistant. It shows on the left side with an assistant-themed background.'),
@@ -101,9 +140,17 @@ export const AssistantMessage: Story = {
       },
     },
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Check for assistant avatar 
+    await expect(canvas.getByTestId('assistant-avatar')).toBeInTheDocument(); 
+    // Check content
+    await expect(canvas.getByText(/This is a response from the assistant/)).toBeInTheDocument();
+  },
 };
 
-// Demonstrate markdown support in messages
+// --- Content Type Stories ---
+
 export const WithMarkdownContent: Story = {
   args: {
     message: createAssistantMessage('# Markdown Support\n\nThe MessageBubble supports **rich** *formatting* through markdown:\n\n- Lists\n- **Bold text**\n- *Italic text*\n- `Code snippets`\n\n```javascript\nconst hello = "world";\nconsole.log(hello);\n```\n\n> Blockquotes are also supported'),
@@ -115,9 +162,17 @@ export const WithMarkdownContent: Story = {
       },
     },
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Check for specific markdown elements
+    await expect(canvas.getByRole('heading', { name: /Markdown Support/i })).toBeInTheDocument();
+    await expect(canvas.getByText('rich', { selector: 'strong' })).toBeInTheDocument();
+    await expect(canvas.getByText('formatting', { selector: 'em' })).toBeInTheDocument();
+    await expect(canvas.getByText('Code snippets', { selector: 'code' })).toBeInTheDocument();
+    await expect(canvas.getByText(/const hello = "world"/)).toBeInTheDocument(); // Check code block content
+  },
 };
 
-// Demonstrate long message handling
 export const LongMessage: Story = {
   args: {
     message: createAssistantMessage('This is a much longer message that demonstrates how the bubble handles multiple lines of text. It should wrap appropriately and maintain readability. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.'),
@@ -129,9 +184,11 @@ export const LongMessage: Story = {
       },
     },
   },
+  // No specific play function needed, primarily visual test
 };
 
-// Demonstrate empty state
+// --- Edge Case Stories ---
+
 export const WithoutTimestamp: Story = {
   args: {
     message: {
@@ -146,9 +203,16 @@ export const WithoutTimestamp: Story = {
       },
     },
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText(/This message has no timestamp/)).toBeInTheDocument();
+    // Check that timestamp element is NOT present (might need specific selector/test-id)
+    await expect(canvas.queryByTestId('message-timestamp')).not.toBeInTheDocument();
+  },
 };
 
-// Demonstrate agent-specific styling
+// --- Agent Stories ---
+
 export const AgentMessage: Story = {
   args: {
     message: createAssistantMessage('This message is from a specific agent and uses a distinct color based on the agent name.', '12:36 PM', 'ResearchAgent'),
@@ -160,35 +224,13 @@ export const AgentMessage: Story = {
       },
     },
   },
-};
-
-// Mobile view for responsive design
-export const MobileView: Story = {
-  parameters: {
-    viewport: {
-      defaultViewport: 'mobile1',
-    },
-    docs: {
-      description: {
-        story: 'Shows how the message bubble adapts to smaller mobile screens. The component uses responsive design to adjust padding, font size, and avatar size based on screen width.',
-      },
-    },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Check if the agent name is displayed
+    await expect(canvas.getByText('ResearchAgent')).toBeInTheDocument();
   },
-  render: () => (
-    <Box sx={{ width: '100%', maxWidth: '320px' }}>
-      <MessageBubble 
-        message={createUserMessage('This is how a message looks on mobile screens with reduced padding and smaller avatar.')} 
-      />
-      <Box mt={2}>
-        <MessageBubble 
-          message={createAssistantMessage('The assistant response also adapts to the smaller screen size.')} 
-        />
-      </Box>
-    </Box>
-  ),
 };
 
-// Multi-agent conversation to demonstrate color assignment
 export const MultiAgentConversation: Story = {
   parameters: {
     docs: {
@@ -198,7 +240,7 @@ export const MultiAgentConversation: Story = {
     },
   },
   render: () => (
-    <Box sx={{ width: '100%', maxWidth: '600px', mx: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 4 }}>
       {[
         createUserMessage('Can you help me understand quantum computing?', '10:00 AM'),
         createAssistantMessage('Quantum computing uses quantum bits or qubits which can exist in multiple states simultaneously, unlike classical bits.', '10:01 AM', 'PhysicsExpert'),
@@ -216,7 +258,142 @@ export const MultiAgentConversation: Story = {
   )
 };
 
-// Responsive conversation example showing different sizes
+// --- Tool Call Stories ---
+
+const sampleToolCall: ToolCall[] = [
+  {
+    id: 'tool_123',
+    functionName: 'searchWeb',
+    arguments: { query: 'latest AI advancements' }
+  }
+];
+
+export const AssistantWithToolCallHidden: Story = {
+  args: {
+    message: createAssistantMessage(
+      'Okay, I will search the web for the latest AI advancements.',
+      '1:00 PM',
+      undefined,
+      sampleToolCall
+    ),
+  },
+  decorators: [withChatContext({ showToolMessages: false })], // Wrap with context override
+  parameters: {
+    docs: {
+      description: {
+        story: 'Assistant message that made a tool call, but the tool indicator is hidden because showToolMessages context is false.'
+      }
+    }
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText(/Okay, I will search the web/)).toBeInTheDocument();
+    // Check that the tool icon/indicator is NOT present
+    await expect(canvas.queryByTestId('tool-call-indicator')).not.toBeInTheDocument();
+  },
+};
+
+export const AssistantWithToolCallVisible: Story = {
+  args: {
+    message: createAssistantMessage(
+      'Okay, I will search the web for the latest AI advancements.',
+      '1:00 PM',
+      undefined,
+      sampleToolCall
+    ),
+  },
+  decorators: [withChatContext({ showToolMessages: true })], // Wrap with context override
+  parameters: {
+    docs: {
+      description: {
+        story: 'Assistant message that made a tool call, and the tool indicator IS visible because showToolMessages context is true.'
+      }
+    }
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText(/Okay, I will search the web/)).toBeInTheDocument();
+    // Check that the tool icon/indicator IS present
+    await expect(canvas.getByTestId('tool-call-indicator')).toBeInTheDocument();
+  },
+};
+
+export const ToolMessageHidden: Story = {
+  args: {
+    message: createToolMessage(
+      '{\"results\": [\"Result 1\", \"Result 2\"]}',
+      'tool_123',
+      '1:01 PM'
+    ),
+  },
+  decorators: [withChatContext({ showToolMessages: false })],
+  parameters: {
+    docs: {
+      description: {
+        story: 'A TOOL role message containing results, which is hidden because showToolMessages context is false.'
+      }
+    }
+  },
+  // Play function: Check that the component renders nothing
+  play: async ({ container }) => {
+    await expect(container.firstChild).toBeNull();
+  },
+};
+
+export const ToolMessageVisible: Story = {
+  args: {
+    message: createToolMessage(
+      '{\"results\": [\"Result 1\", \"Result 2\"]}',
+      'tool_123',
+      '1:01 PM'
+    ),
+  },
+  decorators: [withChatContext({ showToolMessages: true })],
+  parameters: {
+    docs: {
+      description: {
+        story: 'A TOOL role message containing results, which IS visible because showToolMessages context is true. Shows special styling for tool messages.'
+      }
+    }
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Check for tool avatar/icon
+    await expect(canvas.getByTestId('tool-avatar')).toBeInTheDocument();
+    // Check for the "Tool" label
+    await expect(canvas.getByText('Tool')).toBeInTheDocument();
+    // Check for the preformatted content
+    await expect(canvas.getByText(/"Result 1"/)).toBeInTheDocument();
+  },
+};
+
+// --- Responsive Stories ---
+
+export const MobileView: Story = {
+  parameters: {
+    viewport: {
+      defaultViewport: 'mobile1',
+    },
+    docs: {
+      description: {
+        story: 'Shows how the message bubble adapts to smaller mobile screens. The component uses responsive design to adjust padding, font size, and avatar size based on screen width.',
+      },
+    },
+  },
+  render: () => (
+    <Box sx={{ width: '100%' }}> {/* Use 100% width within decorator padding */}
+      <MessageBubble 
+        message={createUserMessage('This is how a message looks on mobile screens with reduced padding and smaller avatar.')} 
+      />
+      <Box mt={2}>
+        <MessageBubble 
+          message={createAssistantMessage('The assistant response also adapts to the smaller screen size.')} 
+        />
+      </Box>
+    </Box>
+  ),
+};
+
 export const ResponsiveConversation: Story = {
   parameters: {
     docs: {
@@ -234,7 +411,6 @@ export const ResponsiveConversation: Story = {
     return (
       <Box sx={{ 
         width: '100%', 
-        maxWidth: isMobile ? '300px' : isTablet ? '450px' : '600px',
         mx: 'auto', 
         display: 'flex', 
         flexDirection: 'column', 
@@ -253,200 +429,7 @@ export const ResponsiveConversation: Story = {
             message={msg}
           />
         ))}
-        <Box mt={2} sx={{ fontSize: '14px', textAlign: 'center', opacity: 0.7 }}>
-          Current viewport: {isMobile ? 'Mobile' : isTablet ? 'Tablet' : 'Desktop'}
-        </Box>
       </Box>
     );
-  }
-};
-
-// Theme variation demonstration
-export const ThemeVariations: Story = {
-  parameters: {
-    docs: {
-      description: {
-        story: 'Demonstrates how the MessageBubble appears in both light and dark themes. The story uses the ThemeProvider to show the component adapting to theme changes.',
-      },
-    },
   },
-  render: () => (
-    <Box sx={{ width: '100%', maxWidth: '600px', display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <Box>
-        <MessageBubble 
-          message={createUserMessage('This is how user messages look with the current theme.')} 
-        />
-      </Box>
-      <Box>
-        <MessageBubble 
-          message={createAssistantMessage('Assistant messages adjust their colors based on the theme mode.')} 
-        />
-      </Box>
-      <Box>
-        <MessageBubble 
-          message={createAssistantMessage('Each agent has a distinct color that is visible in both light and dark modes.', '12:40 PM', 'AnalyticsAgent')} 
-        />
-      </Box>
-      <Box>
-        <MessageBubble 
-          message={createAssistantMessage('The colors ensure good contrast and readability regardless of theme.', '12:41 PM', 'DesignAgent')} 
-        />
-      </Box>
-      <Box sx={{ fontSize: '0.8rem', opacity: 0.7, textAlign: 'center', mt: 2 }}>
-        Try toggling the theme in Storybook to see how the components adapt
-      </Box>
-    </Box>
-  ),
-};
-
-// --- Mock Data --- 
-const mockToolCall: ToolCall = {
-  id: 'tool-call-123',
-  pluginName: 'WeatherPlugin',
-  functionName: 'getWeather',
-  arguments: { location: 'Austin, TX', unit: 'F' }
-};
-
-const mockToolResponseMessage: Message = {
-  id: 'tool-response-456',
-  role: 'tool',
-  content: JSON.stringify({ temperature: 75, condition: 'Sunny' }, null, 2),
-  timestamp: '01:10 PM',
-  toolCallId: 'tool-call-123'
-};
-
-const mockAssistantMessageWithToolCall: Message = {
-  id: 'assistant-tool-call-789',
-  role: 'assistant',
-  content: 'Okay, let me check the weather for you.',
-  timestamp: '01:09 PM',
-  toolCall: [mockToolCall]
-};
-
-const mockAssistantFinalMessage: Message = {
-  id: 'assistant-final-101',
-  role: 'assistant',
-  content: 'The weather in Austin is 75°F and sunny.',
-  timestamp: '01:11 PM',
-};
-
-// --- New Stories for Tool Messages --- 
-
-export const AssistantWithToolCallHidden: Story = {
-  args: {
-    message: mockAssistantMessageWithToolCall,
-  },
-  decorators: [
-    (Story) => withChatContext(Story, { showToolMessages: false }),
-  ],
-  parameters: {
-    docs: {
-      description: {
-        story: 'Assistant message that made a tool call, but the tool call indicator is HIDDEN because `showToolMessages` context is false.',
-      },
-    },
-  },
-};
-
-export const AssistantWithToolCallVisible: Story = {
-  args: {
-    message: mockAssistantMessageWithToolCall,
-  },
-  decorators: [
-    (Story) => withChatContext(Story, { showToolMessages: true }),
-  ],
-  parameters: {
-    docs: {
-      description: {
-        story: 'Assistant message that made a tool call. The tool call indicator is VISIBLE because `showToolMessages` context is true.',
-      },
-    },
-  },
-};
-
-export const ToolResponseMessageHidden: Story = {
-  args: {
-    message: mockToolResponseMessage,
-  },
-  decorators: [
-    (Story) => withChatContext(Story, { showToolMessages: false }),
-  ],
-  render: (args) => (
-    // This story should render nothing, as the bubble hides itself
-    // Add a note indicating this is expected behavior
-    <Box sx={{ p: 2, border: '1px dashed grey', borderRadius: 1, textAlign: 'center' }}>
-      <Typography variant="caption" sx={{ fontStyle: 'italic' }}>
-        This story should render nothing because the Tool message is hidden when showToolMessages is false.
-      </Typography>
-      {/* Render the component anyway to ensure it returns null */}
-      <MessageBubble {...args} /> 
-    </Box>
-  ),
-  parameters: {
-    docs: {
-      description: {
-        story: 'A tool response message that should be HIDDEN because `showToolMessages` context is false. The component itself returns null.',
-      },
-    },
-  },
-};
-
-export const ToolResponseMessageVisible: Story = {
-  args: {
-    message: mockToolResponseMessage,
-  },
-  decorators: [
-    (Story) => withChatContext(Story, { showToolMessages: true }),
-  ],
-  parameters: {
-    docs: {
-      description: {
-        story: 'A tool response message that is VISIBLE because `showToolMessages` context is true. Note the distinct neutral background, label, and Terminal icon.',
-      },
-    },
-  },
-};
-
-// --- Story demonstrating the full flow --- 
-export const FullToolFlowVisible: Story = {
-  decorators: [
-    (Story) => withChatContext(Story, { showToolMessages: true }),
-  ],
-  parameters: {
-    docs: {
-      description: {
-        story: 'Shows the sequence: Assistant preparing tool call (visible indicator), Tool response (visible), Final Assistant message. `showToolMessages` is true.',
-      },
-    },
-  },
-  render: () => (
-    <Box sx={{ width: '100%', maxWidth: '600px', mx: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <MessageBubble message={mockAssistantMessageWithToolCall} />
-      <MessageBubble message={mockToolResponseMessage} />
-      <MessageBubble message={mockAssistantFinalMessage} />
-    </Box>
-  )
-};
-
-export const FullToolFlowHidden: Story = {
-  decorators: [
-    (Story) => withChatContext(Story, { showToolMessages: false }),
-  ],
-  parameters: {
-    docs: {
-      description: {
-        story: 'Shows the sequence: Assistant preparing tool call (indicator hidden), Tool response (hidden), Final Assistant message. `showToolMessages` is false.',
-      },
-    },
-  },
-  render: () => (
-    <Box sx={{ width: '100%', maxWidth: '600px', mx: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <MessageBubble message={mockAssistantMessageWithToolCall} />
-      <MessageBubble message={mockToolResponseMessage} /> 
-      <MessageBubble message={mockAssistantFinalMessage} />
-       <Typography variant="caption" sx={{ fontStyle: 'italic', textAlign: 'center', mt: 1, opacity: 0.7 }}>
-        (Note: The middle 'Tool Response' bubble is correctly hidden here)
-      </Typography>
-    </Box>
-  )
 };

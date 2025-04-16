@@ -16,6 +16,19 @@ const meta: Meta<typeof MarkdownRenderer> = {
   ],
   parameters: {
     layout: 'centered',
+    a11y: {
+      element: '#storybook-root',
+      config: {
+        rules: [],
+      },
+      options: {},
+    },
+    docs: {
+      description: {
+        component:
+          'Renders Markdown content into HTML using micromark with GFM extensions. Adapts styling based on the current theme (light/dark) and offers text size control.',
+      },
+    },
   },
   tags: ['autodocs'],
   argTypes: {

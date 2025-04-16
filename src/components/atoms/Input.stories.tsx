@@ -3,6 +3,9 @@ import { Input } from './Input';
 import { useState } from 'react';
 import { ThemeProvider } from '../providers/ThemeProvider';
 import React from 'react';
+// Import testing utilities
+import { userEvent, within, expect } from '@storybook/test';
+import { action } from '@storybook/addon-actions';
 
 const meta = {
   title: 'Atoms/Input',
@@ -16,6 +19,14 @@ const meta = {
   ],
   parameters: {
     layout: 'centered',
+    // Add accessibility addon parameters
+    a11y: {
+      element: '#storybook-root',
+      config: {
+        rules: [],
+      },
+      options: {},
+    },
     docs: {
       description: {
         component: 'Input component with custom theming support. Displays a text input field with optional label and error message. Supports various input types and sizes.',
@@ -80,6 +91,8 @@ type Story = StoryObj<typeof Input>;
 export const Default: Story = {
   args: {
     placeholder: 'Enter text...',
+    onChange: action('default-changed'),
+    onKeyDown: action('default-key-pressed'),
   },
   parameters: {
     docs: {
@@ -88,6 +101,13 @@ export const Default: Story = {
       },
     },
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const input = canvas.getByPlaceholderText('Enter text...');
+    await expect(input).toBeInTheDocument();
+    await userEvent.type(input, 'Hello');
+    await expect(input).toHaveValue('Hello');
+  },
 };
 
 export const WithLabel: Story = {
@@ -95,6 +115,8 @@ export const WithLabel: Story = {
     label: 'Your Name',
     placeholder: 'John Doe',
     id: 'name-input',
+    onChange: action('with-label-changed'),
+    onKeyDown: action('with-label-key-pressed'),
   },
   parameters: {
     docs: {
@@ -102,6 +124,14 @@ export const WithLabel: Story = {
         story: 'Input field with an associated label',
       },
     },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const input = canvas.getByLabelText('Your Name');
+    await expect(input).toBeInTheDocument();
+    await expect(input).toHaveAttribute('id', 'name-input');
+    await userEvent.type(input, 'Test');
+    await expect(input).toHaveValue('Test');
   },
 };
 
@@ -111,6 +141,16 @@ export const Small: Story = {
     label: 'Small Input',
     placeholder: 'Small size input',
     size: 'sm',
+    onChange: action('small-changed'),
+    onKeyDown: action('small-key-pressed'),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const input = canvas.getByLabelText('Small Input');
+    await expect(input).toBeInTheDocument();
+    // MUI/Tailwind size might be harder to assert directly, focus on interaction
+    await userEvent.type(input, 'sm');
+    await expect(input).toHaveValue('sm');
   },
 };
 
@@ -119,6 +159,15 @@ export const Medium: Story = {
     label: 'Medium Input',
     placeholder: 'Medium size input',
     size: 'md',
+    onChange: action('medium-changed'),
+    onKeyDown: action('medium-key-pressed'),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const input = canvas.getByLabelText('Medium Input');
+    await expect(input).toBeInTheDocument();
+    await userEvent.type(input, 'md');
+    await expect(input).toHaveValue('md');
   },
 };
 
@@ -127,6 +176,15 @@ export const Large: Story = {
     label: 'Large Input',
     placeholder: 'Large size input',
     size: 'lg',
+    onChange: action('large-changed'),
+    onKeyDown: action('large-key-pressed'),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const input = canvas.getByLabelText('Large Input');
+    await expect(input).toBeInTheDocument();
+    await userEvent.type(input, 'lg');
+    await expect(input).toHaveValue('lg');
   },
 };
 
@@ -138,6 +196,8 @@ export const WithError: Story = {
     placeholder: 'Enter your email',
     value: 'invalid-email',
     error: 'Please enter a valid email address',
+    onChange: action('with-error-changed'),
+    onKeyDown: action('with-error-key-pressed'),
   },
   parameters: {
     docs: {
@@ -146,6 +206,14 @@ export const WithError: Story = {
       },
     },
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const input = canvas.getByLabelText('Email');
+    await expect(input).toBeInvalid(); // Assuming error state makes it invalid
+    // Check if the error message is displayed
+    const errorMessage = canvas.getByText('Please enter a valid email address');
+    await expect(errorMessage).toBeInTheDocument();
+  },
 };
 
 export const Disabled: Story = {
@@ -153,6 +221,7 @@ export const Disabled: Story = {
     label: 'Disabled Input',
     placeholder: 'This input is disabled',
     disabled: true,
+    // No handlers needed for disabled
   },
   parameters: {
     docs: {
@@ -160,6 +229,11 @@ export const Disabled: Story = {
         story: 'Disabled input that cannot be interacted with',
       },
     },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const input = canvas.getByLabelText('Disabled Input');
+    await expect(input).toBeDisabled();
   },
 };
 
@@ -169,6 +243,15 @@ export const Password: Story = {
     label: 'Password',
     type: 'password',
     placeholder: '********',
+    onChange: action('password-changed'),
+    onKeyDown: action('password-key-pressed'),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const input = canvas.getByLabelText('Password');
+    await expect(input).toHaveAttribute('type', 'password');
+    await userEvent.type(input, 'secret');
+    await expect(input).toHaveValue('secret');
   },
 };
 
@@ -177,6 +260,15 @@ export const Email: Story = {
     label: 'Email Address',
     type: 'email',
     placeholder: 'you@example.com',
+    onChange: action('email-changed'),
+    onKeyDown: action('email-key-pressed'),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const input = canvas.getByLabelText('Email Address');
+    await expect(input).toHaveAttribute('type', 'email');
+    await userEvent.type(input, 'test@test.com');
+    await expect(input).toHaveValue('test@test.com');
   },
 };
 
@@ -185,10 +277,19 @@ export const Number: Story = {
     label: 'Quantity',
     type: 'number',
     placeholder: '0',
+    onChange: action('number-changed'),
+    onKeyDown: action('number-key-pressed'),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const input = canvas.getByLabelText('Quantity');
+    await expect(input).toHaveAttribute('type', 'number');
+    await userEvent.type(input, '123');
+    await expect(input).toHaveValue(123); // Note: value might be number or string depending on browser/framework
   },
 };
 
-// Interactive example
+// Interactive example (already has play function)
 export const Interactive: Story = {
   render: () => {
     const [value, setValue] = useState('');
@@ -197,6 +298,7 @@ export const Interactive: Story = {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const newValue = e.target.value;
       setValue(newValue);
+      action('interactive-changed')(e); // Log action
       
       // Simple validation example
       if (newValue.length > 0 && newValue.length < 3) {
@@ -206,6 +308,10 @@ export const Interactive: Story = {
       }
     };
     
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      action('interactive-key-pressed')(e);
+    };
+
     return (
       <div style={{ width: '300px' }}>
         <Input
@@ -213,6 +319,7 @@ export const Interactive: Story = {
           placeholder="Type to see validation"
           value={value}
           onChange={handleChange}
+          onKeyDown={handleKeyDown} // Pass keydown handler
           error={error}
         />
         <div style={{ marginTop: '8px', fontSize: '14px' }}>
@@ -228,9 +335,23 @@ export const Interactive: Story = {
       },
     },
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const input = canvas.getByLabelText('Interactive Input');
+    
+    // Type less than 3 chars - check error
+    await userEvent.type(input, 'ab');
+    await expect(input).toHaveValue('ab');
+    await expect(canvas.getByText('Input must be at least 3 characters')).toBeInTheDocument();
+    
+    // Type more chars - check error disappears
+    await userEvent.type(input, 'cdef');
+    await expect(input).toHaveValue('abcdef');
+    await expect(canvas.queryByText('Input must be at least 3 characters')).not.toBeInTheDocument();
+  },
 };
 
-// Theme integration
+// Theme integration (no interactions needed, visual test)
 export const ThemeIntegration: Story = {
   render: () => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '300px' }}>

@@ -1,15 +1,25 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { ThemeToggle } from './ThemeToggle';
 import { ThemeProvider } from '../providers/ThemeProvider';
-import { Box, Typography, useMediaQuery, useTheme, Paper } from '@mui/material';
-import React, { useState, useEffect } from 'react';
+import { useTheme } from '@/context/ThemeContext';
+import { Box, Typography, useMediaQuery, useTheme as useMuiTheme, Paper } from '@mui/material';
+import React, { useState, useEffect, useContext } from 'react';
 import { Sun, Moon } from 'lucide-react';
+// Import testing utilities
+import { userEvent, within, expect, waitFor } from '@storybook/test';
+import { action } from '@storybook/addon-actions';
 
 const meta: Meta<typeof ThemeToggle> = {
   component: ThemeToggle,
   title: 'Molecules/ThemeToggle',
   parameters: {
     layout: 'centered',
+    // Add accessibility addon parameters
+    a11y: {
+      element: '#storybook-root',
+      config: { rules: [] },
+      options: {},
+    },
     docs: {
       description: {
         component: 'Theme toggle button that switches between light and dark modes. This molecule component composes atomic elements like IconButton and icon components to create an interactive toggle with visual feedback. It maintains its own state through context integration and adapts to different screen sizes.',
@@ -39,7 +49,7 @@ const meta: Meta<typeof ThemeToggle> = {
 
 export default meta;
 
-type Story = StoryObj<typeof ThemeToggle>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {},
@@ -49,6 +59,26 @@ export const Default: Story = {
         story: 'Default theme toggle button that changes icon and color based on the current theme. Shows the standard size suitable for desktop and tablet views.',
       },
     },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const initialButton = canvas.getByRole('button');
+    const initialAriaLabel = initialButton.getAttribute('aria-label');
+
+    // Click the toggle
+    await userEvent.click(initialButton);
+
+    // Find the button again (it might re-render)
+    const updatedButton = await canvas.findByRole('button');
+    const updatedAriaLabel = updatedButton.getAttribute('aria-label');
+
+    // Assert that the aria-label changed (indicates theme toggled)
+    await expect(updatedAriaLabel).not.toBe(initialAriaLabel);
+    
+    // Click again to toggle back
+    await userEvent.click(updatedButton);
+    const finalButton = await canvas.findByRole('button');
+    await expect(finalButton.getAttribute('aria-label')).toBe(initialAriaLabel);
   },
 };
 
@@ -63,6 +93,7 @@ export const WithCustomClass: Story = {
       },
     },
   },
+  // No play function needed as it just checks styling
 };
 
 export const Compact: Story = {
@@ -79,6 +110,22 @@ export const Compact: Story = {
       },
     },
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const initialButton = canvas.getByRole('button');
+    const initialAriaLabel = initialButton.getAttribute('aria-label');
+
+    // Click the toggle
+    await userEvent.click(initialButton);
+    const updatedButton = await canvas.findByRole('button');
+    const updatedAriaLabel = updatedButton.getAttribute('aria-label');
+    await expect(updatedAriaLabel).not.toBe(initialAriaLabel);
+    
+    // Click back
+    await userEvent.click(updatedButton);
+    const finalButton = await canvas.findByRole('button');
+    await expect(finalButton.getAttribute('aria-label')).toBe(initialAriaLabel);
+  },
 };
 
 // Show both states side by side
@@ -94,9 +141,10 @@ export const ThemeVariations: Story = {
           display: 'flex', 
           justifyContent: 'center'
         }} elevation={3}>
-          <ThemeToggle />
+          {/* Render toggle normally, it will use context */}
+           <ThemeToggle />
         </Paper>
-        <Typography variant="caption">Dark Mode View</Typography>
+        <Typography variant="caption">Rendered in Dark (Example)</Typography>
       </Box>
       
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
@@ -108,20 +156,21 @@ export const ThemeVariations: Story = {
           justifyContent: 'center',
           border: '1px solid rgba(0, 0, 0, 0.1)'
         }} elevation={1}>
-          <ThemeToggle />
+           {/* Render toggle normally, it will use context */}
+           <ThemeToggle />
         </Paper>
-        <Typography variant="caption">Light Mode View</Typography>
+        <Typography variant="caption">Rendered in Light (Example)</Typography>
       </Box>
       
-      <Box sx={{ fontSize: '0.8rem', opacity: 0.7, position: 'absolute', bottom: -40, textAlign: 'center' }}>
-        Try toggling the theme in Storybook to see actual theme changes
+      <Box sx={{ fontSize: '0.8rem', opacity: 0.7, position: 'absolute', bottom: -40, textAlign: 'center', width: '100%' }}>
+        Note: Use the toolbar theme switcher to see the actual context-based toggle.
       </Box>
     </Box>
   ),
   parameters: {
     docs: {
       description: {
-        story: 'Shows how the toggle appears in both light and dark modes. This simulated view demonstrates the visual differences, while the actual component will respond to the theme context.',
+        story: 'Shows how the toggle appears in both light and dark modes based on the surrounding theme context. Use the Storybook toolbar theme switcher to observe the change.',
       },
     },
   },
@@ -192,46 +241,35 @@ export const ComponentComposition: Story = {
 export const ResponsiveToggle: Story = {
   args: {},
   render: () => {
-    // This is a render function component that can use hooks
-    const theme = useTheme();
+    const theme = useMuiTheme(); // Use MUI theme hook here
+    const { isDarkMode, toggleTheme } = useTheme(); // Use our context hook
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    // @ts-ignore - useState is not recognized in static Story type
     const [toggleCount, setToggleCount] = useState(0);
-    // @ts-ignore - useState is not recognized in static Story type
-    const [currentTheme, setCurrentTheme] = useState<string>('');
-    const { isDarkMode } = useTheme();
-    
-    // Update the current theme display
-    // @ts-ignore - useEffect is not recognized in static Story type
-    useEffect(() => {
-      setCurrentTheme(isDarkMode ? 'Dark' : 'Light');
-    }, [isDarkMode]);
-    
-    // Custom theme toggle that tracks clicks
+    const currentTheme = isDarkMode ? 'Dark' : 'Light';
+
     const handleToggleWithTracking = () => {
+      toggleTheme(); // Use the actual context toggle function
       setToggleCount(prev => prev + 1);
+      action('theme-toggled')(isDarkMode ? 'light' : 'dark'); // Log the *new* theme
     };
-    
+
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
         <Typography variant="caption" sx={{ mb: 1 }}>
           Current viewport: <strong>{isMobile ? 'Mobile' : 'Desktop/Tablet'}</strong>
         </Typography>
         
-        <Box onClick={handleToggleWithTracking}>
-          <ThemeToggle compact={isMobile} />
-        </Box>
+        {/* Render the actual toggle which uses context */}
+        <ThemeToggle compact={isMobile} /> 
         
-        {toggleCount > 0 && (
-          <Paper sx={{ p: 1.5, mt: 1, width: '100%', maxWidth: '250px' }} elevation={1}>
-            <Typography variant="caption" component="div" sx={{ textAlign: 'center' }}>
-              Toggle clicked: <strong>{toggleCount}</strong> times
-            </Typography>
-            <Typography variant="caption" component="div" sx={{ textAlign: 'center' }}>
-              Current theme: <strong>{currentTheme}</strong>
-            </Typography>
-          </Paper>
-        )}
+        <Paper sx={{ p: 1.5, mt: 1, width: '100%', maxWidth: '250px' }} elevation={1}>
+          <Typography variant="caption" component="div" sx={{ textAlign: 'center' }}>
+            Toggle button clicked: <strong>{toggleCount}</strong> times (via play function)
+          </Typography>
+          <Typography variant="caption" component="div" sx={{ textAlign: 'center' }}>
+            Current theme: <strong>{currentTheme}</strong>
+          </Typography>
+        </Paper>
         
         <Typography variant="caption" sx={{ fontSize: '0.75rem', opacity: 0.7, mt: 1 }}>
           The toggle automatically switches to compact mode on small screens.<br />
@@ -243,8 +281,30 @@ export const ResponsiveToggle: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Demonstrates how the toggle adapts to different screen sizes and provides interaction feedback. Shows responsive design in action with state tracking.',
+        story: 'Demonstrates how the toggle adapts to different screen sizes and provides interaction feedback using the actual ThemeContext. Shows responsive design in action with state tracking.',
       },
     },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const toggleButton = canvas.getByRole('button'); // Only one ThemeToggle button
+    const themeDisplay = canvas.getByText(/Current theme:/i);
+    const clicksDisplay = canvas.getByText(/Toggle button clicked:/i); 
+    const initialTheme = themeDisplay.textContent?.includes('Light') ? 'Light' : 'Dark';
+
+    // Click toggle
+    await userEvent.click(toggleButton);
+    const expectedThemeAfterFirstClick = initialTheme === 'Light' ? 'Dark' : 'Light';
+    await waitFor(() => {
+      expect(themeDisplay).toHaveTextContent(expectedThemeAfterFirstClick);
+    });
+    await expect(clicksDisplay).toHaveTextContent('Toggle button clicked: 1 times');
+
+    // Click toggle back
+    await userEvent.click(toggleButton);
+    await waitFor(() => {
+      expect(themeDisplay).toHaveTextContent(initialTheme); // Should be back to original
+    });
+     await expect(clicksDisplay).toHaveTextContent('Toggle button clicked: 2 times');
   },
 }; 

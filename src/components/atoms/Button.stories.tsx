@@ -4,6 +4,7 @@ import { Send, Save, ArrowRight, Loader2 } from 'lucide-react';
 import { ThemeProvider } from '../providers/ThemeProvider';
 import React from 'react';
 import { userEvent, within, expect } from '@storybook/test'; // Import testing utilities
+import { action } from '@storybook/addon-actions'; // Import action for logging
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
 const meta = {
@@ -19,6 +20,14 @@ const meta = {
   parameters: {
     // Optional parameter to center the component in the Canvas.
     layout: 'centered',
+    // Add accessibility addon parameters
+    a11y: {
+      element: '#storybook-root', // Optional: Target element for checks
+      config: {
+        rules: [], // Optional: Configure rules
+      },
+      options: {}, // Optional: Configure options
+    },
     docs: {
       description: {
         component: 'Button component using MUI\'s LoadingButton with custom styling and theme support.',
@@ -57,6 +66,11 @@ const meta = {
     fullWidth: { control: 'boolean', description: 'Span full width' },
     className: { control: 'text', description: 'Additional CSS classes' },
     sx: { control: 'object', description: 'MUI sx prop for style overrides' },
+    loadingPosition: {
+      control: { type: 'select' },
+      options: ['start', 'end', 'center'],
+      description: 'Position of the loading indicator',
+    }
   },
 } satisfies Meta<typeof Button>;
 
@@ -75,6 +89,7 @@ export const Primary: Story = {
     disabled: false,
     loading: false,
     fullWidth: false,
+    onClick: action('primary-clicked'),
   },
   // Add play function for interaction testing
   play: async ({ canvasElement, args }) => {
@@ -85,11 +100,9 @@ export const Primary: Story = {
     // Simulate user click
     await userEvent.click(button);
     
-    // Assertion: Check if the onClick handler was called (if provided)
-    // Note: Storybook's action logger implicitly checks this when `onClick` is defined in argTypes
-    // We can add more explicit checks if needed, e.g., asserting element state changes
-    // Example: If clicking toggled a state, we could check for that change.
-    // await expect(button).toHaveAttribute('data-clicked', 'true'); // Example assertion
+    // Assertion: Check if the button is still enabled after click (basic check)
+    await expect(button).toBeEnabled();
+    // Note: The 'action' argType implicitly checks if the handler is called.
   },
 };
 
@@ -99,6 +112,7 @@ export const SecondaryColor: Story = {
     ...Primary.args,
     color: 'secondary',
     children: 'Secondary Color',
+    onClick: action('secondary-color-clicked'),
   },
 };
 
@@ -107,6 +121,7 @@ export const SuccessColor: Story = {
     ...Primary.args,
     color: 'success',
     children: 'Success Color',
+    onClick: action('success-color-clicked'),
   },
 };
 
@@ -115,6 +130,7 @@ export const ErrorColor: Story = {
     ...Primary.args,
     color: 'error',
     children: 'Error Color',
+    onClick: action('error-color-clicked'),
   },
 };
 
@@ -124,6 +140,7 @@ export const Outlined: Story = {
     ...Primary.args,
     variant: 'outlined',
     children: 'Outlined Button',
+    onClick: action('outlined-clicked'),
   },
 };
 
@@ -132,6 +149,7 @@ export const Text: Story = {
     ...Primary.args,
     variant: 'text',
     children: 'Text Button',
+    onClick: action('text-clicked'),
   },
 };
 
@@ -141,6 +159,7 @@ export const Small: Story = {
     ...Primary.args,
     size: 'small',
     children: 'Small Button',
+    onClick: action('small-clicked'),
   },
 };
 
@@ -149,6 +168,7 @@ export const Large: Story = {
     ...Primary.args,
     size: 'large',
     children: 'Large Button',
+    onClick: action('large-clicked'),
   },
 };
 
@@ -158,6 +178,13 @@ export const Disabled: Story = {
     ...Primary.args,
     children: 'Disabled Button',
     disabled: true,
+    onClick: undefined,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const button = canvas.getByRole('button', { name: /Disabled Button/i });
+    // Assertion: Check if the button is actually disabled
+    await expect(button).toBeDisabled();
   },
 };
 
@@ -166,6 +193,14 @@ export const Loading: Story = {
     ...Primary.args,
     children: 'Loading...',
     loading: true,
+    onClick: undefined,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const button = canvas.getByRole('button', { name: /Loading.../i });
+    // Assertion: Check for loading indicator (implementation-specific)
+    // MUI LoadingButton adds specific classes or structure
+    await expect(button.querySelector('.MuiLoadingButton-loadingIndicator')).toBeInTheDocument();
   },
 };
 
@@ -175,6 +210,7 @@ export const WithStartIcon: Story = {
     ...Primary.args,
     children: 'Send',
     startIcon: <Send size={16} />,
+    onClick: action('with-start-icon-clicked'),
   },
 };
 
@@ -184,6 +220,7 @@ export const WithEndIcon: Story = {
     color: 'secondary',
     children: 'Next',
     endIcon: <ArrowRight size={16} />,
+    onClick: action('with-end-icon-clicked'),
   },
 };
 
@@ -194,6 +231,7 @@ export const LoadingWithIcon: Story = {
     loading: true,
     loadingPosition: 'start',
     startIcon: <Save size={16} />,
+    onClick: undefined,
   },
 };
 
@@ -201,48 +239,62 @@ export const LoadingWithIcon: Story = {
 export const FullWidthResponsive: Story = {
   args: {
     ...Primary.args,
-    children: 'Full Width (Resize Viewport)',
+    children: 'Full Width Button',
     fullWidth: true,
+    onClick: action('full-width-clicked'),
   },
   parameters: {
     viewport: { defaultViewport: 'responsive' },
   },
   render: (args) => (
-    <div style={{ width: '100%', border: '1px dashed grey', padding: '10px' }}>
+    <div style={{ width: '100%', padding: '10px', border: '1px dashed grey' }}>
       <Button {...args} />
     </div>
   ),
 };
 
-// Theme Color Integration Example
+// Refined Theme Color Integration Example
 export const ThemeColorIntegration: Story = {
   args: {
-    ...Primary.args,
-    children: 'Theme Integration',
+    // Provide default required prop to satisfy types, even if render overrides
+    children: 'Theme Buttons',
   },
   render: () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <div>
-        <h3 style={{ marginBottom: '8px' }}>Primary Variant</h3>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <Button variant="contained" color="primary">Normal</Button>
+        <h3 style={{ marginBottom: '8px' }}>Contained Variant</h3>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <Button variant="contained" color="primary">Primary</Button>
+          <Button variant="contained" color="secondary">Secondary</Button>
+          <Button variant="contained" color="success">Success</Button>
+          <Button variant="contained" color="error">Error</Button>
+          <Button variant="contained" color="warning">Warning</Button>
+          <Button variant="contained" color="info">Info</Button>
           <Button variant="contained" color="primary" disabled>Disabled</Button>
-          <Button variant="contained" color="primary">Contained Primary</Button>
-          <Button variant="contained" color="primary" disabled>Contained Disabled</Button>
-        </div>
-      </div>
-      <div>
-        <h3 style={{ marginBottom: '8px' }}>Secondary Variant</h3>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <Button variant="contained" color="secondary">Contained Secondary</Button>
-          <Button variant="contained" color="secondary" disabled>Contained Disabled</Button>
         </div>
       </div>
       <div>
         <h3 style={{ marginBottom: '8px' }}>Outlined Variant</h3>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <Button variant="outlined" color="primary">Outlined Primary</Button>
-          <Button variant="outlined" color="primary" disabled>Outlined Disabled</Button>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <Button variant="outlined" color="primary">Primary</Button>
+          <Button variant="outlined" color="secondary">Secondary</Button>
+          <Button variant="outlined" color="success">Success</Button>
+          <Button variant="outlined" color="error">Error</Button>
+          <Button variant="outlined" color="warning">Warning</Button>
+          <Button variant="outlined" color="info">Info</Button>
+          <Button variant="outlined" color="primary" disabled>Disabled</Button>
+        </div>
+      </div>
+      <div>
+        <h3 style={{ marginBottom: '8px' }}>Text Variant</h3>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <Button variant="text" color="primary">Primary</Button>
+          <Button variant="text" color="secondary">Secondary</Button>
+          <Button variant="text" color="success">Success</Button>
+          <Button variant="text" color="error">Error</Button>
+          <Button variant="text" color="warning">Warning</Button>
+          <Button variant="text" color="info">Info</Button>
+          <Button variant="text" color="primary" disabled>Disabled</Button>
         </div>
       </div>
     </div>

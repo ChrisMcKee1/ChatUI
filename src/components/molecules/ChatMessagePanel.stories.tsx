@@ -1,17 +1,24 @@
 import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
-import { ChatMessagePanel } from './ChatMessagePanel';
+import { ChatMessagePanel, Message } from './ChatMessagePanel';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { Box, useMediaQuery, useTheme, Typography, Paper, Stack, Divider, IconButton } from '@mui/material';
 import { v4 as uuidv4 } from 'uuid';
 import { Role } from './MessageBubble';
 import { MessageSquare, Type } from 'lucide-react';
+import { userEvent, within, expect, waitFor } from '@storybook/test';
+import { action } from '@storybook/addon-actions';
 
 const meta: Meta<typeof ChatMessagePanel> = {
   component: ChatMessagePanel,
   title: 'Molecules/ChatMessagePanel',
   parameters: {
     layout: 'fullscreen',
+    a11y: {
+      element: '#storybook-root',
+      config: { rules: [] },
+      options: {},
+    },
     docs: {
       description: {
         component: 'Container for displaying chat messages with responsive layout and empty state handling. This molecule composes atomic components to create a complete chat interface with features like auto-scrolling, multi-agent conversations, text size controls, and responsive design adaptations.',
@@ -22,9 +29,9 @@ const meta: Meta<typeof ChatMessagePanel> = {
   decorators: [
     (Story) => (
       <ThemeProvider>
-        <div style={{ height: '600px', display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ height: '600px', display: 'flex', flexDirection: 'column', border: '1px dashed grey' }}>
           <Story />
-        </div>
+        </Box>
       </ThemeProvider>
     ),
   ],
@@ -42,16 +49,15 @@ const meta: Meta<typeof ChatMessagePanel> = {
     },
     isLoading: {
       control: 'boolean',
-      description: 'Whether the panel is in a loading state',
+      description: 'Whether the panel is in a loading state (affects auto-scroll behavior)',
     },
   }
 };
 
 export default meta;
 
-type Story = StoryObj<typeof ChatMessagePanel>;
+type Story = StoryObj<typeof meta>;
 
-// Sample markdown content
 const markdownContent = `
 # Heading 1
 ## Heading 2
@@ -81,10 +87,106 @@ function greet(name) {
 [Link to example.com](https://example.com)
 `;
 
-// Empty panel with no messages
+const basicUserMessage: Message = {
+  id: uuidv4(),
+  content: 'Hello! How can you help me?',
+  role: 'user',
+  timestamp: '1m ago',
+};
+
+const basicAssistantMessage: Message = {
+  id: uuidv4(),
+  content: "I'm an AI assistant, and I can help you with various tasks such as answering questions, generating content, providing recommendations, and more. Just let me know what you need!",
+  role: 'assistant',
+  timestamp: 'Just now',
+};
+
+const conversationMessages: Message[] = [
+  {
+    id: uuidv4(),
+    content: 'Hello! I have a question about JavaScript.',
+    role: 'user',
+    timestamp: '5m ago',
+  },
+  {
+    id: uuidv4(),
+    content: "Sure, I'd be happy to help with JavaScript. What would you like to know?",
+    role: 'assistant',
+    timestamp: '4m ago',
+  },
+  {
+    id: uuidv4(),
+    content: 'How do I create a Promise in JavaScript?',
+    role: 'user',
+    timestamp: '3m ago',
+  },
+  {
+    id: uuidv4(),
+    content: 'In JavaScript, you can create a Promise using the Promise constructor. Here\'s an example:\n\n```javascript\nconst myPromise = new Promise((resolve, reject) => {\n  // Asynchronous operation\n  const success = true;\n  \n  if (success) {\n    resolve("Operation completed successfully");\n  } else {\n    reject("Operation failed");\n  }\n});\n\n// Using the Promise\nmyPromise\n  .then(result => console.log(result))\n  .catch(error => console.error(error));\n```\n\nThe Promise constructor takes a function with two parameters: resolve and reject. You call resolve when the asynchronous operation is successful, and reject when it fails.',
+    role: 'assistant',
+    timestamp: '2m ago',
+  },
+  {
+    id: uuidv4(),
+    content: 'Thank you! That was very helpful.',
+    role: 'user',
+    timestamp: '1m ago',
+  },
+  {
+    id: uuidv4(),
+    content: "You're welcome! If you have any more questions about JavaScript or anything else, feel free to ask.",
+    role: 'assistant',
+    timestamp: 'Just now',
+  },
+];
+
+const multiAgentMessages: Message[] = [
+  {
+    id: uuidv4(),
+    content: 'Hello! I need help with a project that requires both coding and design advice.',
+    role: 'user',
+    timestamp: '5m ago',
+  },
+  {
+    id: uuidv4(),
+    content: "I'm Engineer, and I can help with the technical aspects of your project. What kind of coding help do you need?",
+    role: 'assistant',
+    agentName: 'Engineer',
+    timestamp: '4m ago',
+  },
+  {
+    id: uuidv4(),
+    content: "I'm Designer, and I can provide guidance on the visual and UX aspects. What's the design context for this project?",
+    role: 'assistant',
+    agentName: 'Designer',
+    timestamp: '4m ago',
+  },
+  {
+    id: uuidv4(),
+    content: "I'm building a portfolio website and I need help with responsive layout coding and a clean design.",
+    role: 'user',
+    timestamp: '3m ago',
+  },
+  {
+    id: uuidv4(),
+    content: "For responsive layouts, I recommend using a CSS Grid or Flexbox approach rather than older methods. Here's a basic structure you could use:\n\n```css\n.portfolio-container {\n  display: grid;\n  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));\n  gap: 2rem;\n}\n\n@media (max-width: 768px) {\n  .portfolio-container {\n    grid-template-columns: 1fr;\n  }\n}\n```\n\nThis will create a multi-column layout that adjusts to a single column on smaller screens.",
+    role: 'assistant',
+    agentName: 'Engineer',
+    timestamp: '2m ago',
+  },
+  {
+    id: uuidv4(),
+    content: "For a portfolio design, I recommend:\n\n1. **Consistent white space** - Use padding and margins consistently (try a 8px or 16px base unit)\n2. **Limited color palette** - 2-3 primary colors plus 1-2 accent colors\n3. **Typography hierarchy** - 2 fonts maximum (one for headings, one for body text)\n4. **High-quality images** - Optimize all portfolio images for web (compress without losing quality)\n\nMinimalism works well for portfolios as it lets your work be the focus rather than the site design itself.",
+    role: 'assistant',
+    agentName: 'Designer',
+    timestamp: '2m ago',
+  },
+];
+
 export const EmptyPanel: Story = {
   args: {
     messages: [],
+    isLoading: false,
   },
   parameters: {
     docs: {
@@ -93,19 +195,17 @@ export const EmptyPanel: Story = {
       },
     },
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText(/Start chatting/i)).toBeInTheDocument();
+    await expect(canvas.getByTestId('message-square-icon')).toBeInTheDocument();
+  },
 };
 
-// Panel with a user message
 export const WithUserMessage: Story = {
   args: {
-    messages: [
-      {
-        id: uuidv4(),
-        content: 'Hello! How can you help me?',
-        role: 'user',
-        timestamp: 'Just now',
-      },
-    ],
+    messages: [basicUserMessage],
+    isLoading: false,
   },
   parameters: {
     docs: {
@@ -114,25 +214,17 @@ export const WithUserMessage: Story = {
       },
     },
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText(basicUserMessage.content)).toBeInTheDocument();
+    await expect(canvas.queryByText(/Agent:/i)).not.toBeInTheDocument();
+  },
 };
 
-// Panel with a user message and assistant response
 export const WithUserAndAssistantMessages: Story = {
   args: {
-    messages: [
-      {
-        id: uuidv4(),
-        content: 'Hello! How can you help me?',
-        role: 'user',
-        timestamp: '1m ago',
-      },
-      {
-        id: uuidv4(),
-        content: "I'm an AI assistant, and I can help you with various tasks such as answering questions, generating content, providing recommendations, and more. Just let me know what you need!",
-        role: 'assistant',
-        timestamp: 'Just now',
-      },
-    ],
+    messages: [basicUserMessage, basicAssistantMessage],
+    isLoading: false,
   },
   parameters: {
     docs: {
@@ -141,49 +233,17 @@ export const WithUserAndAssistantMessages: Story = {
       },
     },
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText(basicUserMessage.content)).toBeInTheDocument();
+    await expect(canvas.getByText(basicAssistantMessage.content)).toBeInTheDocument();
+  },
 };
 
-// Panel with multiple messages as a conversation
 export const Conversation: Story = {
   args: {
-    messages: [
-      {
-        id: uuidv4(),
-        content: 'Hello! I have a question about JavaScript.',
-        role: 'user',
-        timestamp: '5m ago',
-      },
-      {
-        id: uuidv4(),
-        content: "Sure, I'd be happy to help with JavaScript. What would you like to know?",
-        role: 'assistant',
-        timestamp: '4m ago',
-      },
-      {
-        id: uuidv4(),
-        content: 'How do I create a Promise in JavaScript?',
-        role: 'user',
-        timestamp: '3m ago',
-      },
-      {
-        id: uuidv4(),
-        content: 'In JavaScript, you can create a Promise using the Promise constructor. Here\'s an example:\n\n```javascript\nconst myPromise = new Promise((resolve, reject) => {\n  // Asynchronous operation\n  const success = true;\n  \n  if (success) {\n    resolve("Operation completed successfully");\n  } else {\n    reject("Operation failed");\n  }\n});\n\n// Using the Promise\nmyPromise\n  .then(result => console.log(result))\n  .catch(error => console.error(error));\n```\n\nThe Promise constructor takes a function with two parameters: resolve and reject. You call resolve when the asynchronous operation is successful, and reject when it fails.',
-        role: 'assistant',
-        timestamp: '2m ago',
-      },
-      {
-        id: uuidv4(),
-        content: 'Thank you! That was very helpful.',
-        role: 'user',
-        timestamp: '1m ago',
-      },
-      {
-        id: uuidv4(),
-        content: "You're welcome! If you have any more questions about JavaScript or anything else, feel free to ask.",
-        role: 'assistant',
-        timestamp: 'Just now',
-      },
-    ],
+    messages: conversationMessages,
+    isLoading: false,
   },
   parameters: {
     docs: {
@@ -192,53 +252,43 @@ export const Conversation: Story = {
       },
     },
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText(conversationMessages[0].content)).toBeInTheDocument();
+    await expect(canvas.getByText(conversationMessages[conversationMessages.length - 1].content)).toBeInTheDocument();
+    await expect(canvas.getByText(/new Promise/)).toBeInTheDocument();
+
+    const textSizeButton = canvas.getByRole('button', { name: /Text Size:/i });
+    await userEvent.click(textSizeButton);
+    
+    const menu = await canvas.findByRole('menu');
+    const smallOption = within(menu).getByRole('menuitem', { name: 'Small' });
+    const largeOption = within(menu).getByRole('menuitem', { name: 'Large' });
+    const mediumOption = within(menu).getByRole('menuitem', { name: 'Medium' });
+
+    await userEvent.click(smallOption);
+    await waitFor(() => {
+      expect(canvas.getByRole('button', { name: /Text Size: small/i })).toBeInTheDocument();
+    });
+
+    await userEvent.click(textSizeButton);
+    await userEvent.click(largeOption);
+    await waitFor(() => {
+      expect(canvas.getByRole('button', { name: /Text Size: large/i })).toBeInTheDocument();
+    });
+    
+    await userEvent.click(textSizeButton);
+    await userEvent.click(mediumOption);
+    await waitFor(() => {
+      expect(canvas.getByRole('button', { name: /Text Size: medium/i })).toBeInTheDocument();
+    });
+  },
 };
 
-// Panel with a multi-agent conversation
 export const MultiAgentConversation: Story = {
   args: {
-    messages: [
-      {
-        id: uuidv4(),
-        content: 'Hello! I need help with a project that requires both coding and design advice.',
-        role: 'user',
-        timestamp: '5m ago',
-      },
-      {
-        id: uuidv4(),
-        content: "I'm Engineer, and I can help with the technical aspects of your project. What kind of coding help do you need?",
-        role: 'assistant',
-        agentName: 'Engineer',
-        timestamp: '4m ago',
-      },
-      {
-        id: uuidv4(),
-        content: "I'm Designer, and I can provide guidance on the visual and UX aspects. What's the design context for this project?",
-        role: 'assistant',
-        agentName: 'Designer',
-        timestamp: '4m ago',
-      },
-      {
-        id: uuidv4(),
-        content: "I'm building a portfolio website and I need help with responsive layout coding and a clean design.",
-        role: 'user',
-        timestamp: '3m ago',
-      },
-      {
-        id: uuidv4(),
-        content: "For responsive layouts, I recommend using a CSS Grid or Flexbox approach rather than older methods. Here's a basic structure you could use:\n\n```css\n.portfolio-container {\n  display: grid;\n  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));\n  gap: 2rem;\n}\n\n@media (max-width: 768px) {\n  .portfolio-container {\n    grid-template-columns: 1fr;\n  }\n}\n```\n\nThis will create a multi-column layout that adjusts to a single column on smaller screens.",
-        role: 'assistant',
-        agentName: 'Engineer',
-        timestamp: '2m ago',
-      },
-      {
-        id: uuidv4(),
-        content: "For a portfolio design, I recommend:\n\n1. **Consistent white space** - Use padding and margins consistently (try a 8px or 16px base unit)\n2. **Limited color palette** - 2-3 primary colors plus 1-2 accent colors\n3. **Typography hierarchy** - 2 fonts maximum (one for headings, one for body text)\n4. **High-quality images** - Optimize all portfolio images for web (compress without losing quality)\n\nMinimalism works well for portfolios as it lets your work be the focus rather than the site design itself.",
-        role: 'assistant',
-        agentName: 'Designer',
-        timestamp: '2m ago',
-      },
-    ],
+    messages: multiAgentMessages,
+    isLoading: false,
   },
   parameters: {
     docs: {
@@ -247,268 +297,167 @@ export const MultiAgentConversation: Story = {
       },
     },
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('Engineer')).toBeInTheDocument();
+    await expect(canvas.getByText('Designer')).toBeInTheDocument();
+    await expect(canvas.getByText(/CSS Grid or Flexbox/)).toBeInTheDocument();
+    await expect(canvas.getByText(/Consistent white space/)).toBeInTheDocument();
+  },
 };
 
-// Panel in loading state
-export const Loading: Story = {
+export const LoadingState: Story = {
   args: {
-    messages: [
-      {
-        id: uuidv4(),
-        content: 'Can you help me understand quantum computing?',
-        role: 'user',
-        timestamp: 'Just now',
-      },
-    ],
+    messages: conversationMessages.slice(0, 3),
     isLoading: true,
   },
   parameters: {
     docs: {
       description: {
-        story: 'Panel in loading state, ready to receive an assistant response. This demonstrates how the auto-scrolling behavior is optimized for streaming responses.',
+        story: 'Shows the panel state while loading a response. The isLoading prop affects auto-scroll behavior, ensuring the panel scrolls immediately to the bottom as new content streams in, rather than using smooth scrolling.',
       },
     },
   },
 };
 
-// Panel with markdown content
 export const WithMarkdownContent: Story = {
   args: {
     messages: [
       {
         id: uuidv4(),
-        content: 'Can you show me how markdown works in this chat?',
+        content: 'Can you show me some markdown examples?',
         role: 'user',
-        timestamp: '1m ago',
+        timestamp: '2m ago',
       },
       {
         id: uuidv4(),
         content: markdownContent,
         role: 'assistant',
-        timestamp: 'Just now',
+        timestamp: '1m ago',
       },
     ],
+    isLoading: false,
   },
   parameters: {
     docs: {
       description: {
-        story: 'Shows markdown rendering capabilities including headings, lists, code blocks, tables, and blockquotes. Demonstrates how complex formatted content is displayed in messages.',
+        story: 'Demonstrates rendering of various markdown elements including headings, lists, code blocks, and tables within message bubbles.',
       },
     },
   },
 };
 
-// Component composition story
 export const ComponentComposition: Story = {
   render: () => (
-    <Box sx={{ p: 3, maxWidth: '800px' }}>
+    <Box sx={{ p: 3 }}>
       <Typography variant="h6" gutterBottom>ChatMessagePanel Composition</Typography>
       <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
         <Typography variant="body2" paragraph>
-          The ChatMessagePanel molecule is composed of these components:
+          The ChatMessagePanel molecule is composed of several key elements:
         </Typography>
-        
-        <Box component="ul" sx={{ pl: 2, mb: 3 }}>
-          <li>MessageBubble components - Display individual chat messages</li>
-          <li>Typography components - Empty state text and labels</li>
-          <li>IconButton with Type icon - Text size adjustment control</li>
-          <li>Menu and MenuItem components - Text size selection dropdown</li>
-          <li>MessageSquare icon - Empty state illustration</li>
-          <li>Box components - Layout containers and scrollable area</li>
+        <Box component="ul" sx={{ pl: 2, fontSize: '0.875rem', mb: 3 }}>
+          <li>MUI Box: Main container providing layout and styling</li>
+          <li>MessageBubble (Molecule): Renders individual messages</li>
+          <li>Empty State: Displays placeholder content when no messages</li>
+          <li>Text Size Control: IconButton and Menu for adjusting text density</li>
+          <li>Auto-Scroll Logic: Uses React refs and useEffect for smooth scrolling</li>
         </Box>
-        
         <Divider sx={{ my: 2 }} />
-        
-        <Stack spacing={3}>
-          <Box>
-            <Typography variant="subtitle2" gutterBottom>Key Features:</Typography>
-            <Box component="ul" sx={{ pl: 2 }}>
-              <li>Auto-scrolling behavior for new messages</li>
-              <li>Responsive layout with mobile optimizations</li>
-              <li>Adjustable text size with persistent preferences</li>
-              <li>Multi-agent conversation support with color coding</li>
-              <li>Empty state with clear user guidance</li>
-              <li>Markdown rendering for rich content</li>
-            </Box>
-          </Box>
-          
-          <Box>
-            <Typography variant="subtitle2" gutterBottom>Internal Components:</Typography>
-            <Stack direction="row" spacing={2} flexWrap="wrap">
-              <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, width: 110 }}>
-                <MessageSquare size={24} />
-                <Typography variant="caption">Empty State Icon</Typography>
-              </Paper>
-              
-              <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, width: 110 }}>
-                <Type size={24} />
-                <Typography variant="caption">Text Size Control</Typography>
-              </Paper>
-              
-              <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, width: 110 }}>
-                <Box sx={{ height: 24, width: 24, bgcolor: 'rgba(120, 220, 232, 0.3)', borderRadius: '4px' }} />
-                <Typography variant="caption">Message Bubble</Typography>
-              </Paper>
-            </Stack>
+        <Stack spacing={2}>
+          <Typography variant="subtitle2" gutterBottom>Key Features:</Typography>
+          <Box component="ul" sx={{ pl: 2, fontSize: '0.875rem' }}>
+            <li>Displays conversation history</li>
+            <li>Handles empty states gracefully</li>
+            <li>Supports user, assistant, and multi-agent messages</li>
+            <li>Integrates Markdown rendering via MessageBubble</li>
+            <li>Responsive design for various screen sizes</li>
+            <li>Auto-scrolling for new messages</li>
+            <li>Text size adjustment for user preference</li>
           </Box>
         </Stack>
       </Paper>
-      
-      <Box sx={{ mb: 2 }}>
-        <Typography variant="subtitle1" gutterBottom>Sample Empty State:</Typography>
-        <Box sx={{ height: 200, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 1, overflow: 'hidden' }}>
-          <ChatMessagePanel messages={[]} />
-        </Box>
-      </Box>
-      
-      <Box>
-        <Typography variant="subtitle1" gutterBottom>Sample Conversation:</Typography>
-        <Box sx={{ height: 300, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 1, overflow: 'hidden' }}>
-          <ChatMessagePanel
-            messages={[
-              {
-                id: uuidv4(),
-                content: 'Hello! How does this component work?',
-                role: 'user',
-                timestamp: '1m ago',
-              },
-              {
-                id: uuidv4(),
-                content: "The ChatMessagePanel is a molecule component that handles the display of chat messages. It manages message layout, scrolling, and styling.",
-                role: 'assistant',
-                timestamp: 'Just now',
-              },
-            ]}
-          />
-        </Box>
-      </Box>
+      <Typography variant="subtitle2" sx={{ mb: 1 }}>Example Panel:</Typography>
+      <Paper elevation={1} sx={{ height: '300px', overflow: 'hidden' }}>
+        <ChatMessagePanel messages={conversationMessages.slice(0, 2)} />
+      </Paper>
     </Box>
   ),
   parameters: {
+    layout: 'centered',
     docs: {
       description: {
-        story: 'Demonstrates how the ChatMessagePanel is composed of smaller atomic components and the key features it provides. Shows the internal structure and composition of the molecule.',
+        story: 'Shows how the ChatMessagePanel molecule is composed of other components and highlights its key features and responsibilities within the chat interface.',
       },
     },
   },
 };
 
-// Panel showing different text sizes
 export const TextSizeControl: Story = {
   render: () => (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h6" gutterBottom>Text Size Control Feature</Typography>
-      <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
-        <Typography variant="body2" paragraph>
-          The ChatMessagePanel includes a text size control feature that allows users to adjust the size of text in messages. This enhances accessibility and user preference customization.
-        </Typography>
-        
-        <Stack direction="row" spacing={3} alignItems="center" mb={3}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <IconButton sx={{ bgcolor: 'rgba(0,0,0,0.05)', p: 1.5, borderRadius: 1 }}>
-              <Type size={24} />
-            </IconButton>
-            <Typography variant="caption">Text Size Control</Typography>
-          </Box>
-          
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-            <Typography variant="caption" sx={{ fontWeight: 'bold' }}>Size Options:</Typography>
-            <Typography variant="caption">• Small (0.875rem)</Typography>
-            <Typography variant="caption">• Medium (1rem) - Default</Typography>
-            <Typography variant="caption">• Large (1.125rem)</Typography>
-          </Box>
-        </Stack>
-        
-        <Box sx={{ fontSize: '0.875rem', opacity: 0.7, mb: 2 }}>
-          User preference is stored in localStorage as "chatui-text-size" and persists between sessions.
-        </Box>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <Paper sx={{ p: 2 }} elevation={1}>
+        <Typography variant="subtitle2">Small Text Size Panel</Typography>
+        <ChatMessagePanel 
+          messages={[
+            {
+              id: uuidv4(),
+              content: 'This is a user message with small text.',
+              role: 'user',
+              timestamp: '1m ago',
+            },
+            {
+              id: uuidv4(),
+              content: 'This is an assistant response with small text.',
+              role: 'assistant',
+              timestamp: 'Just now',
+            },
+          ]}
+        />
       </Paper>
-      
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-        <div>
-          <Typography variant="subtitle2" gutterBottom>Small Text Size</Typography>
-          <Paper elevation={1} sx={{ overflow: 'hidden', height: 200 }}>
-            <ChatMessagePanel
-              messages={[
-                {
-                  id: uuidv4(),
-                  content: 'This is a user message with small text size',
-                  role: 'user',
-                  timestamp: '1m ago',
-                  // @ts-ignore - Adding custom property to set text size
-                  textSize: 'small',
-                },
-                {
-                  id: uuidv4(),
-                  content: 'This is an assistant response with small text size. Small text is useful for dense information displays and when screen space is limited.',
-                  role: 'assistant',
-                  timestamp: 'Just now',
-                  // @ts-ignore - Adding custom property to set text size
-                  textSize: 'small',
-                },
-              ]}
-            />
-          </Paper>
-        </div>
-        
-        <div>
-          <Typography variant="subtitle2" gutterBottom>Medium Text Size (Default)</Typography>
-          <Paper elevation={1} sx={{ overflow: 'hidden', height: 200 }}>
-            <ChatMessagePanel
-              messages={[
-                {
-                  id: uuidv4(),
-                  content: 'This is a user message with medium text size',
-                  role: 'user',
-                  timestamp: '1m ago',
-                  // @ts-ignore - Adding custom property to set text size
-                  textSize: 'medium',
-                },
-                {
-                  id: uuidv4(),
-                  content: 'This is an assistant response with medium text size. Medium text provides a balanced reading experience for most users.',
-                  role: 'assistant',
-                  timestamp: 'Just now',
-                  // @ts-ignore - Adding custom property to set text size
-                  textSize: 'medium',
-                },
-              ]}
-            />
-          </Paper>
-        </div>
-        
-        <div>
-          <Typography variant="subtitle2" gutterBottom>Large Text Size</Typography>
-          <Paper elevation={1} sx={{ overflow: 'hidden', height: 200 }}>
-            <ChatMessagePanel
-              messages={[
-                {
-                  id: uuidv4(),
-                  content: 'This is a user message with large text size',
-                  role: 'user',
-                  timestamp: '1m ago',
-                  // @ts-ignore - Adding custom property to set text size
-                  textSize: 'large',
-                },
-                {
-                  id: uuidv4(),
-                  content: 'This is an assistant response with large text size. Large text improves readability for users who prefer or need larger text.',
-                  role: 'assistant',
-                  timestamp: 'Just now',
-                  // @ts-ignore - Adding custom property to set text size
-                  textSize: 'large',
-                },
-              ]}
-            />
-          </Paper>
-        </div>
-      </div>
+      <Paper sx={{ p: 2 }} elevation={1}>
+        <Typography variant="subtitle2">Medium Text Size Panel</Typography>
+        <ChatMessagePanel 
+          messages={[
+            {
+              id: uuidv4(),
+              content: 'This is a user message with medium text.',
+              role: 'user',
+              timestamp: '1m ago',
+            },
+            {
+              id: uuidv4(),
+              content: 'This is an assistant response with medium text.',
+              role: 'assistant',
+              timestamp: 'Just now',
+            },
+          ]}
+        />
+      </Paper>
+      <Paper sx={{ p: 2 }} elevation={1}>
+        <Typography variant="subtitle2">Large Text Size Panel</Typography>
+        <ChatMessagePanel 
+          messages={[
+            {
+              id: uuidv4(),
+              content: 'This is a user message with large text.',
+              role: 'user',
+              timestamp: '1m ago',
+            },
+            {
+              id: uuidv4(),
+              content: 'This is an assistant response with large text.',
+              role: 'assistant',
+              timestamp: 'Just now',
+            },
+          ]}
+        />
+      </Paper>
     </Box>
   ),
   parameters: {
     docs: {
       description: {
-        story: 'Demonstrates the text size adjustment feature with examples of small, medium, and large text sizes. Shows how the component adapts to different text density preferences.',
+        story: 'Demonstrates the text size control functionality. Note that the ChatMessagePanel internally manages the text size state; this story shows messages rendered within panels, but the actual size change is interactive via the control button (top right) or tested in the `Conversation` story\'s play function.',
       },
     },
   },
