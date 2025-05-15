@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { TextField, Box, IconButton, Tooltip } from '@mui/material';
 import { Send } from 'lucide-react';
-import { useTheme } from '@/context/ThemeContext';
+import { useTheme, TextSizeOption } from '@/context/ThemeContext';
+import { useMediaQuery, useTheme as useMuiTheme } from '@mui/material';
 
 // Default fallback colors - matching our theme
 const DEFAULT_PRIMARY = '#ff6188'; // Pink color
@@ -17,6 +18,7 @@ export interface ChatInputProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  textSize?: TextSizeOption;
 }
 
 export const ChatInput = ({
@@ -24,9 +26,12 @@ export const ChatInput = ({
   placeholder = 'Type your message...',
   disabled = false,
   className = '',
+  textSize = 'medium',
 }: ChatInputProps) => {
   const [message, setMessage] = useState('');
   const { theme, isDarkMode } = useTheme();
+  const muiTheme = useMuiTheme();
+  const isXsScreen = useMediaQuery(muiTheme.breakpoints.down('sm'));
 
   // Get theme colors with proper fallbacks
   const primaryColor = theme?.colors?.primary || '#ff6188'; // Pink
@@ -44,6 +49,15 @@ export const ChatInput = ({
     // Return as comma-separated string for rgba()
     return `${r}, ${g}, ${b}`;
   }
+
+  const getInputFontSize = () => {
+    const baseSizes = {
+      small: { xs: '0.75rem', default: '0.8125rem' }, 
+      medium: { xs: '0.875rem', default: '1rem' },    
+      large: { xs: '1rem', default: '1.1875rem' }     
+    };
+    return isXsScreen ? baseSizes[textSize].xs : baseSizes[textSize].default;
+  };
 
   const handleSendMessage = () => {
     if (message.trim()) {
@@ -81,6 +95,7 @@ export const ChatInput = ({
               backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : '#ffffff',
               border: isDarkMode ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 0, 0, 0.1)',
               '& textarea': {
+                fontSize: getInputFontSize(),
                 color: isDarkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.9)',
                 '&::placeholder': {
                   color: isDarkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',

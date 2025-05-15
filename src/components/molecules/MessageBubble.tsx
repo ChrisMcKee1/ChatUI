@@ -3,12 +3,11 @@
 import React from 'react';
 import { Avatar, Box, Typography, useMediaQuery, useTheme as useMuiTheme, Paper } from '@mui/material';
 import { User, Bot, Terminal, Wrench } from 'lucide-react';
-import { useTheme } from '@/context/ThemeContext';
+import { useTheme, TextSizeOption } from '@/context/ThemeContext';
 import { useChatContext } from '@/context/ChatContext';
 import { useState, useEffect } from 'react';
 import { Message } from './ChatMessagePanel';
 import { MarkdownRenderer } from '@/components/atoms/MarkdownRenderer';
-import { TextSizeOption } from './ChatMessagePanel';
 
 export type Role = 'user' | 'assistant' | 'system' | 'tool';
 
@@ -220,6 +219,18 @@ export const MessageBubble = ({
   const baseTimestampColor = theme?.colors?.textSecondary || '#888888'; // Mid-grey fallback
   const adjustedTimestampColor = adjustHexColor(baseTimestampColor, isDarkMode ? 50 : -40);
 
+  const getBubblePadding = () => {
+    switch (textSize) {
+      case 'small':
+        return { xs: 1, sm: 1.25 };
+      case 'large':
+        return { xs: 2, sm: 2.5 };
+      case 'medium':
+      default:
+        return { xs: 1.5, sm: 2 };
+    }
+  };
+
   // Main render
   return (
     <Box
@@ -271,7 +282,7 @@ export const MessageBubble = ({
           sx={{
             bgcolor: bubbleBgColor,
             color: textColor,
-            p: { xs: 1.5, sm: 2 },
+            p: getBubblePadding(),
             borderRadius: 3,
             maxWidth: getMaxWidth(),
             overflowWrap: 'break-word',

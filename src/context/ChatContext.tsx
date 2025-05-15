@@ -9,7 +9,6 @@ import { AgentMode } from '@/components/molecules/AgentToggle';
 import { useServices } from '@/services/ServiceProvider';
 import { ChatMessage } from '@/services/IChatService';
 import { ChatMode } from '@/services/IHistoryService';
-import { trackUserAction } from '@/utils/telemetry';
 
 // Map AgentMode to ChatMode
 const mapAgentModeToChatMode = (agentMode: AgentMode): ChatMode => {
@@ -223,11 +222,11 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
      if (!isMounted) return; // Ensure runs client-side
     
     // Track this user action
-    trackUserAction('send_message', {
-      'agent_mode': state.agentMode,
-      'has_active_chat': state.activeChatId ? true : false,
-      'content_length': content.length
-    });
+    // trackUserAction('send_message', {
+    //   'agent_mode': state.agentMode,
+    //   'has_active_chat': state.activeChatId ? true : false,
+    //   'content_length': content.length
+    // });
      
     let currentActiveChatId = state.activeChatId;
 
@@ -349,10 +348,10 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   // Set the agent mode (doesn't directly cause hydration issues)
   const setAgentMode = useCallback((mode: AgentMode) => {
     // Track this user action
-    trackUserAction('change_agent_mode', {
-      'previous_mode': state.agentMode,
-      'new_mode': mode
-    });
+    // trackUserAction('change_agent_mode', {
+    //   'previous_mode': state.agentMode,
+    //   'new_mode': mode
+    // });
     
     setState(prevState => ({
       ...prevState,
@@ -387,7 +386,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   
   // Toggle the visibility of tool messages
   const toggleToolMessageVisibility = useCallback(() => {
-    trackUserAction('toggle_tool_messages', { 'visibility': !state.showToolMessages });
+    // trackUserAction('toggle_tool_messages', { 'visibility': !state.showToolMessages });
     setState(prevState => ({ ...prevState, showToolMessages: !prevState.showToolMessages }));
   }, [state.showToolMessages]);
   

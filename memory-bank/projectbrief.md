@@ -9,4 +9,5 @@ Develop a modern React chat application using Next.js that interacts with two di
 - **Agent Toggle:** Implement a UI toggle with specific icons (message box, two robots) to switch between the standard and multi-agent API endpoints.
 - **Theming:** Support light and dark modes using provided custom JSON theme files.
 - **Technology:** Utilize Next.js, React, Atomic Design principles, and Storybook.
-- **Workflow:** Initialize with Git using the Gitflow workflow. 
+- **Workflow:** Initialize with Git using the Gitflow workflow.
+- **No Telemetry:** The application will not include any client-side or server-side telemetry or analytics. 

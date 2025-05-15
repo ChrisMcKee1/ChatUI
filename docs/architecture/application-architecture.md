@@ -1,6 +1,6 @@
 # Application Architecture
 
-This diagram provides a high-level overview of the application's structure, including the Next.js framework, context providers, UI layer, service layer, telemetry, and external systems.
+This diagram provides a high-level overview of the application's structure, including the Next.js framework, context providers, UI layer, service layer, and external systems.
 
 ```mermaid
 %%{init: {'theme':'dark'}}%%
@@ -39,15 +39,9 @@ flowchart TD
         end
     end
     
-    subgraph Telemetry["Telemetry"]
-        OpenTel[OpenTelemetry]
-        TelUtils[Telemetry Utils]
-    end
-    
     subgraph External_Systems["External Systems"]
         APIs[Chat & History APIs]
         LocalStorage[Browser LocalStorage]
-        TelBackend[Telemetry Backend]
     end
     
     App --> Layout
@@ -75,16 +69,11 @@ flowchart TD
     AHS --> APIs
     LHS --> LocalStorage
     
-    Components --> TelUtils
-    TelUtils --> OpenTel
-    OpenTel --> TelBackend
-    
     style Next_Framework fill:#1565c0,stroke:#0d47a1,color:#ffffff
     style Context_Providers fill:#6a1b9a,stroke:#4a148c,color:#ffffff
     style UI_Layer fill:#e65100,stroke:#bf360c,color:#ffffff
     style Service_Layer fill:#2e7d32,stroke:#1b5e20,color:#ffffff
     style External_Systems fill:#d84315,stroke:#bf360c,color:#ffffff
-    style Telemetry fill:#0097a7,stroke:#006064,color:#ffffff
     
     linkStyle default stroke:#88ccff,stroke-width:2px
 ``` 

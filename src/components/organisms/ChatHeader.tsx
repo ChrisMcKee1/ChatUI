@@ -1,12 +1,13 @@
 'use client';
 
-import { Box, Typography, AppBar, Toolbar, Tooltip, IconButton } from '@mui/material';
+import { Box, Typography, AppBar, Toolbar, Tooltip, IconButton, Menu, MenuItem } from '@mui/material';
 import { ThemeToggle } from '@/components/molecules/ThemeToggle';
 import { AgentToggle, AgentMode } from '@/components/molecules/AgentToggle';
-import { useTheme } from '@/context/ThemeContext';
+import { useTheme, TextSizeOption } from '@/context/ThemeContext';
 import { useChatContext } from '@/context/ChatContext';
-import { Plus, Eye, EyeOff } from 'lucide-react';
+import { Plus, Eye, EyeOff, Type } from 'lucide-react';
 import { getAppName } from '@/utils/environment';
+import React, { useState } from 'react';
 
 export interface ChatHeaderProps {
   agentMode: AgentMode;
@@ -47,16 +48,44 @@ export const ChatHeader = ({
   isExtraSmallScreen = false,
 }: ChatHeaderProps) => {
   // Get theme directly from context - this ensures we react to theme changes
-  const { theme, isDarkMode } = useTheme();
+  const { theme, isDarkMode, textSize, setTextSize } = useTheme();
   // Get tool message state from ChatContext
   const { showToolMessages, toggleToolMessageVisibility } = useChatContext();
   
+  const [anchorElMenu, setAnchorElMenu] = useState<null | HTMLElement>(null);
+  const openTextSizeMenu = Boolean(anchorElMenu);
+
   // Use theme colors with fallbacks - directly within render to ensure reactivity
   const primaryColor = theme?.colors?.primary || '#ff6188';
   
   // Get application name from environment variables
   const appName = getAppName();
   
+  const getHeaderTitleFontSize = () => {
+    const baseSizes = {
+      xs: 1, // 1rem
+      sm: 1.125, // 1.125rem
+      default: 1.25, // 1.25rem
+    };
+
+    let currentBaseSizeRem = baseSizes.default;
+    if (isExtraSmallScreen) {
+      currentBaseSizeRem = baseSizes.xs;
+    } else if (isSmallScreen) {
+      currentBaseSizeRem = baseSizes.sm;
+    }
+
+    switch (textSize) {
+      case 'small':
+        return `${currentBaseSizeRem * 0.9}rem`;
+      case 'large':
+        return `${currentBaseSizeRem * 1.1}rem`;
+      case 'medium':
+      default:
+        return `${currentBaseSizeRem}rem`;
+    }
+  };
+
   // Parse app name to color by uppercase letters
   const renderAppName = () => {
     const appNameValue = appName || 'ChatUI';
@@ -89,6 +118,19 @@ export const ChatHeader = ({
         <Box component="span">{secondPart}</Box>
       </>
     );
+  };
+
+  const handleTextSizeMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorElMenu(event.currentTarget);
+  };
+
+  const handleTextSizeMenuClose = () => {
+    setAnchorElMenu(null);
+  };
+
+  const handleSelectTextSize = (size: TextSizeOption) => {
+    setTextSize(size);
+    handleTextSizeMenuClose();
   };
   
   return (
@@ -125,7 +167,7 @@ export const ChatHeader = ({
             sx={{ 
               fontWeight: 'bold',
               color: isDarkMode ? 'white' : 'grey.900',
-              fontSize: isExtraSmallScreen ? '1rem' : isSmallScreen ? '1.125rem' : '1.25rem', // Smaller font on small screens
+              fontSize: getHeaderTitleFontSize(), // Applied dynamic font size
             }}
             suppressHydrationWarning
           >
@@ -154,6 +196,55 @@ export const ChatHeader = ({
               <Plus size={isSmallScreen ? 18 : 20} color={primaryColor} />
             </IconButton>
           </Tooltip>
+          <Tooltip title={`Text Size: ${textSize}`}>
+            <IconButton
+              onClick={handleTextSizeMenuClick}
+              size={isSmallScreen ? "small" : "medium"}
+              aria-controls={openTextSizeMenu ? 'text-size-menu' : undefined}
+              aria-haspopup="true"
+              aria-expanded={openTextSizeMenu ? 'true' : undefined}
+              sx={{
+                bgcolor: isDarkMode ? 'grey.800' : 'grey.100',
+                p: isSmallScreen ? 0.75 : 1,
+                '&:hover': {
+                  bgcolor: isDarkMode ? 'grey.700' : 'grey.200',
+                },
+              }}
+            >
+              <Type 
+                size={isSmallScreen ? 18 : 20} 
+                color={theme?.colors?.textSecondary ?? (isDarkMode ? '#bbb' : '#555')}
+              />
+            </IconButton>
+          </Tooltip>
+          <Menu
+            id="text-size-menu"
+            anchorEl={anchorElMenu}
+            open={openTextSizeMenu}
+            onClose={handleTextSizeMenuClose}
+            MenuListProps={{
+              'aria-labelledby': 'text-size-button',
+            }}
+          >
+            <MenuItem 
+              onClick={() => handleSelectTextSize('small')}
+              selected={textSize === 'small'}
+            >
+              Small
+            </MenuItem>
+            <MenuItem 
+              onClick={() => handleSelectTextSize('medium')}
+              selected={textSize === 'medium'}
+            >
+              Medium
+            </MenuItem>
+            <MenuItem 
+              onClick={() => handleSelectTextSize('large')}
+              selected={textSize === 'large'}
+            >
+              Large
+            </MenuItem>
+          </Menu>
           <Tooltip title={showToolMessages ? "Hide Tool Messages" : "Show Tool Messages"}>
             <IconButton 
               onClick={toggleToolMessageVisibility} 

@@ -1,10 +1,10 @@
 'use client';
 
 import { MessageSquare, Bot, Loader2 } from 'lucide-react';
-import { Box, Typography, CircularProgress, SxProps, Theme, Fade } from '@mui/material';
+import { Box, Typography, CircularProgress, SxProps, Theme, Fade, useMediaQuery, useTheme as useMuiTheme } from '@mui/material';
 import { ChatInput } from '@/components/molecules/ChatInput';
 import { AgentMode } from '@/components/molecules/AgentToggle';
-import { useTheme } from '@/context/ThemeContext';
+import { useTheme, TextSizeOption } from '@/context/ThemeContext';
 
 // Helper function to convert hex to rgb
 function hexToRgb(hex: string) {
@@ -35,8 +35,9 @@ export const ChatInputArea = ({
   className = '',
   sx = {},
 }: ChatInputAreaProps) => {
-  // Get theme directly from context to ensure reactivity to theme changes
-  const { theme, isDarkMode } = useTheme();
+  const { theme, isDarkMode, textSize } = useTheme();
+  const muiTheme = useMuiTheme(); // For screen size detection
+  const isXsScreen = useMediaQuery(muiTheme.breakpoints.down('sm')); // For screen size detection
   
   // Get theme colors with fallbacks
   const warningColor = theme?.colors?.warning || '#ffd866'; // Yellow/orange
@@ -50,6 +51,18 @@ export const ChatInputArea = ({
   const agentModeBgColor = isDarkMode 
     ? `rgba(${hexToRgb(secondaryColor)}, 0.9)` 
     : `rgba(${hexToRgb(secondaryColor)}, 0.5)`;
+  
+  const getModeIndicatorFontSize = () => {
+    // Using a slightly smaller scale than messages/inputs for caption text
+    const baseSizes = {
+      small: { xs: '0.65rem', default: '0.7rem' }, 
+      medium: { xs: '0.7rem', default: '0.75rem' },    
+      large: { xs: '0.75rem', default: '0.8rem' }     
+    };
+    // Fallback to medium if textSize is somehow not one of the TextSizeOption values
+    const sizeMap = baseSizes[textSize] || baseSizes.medium;
+    return isXsScreen ? sizeMap.xs : sizeMap.default;
+  };
   
   return (
     <Box
@@ -88,7 +101,7 @@ export const ChatInputArea = ({
               >
                 <MessageSquare size={12} color="#222" />
               </Box>
-              <Typography variant="caption" fontWeight="medium">
+              <Typography variant="caption" fontWeight="medium" sx={{ fontSize: getModeIndicatorFontSize() }}>
                 Using standard chat mode
               </Typography>
             </>
@@ -107,7 +120,7 @@ export const ChatInputArea = ({
               >
                 <Bot size={12} color="#222" />
               </Box>
-              <Typography variant="caption" fontWeight="medium">
+              <Typography variant="caption" fontWeight="medium" sx={{ fontSize: getModeIndicatorFontSize() }}>
                 Using multi-agent mode
               </Typography>
             </>
@@ -129,7 +142,7 @@ export const ChatInputArea = ({
                   className="animate-spin" 
                   style={{ marginRight: '6px' }} 
                 />
-                <Typography variant="caption" fontWeight="medium">
+                <Typography variant="caption" fontWeight="medium" sx={{ fontSize: getModeIndicatorFontSize() }}>
                   {agentMode === 'standard' ? 'Processing your request...' : 'Agents are thinking...'}
                 </Typography>
               </Box>
@@ -140,6 +153,7 @@ export const ChatInputArea = ({
           onSendMessage={onSendMessage}
           disabled={isLoading}
           placeholder={isLoading ? 'Waiting for response...' : `Type your message...`}
+          textSize={textSize}
         />
         {isLoading && (
           <Fade in={isLoading} timeout={500}>

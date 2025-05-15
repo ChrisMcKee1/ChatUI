@@ -26,7 +26,6 @@
     - Recreated 11 key architecture diagrams.
     - Updated diagram references.
 - **Updated API Documentation & Examples for Semantic Kernel Focus:** ✅
-- **Implemented OpenTelemetry with Azure Monitor Integration:** ✅
 - **Completed Full Project Review & Documentation Update:** ✅
 - **Fixed layout and container sizing issues:** ✅
 - **Completed message box text size/resolution improvement and markdown support:** ✅
@@ -43,6 +42,7 @@
 - **Fixed Storybook Runtime Error:** Resolved a syntax error in `ChatMessagePanel.stories.tsx` that prevented Storybook from loading. ✅
 - **Updated NPM Dependencies:** Ran `npm update` to resolve sub-dependency deprecation warnings and updated `package-lock.json`. ✅
 - **Completed Storybook Refactoring & Verification:** Reviewed and updated all component stories (Atom, Molecule, Organism, Template) according to guidelines and verified Storybook runs correctly. ✅
+- **Removed Telemetry System:** Successfully removed all OpenTelemetry and Azure Monitor related code, configurations, dependencies, and documentation from the application to simplify the codebase. ✅
 
 ## Decisions & Considerations
 - **Storybook Refactoring Plan:** Systematically review and update all stories (`Atoms`, `Molecules`, `Organisms`, `Templates`) based on current component implementations and `.cursorrules` guidelines, followed by running the `test-storybook` script.
@@ -59,7 +59,6 @@
 - Themes organized in dedicated directory.
 - Using functional state updates.
 - Ensured architecture diagrams are up to date.
-- Implemented OpenTelemetry with Azure Monitor.
 - Storybook stories rebuilt and aligned.
 - Consistent theming in Storybook verified.
 - Next.js build ignores lint/type errors for deployment.
@@ -76,9 +75,9 @@
 - Should we implement scroll position memory when switching between chats? (Lower priority)
 - Should we implement end-to-end tests for the application? (Future consideration)
 - How can we better integrate architecture diagrams into the development workflow? (Ongoing process)
-- **Which OpenTelemetry backend is most suitable for our needs (Jaeger, Zipkin, etc.)?** (Needs decision - Current: Azure Monitor)
-- **Should we implement custom instrumentation for specific critical paths?** (Needs decision - Currently using auto-instrumentation + basic manual)
-- **How can we balance comprehensive telemetry with minimal performance impact?** (Needs research/testing)
 - How can we automate testing of component states using Storybook? (Future consideration)
 - What's the best approach to handle linting rules in a collaborative development environment? (Lower priority)
 - How can we improve the display of very long messages or code blocks in `MessageBubble`? (Future enhancement)
+
+### Recent Research (Context7 MCP)
+*(Ensure this section is empty or only contains non-telemetry research)*

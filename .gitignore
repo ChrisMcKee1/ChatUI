@@ -63,9 +63,9 @@ next-env.d.ts
 *.njsproj
 *.sln
 
-# OpenTelemetry
 otel-logs/
 
 # Cache
 .eslintcache
 .swc/
+.cursorignore

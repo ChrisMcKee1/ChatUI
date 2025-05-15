@@ -167,29 +167,11 @@ This document outlines the key architectural and design patterns used in the Cha
 - **Service Layer Integration**:
   - `ApiChatService` (`src/services/ApiChatService.ts`) parses `TOOL` roles and `toolCall` / `toolCallId` fields from the API response (both native SK and minimal formats) and maps them to the `Message` interface.
 
-## OpenTelemetry Observability Patterns
-*(Refer to: [Diagram 2: Application Architecture](architectureDiagrams.md#2-application-architecture))*
-- **Configuration Approach**: Uses Next.js instrumentation hook (`instrumentation.ts`) for server-side initialization.
-  - Avoids loading SDK in the browser.
-  - Configured via environment variables. *(Refer to: [Diagram 5: Environment Configuration](architectureDiagrams.md#5-environment-configuration))*
-
-- **Instrumentation Strategy**:
-  - **Auto-Instrumentation**: OpenTelemetry's auto-instrumentations for HTTP on the server.
-  - **Server-Side Focus**: Node.js server-side components only.
-  - **Backend Integration**: Direct integration with Azure Monitor. *(Refer to: [Diagram 2: Application Architecture](architectureDiagrams.md#2-application-architecture) and [Diagram 10: Deployment Architecture](architectureDiagrams.md#10-deployment-architecture) for context)*
-
-- **Telemetry Data Collection**:
-  - **Tracing**: Distributed traces for server-side request processing.
-  - **Resource Attributes**: Includes service name, version, and environment information for proper context
-  - **Azure Monitor Integration**: Sends telemetry directly to Azure Application Insights
-
-- **Resource Management**:
-  - Implements proper SDK startup and shutdown procedures
-  - Ensures graceful termination with SIGTERM handler
-  - Provides detailed error logging for initialization failures
-
-- **Deployment Considerations**:
-  - Azure-specific implementation optimized for Azure Application Insights
-  - Configurable connection string through environment variables
-  - Environment-aware configuration to adapt to deployment context
-  - Webpack configuration to handle Node.js specific modules 
+## Environment Variable Management
+*(Refer to: [Diagram 5: Environment Configuration](architectureDiagrams.md#5-environment-configuration))*
+- **Configuration Sources**: `.env.local` for local development, GitHub Secrets for CI/CD, Azure App Settings for production runtime.
+- **Access**: Environment variables are accessed via `process.env.VARIABLE_NAME`.
+- **Build Time vs. Runtime**:
+  - `NEXT_PUBLIC_` prefixed variables are available at build time and client-side.
+  - Other variables are server-side only.
+- **Security**: Sensitive keys (API keys, connection strings) are managed via GitHub Secrets and Azure App Settings, not committed to the repository.

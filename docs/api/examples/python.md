@@ -80,7 +80,6 @@ app = FastAPI()
 # Helper to get configured chat service (replace with your actual injection/retrieval logic)
 async def get_chat_service() -> ChatCompletionClientBase:
     # This is a placeholder. In a real app, you'd likely inject the kernel or service.
-    from semantic_kernel.connectors.ai.open_ai import AzureChatCompletion # Example
     # Load config from env or other sources
     # service = AzureChatCompletion(...) 
     # return service

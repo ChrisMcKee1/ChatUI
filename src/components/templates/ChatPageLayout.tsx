@@ -8,7 +8,6 @@ import { ChatMessagePanel } from '@/components/molecules/ChatMessagePanel';
 import { ChatInputArea } from '@/components/organisms/ChatInputArea';
 import { useTheme } from '@/context/ThemeContext';
 import { useChatContext } from '@/context/ChatContext';
-import { trackComponentRender } from '@/utils/telemetry';
 import { getAppName } from '@/utils/environment';
 
 export interface ChatPageLayoutProps {
@@ -44,18 +43,18 @@ export const ChatPageLayout = ({
   useEffect(() => {
     setMounted(true);
     
-    // Track component render performance
-    const endTracking = trackComponentRender('ChatPageLayout', {
-      isMobile,
-      isSmallMobile,
-      isExtraSmallMobile,
-      isDarkMode,
-      hasMessages: messages.length > 0,
-      hasChatHistories: chatHistories.length > 0
-    });
+    // Track component render performance -- THIS BLOCK WILL BE COMMENTED OUT
+    // const endTracking = trackComponentRender('ChatPageLayout', { -- COMMENT OUT
+    //   isMobile, -- COMMENT OUT
+    //   isSmallMobile, -- COMMENT OUT
+    //   isExtraSmallMobile, -- COMMENT OUT
+    //   isDarkMode, -- COMMENT OUT
+    //   hasMessages: messages.length > 0, -- COMMENT OUT
+    //   hasChatHistories: chatHistories.length > 0 -- COMMENT OUT
+    // }); -- COMMENT OUT
     
-    // Clean up tracking when component unmounts
-    return endTracking;
+    // Clean up tracking when component unmounts -- COMMENT OUT
+    // return endTracking; -- COMMENT OUT
   }, []);
   
   // Local state for drawer
@@ -176,4 +175,4 @@ export const ChatPageLayout = ({
       </Box>
     </Box>
   );
-}; 
+} 

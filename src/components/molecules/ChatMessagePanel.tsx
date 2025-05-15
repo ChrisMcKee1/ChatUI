@@ -1,11 +1,11 @@
 'use client';
 
-import { Box, Typography, SxProps, Theme, IconButton, Menu, MenuItem, Tooltip } from '@mui/material';
+import { Box, Typography, SxProps, Theme } from '@mui/material';
 import { MessageBubble, Role } from '@/components/molecules/MessageBubble';
-import { MessageSquare, Type } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { useChatContext } from '@/context/ChatContext';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 // Define the ToolCall type based on the API response structure
 export interface ToolCall {
@@ -33,30 +33,16 @@ export interface ChatMessagePanelProps {
   isLoading?: boolean;
 }
 
-// Text size options for UI density control
-export type TextSizeOption = 'small' | 'medium' | 'large';
-
 export const ChatMessagePanel = ({
   messages,
   className = '',
   sx = {},
   isLoading = false,
 }: ChatMessagePanelProps) => {
-  const { theme, isDarkMode } = useTheme();
+  const { theme, isDarkMode, textSize } = useTheme();
   const { showToolMessages } = useChatContext();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [textSize, setTextSize] = useState<TextSizeOption>('medium');
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const open = Boolean(anchorEl);
-  
-  // Check if a stored preference exists and use it
-  useEffect(() => {
-    const storedTextSize = localStorage.getItem('chatui-text-size');
-    if (storedTextSize && ['small', 'medium', 'large'].includes(storedTextSize)) {
-      setTextSize(storedTextSize as TextSizeOption);
-    }
-  }, []);
   
   // Filter messages based on role and showToolMessages state
   const visibleMessages = messages.filter(message => {
@@ -117,6 +103,20 @@ export const ChatMessagePanel = ({
     return () => window.removeEventListener('resize', handleResize);
   }, [visibleMessages.length, scrollToBottom]);
 
+  const getLayoutSpacing = () => {
+    switch (textSize) {
+      case 'small':
+        return { gap: 2, padding: 3 }; // Smaller gap and padding
+      case 'large':
+        return { gap: 6, padding: 6 }; // Larger gap and padding (current default)
+      case 'medium':
+      default:
+        return { gap: 4, padding: 4 }; // Medium gap and padding
+    }
+  };
+
+  const layoutSpacing = getLayoutSpacing();
+
   // Add a MutationObserver to detect when new message content is added to the DOM
   // This is particularly helpful for streaming responses where the content changes incrementally
   useEffect(() => {
@@ -137,23 +137,6 @@ export const ChatMessagePanel = ({
     return () => observer.disconnect();
   }, [isLoading, scrollToBottom]);
   
-  // Handle opening the text size menu
-  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  // Handle closing the text size menu
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
-  // Handle selecting a text size
-  const handleSelectTextSize = (size: TextSizeOption) => {
-    setTextSize(size);
-    localStorage.setItem('chatui-text-size', size);
-    handleClose();
-  };
-  
   return (
     <Box
       ref={containerRef}
@@ -170,64 +153,6 @@ export const ChatMessagePanel = ({
         ...sx
       }}
     >
-      {/* Text size adjustment control */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: '1rem',
-          right: '1rem',
-          zIndex: 10,
-        }}
-      >
-        <Tooltip title={`Text Size: ${textSize}`}>
-          <IconButton
-            onClick={handleClick}
-            size="medium"
-            aria-controls={open ? 'text-size-menu' : undefined}
-            aria-haspopup="true"
-            aria-expanded={open ? 'true' : undefined}
-            sx={{ 
-              bgcolor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
-              '&:hover': {
-                bgcolor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
-              },
-              padding: '10px',
-              borderRadius: '8px',
-            }}
-          >
-            <Type size={24} color={isDarkMode ? '#fff' : '#000'} />
-          </IconButton>
-        </Tooltip>
-        <Menu
-          id="text-size-menu"
-          anchorEl={anchorEl}
-          open={open}
-          onClose={handleClose}
-          MenuListProps={{
-            'aria-labelledby': 'text-size-button',
-          }}
-        >
-          <MenuItem 
-            onClick={() => handleSelectTextSize('small')}
-            selected={textSize === 'small'}
-          >
-            Small
-          </MenuItem>
-          <MenuItem 
-            onClick={() => handleSelectTextSize('medium')}
-            selected={textSize === 'medium'}
-          >
-            Medium
-          </MenuItem>
-          <MenuItem 
-            onClick={() => handleSelectTextSize('large')}
-            selected={textSize === 'large'}
-          >
-            Large
-          </MenuItem>
-        </Menu>
-      </Box>
-
       {visibleMessages.length === 0 ? (
         <Box
           sx={{
@@ -285,8 +210,8 @@ export const ChatMessagePanel = ({
           sx={{ 
             display: 'flex', 
             flexDirection: 'column', 
-            gap: 6, 
-            p: 6,
+            gap: layoutSpacing.gap, // Dynamic gap
+            p: layoutSpacing.padding, // Dynamic padding
             overflow: 'auto',
             width: '100%', 
             height: '100%',

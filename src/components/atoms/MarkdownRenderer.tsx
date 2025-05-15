@@ -40,19 +40,31 @@ export const MarkdownRenderer = ({
   // Determine font size based on textSize prop and screen size
   const getFontSize = () => {
     const baseSizes = {
-      small: { xs: '0.75rem', default: '0.875rem' },
+      small: { xs: '0.75rem', default: '0.8125rem' },
       medium: { xs: '0.875rem', default: '1rem' },
-      large: { xs: '1rem', default: '1.125rem' }
+      large: { xs: '1rem', default: '1.1875rem' }
     };
     
     return isXsScreen ? baseSizes[textSize].xs : baseSizes[textSize].default;
+  };
+  
+  const getLineHeight = () => {
+    switch (textSize) {
+      case 'small':
+        return 1.4;
+      case 'large':
+        return 1.6;
+      case 'medium':
+      default:
+        return 1.5;
+    }
   };
   
   // Create CSS for styling the rendered markdown
   const markdownStyles = {
     '& p': { 
       margin: '0.75em 0',
-      lineHeight: 1.5,
+      lineHeight: getLineHeight(),
     },
     '& ul, & ol': { 
       paddingLeft: isXsScreen ? '1.5em' : '2em',

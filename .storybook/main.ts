@@ -37,8 +37,6 @@ const config: StorybookConfig = {
       config.resolve.alias = {
         ...config.resolve.alias,
         '@': path.resolve(__dirname, '../src'),
-        // Mock OpenTelemetry API to avoid __dirname issues
-        '@opentelemetry/api': path.resolve(__dirname, './mocks/opentelemetry.js'),
         // Mock ServiceProvider for Storybook
         '@/services/ServiceProvider': path.resolve(__dirname, './mocks/ServiceProvider.js'),
         // Mock ServiceFactory as well

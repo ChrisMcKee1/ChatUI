@@ -129,15 +129,9 @@ flowchart TD
         end
     end
     
-    subgraph Telemetry["Telemetry"]
-        OpenTel[OpenTelemetry]
-        TelUtils[Telemetry Utils]
-    end
-    
     subgraph External_Systems["External Systems"]
         APIs[Chat & History APIs]
         LocalStorage[Browser LocalStorage]
-        TelBackend[Telemetry Backend]
     end
     
     App --> Layout
@@ -165,16 +159,11 @@ flowchart TD
     AHS --> APIs
     LHS --> LocalStorage
     
-    Components --> TelUtils
-    TelUtils --> OpenTel
-    OpenTel --> TelBackend
-    
     style Next_Framework fill:#1565c0,stroke:#0d47a1,color:#ffffff
     style Context_Providers fill:#6a1b9a,stroke:#4a148c,color:#ffffff
     style UI_Layer fill:#e65100,stroke:#bf360c,color:#ffffff
     style Service_Layer fill:#2e7d32,stroke:#1b5e20,color:#ffffff
     style External_Systems fill:#d84315,stroke:#bf360c,color:#ffffff
-    style Telemetry fill:#0097a7,stroke:#006064,color:#ffffff
     
     linkStyle default stroke:#88ccff,stroke-width:2px
 ```
@@ -344,7 +333,6 @@ flowchart TD
         MA_MODE[NEXT_PUBLIC_MULTI_AGENT_CHAT_API_MODE]
         CH_URL[NEXT_PUBLIC_CHAT_HISTORY_API_URL]
         CH_MODE[NEXT_PUBLIC_CHAT_HISTORY_MODE]
-        OTEL[OTEL_EXPORTER_OTLP_ENDPOINT]
     end
     
     Dev -->|Uses| EnvLocal
@@ -641,7 +629,6 @@ flowchart TD
         subgraph FrontendInfra["Frontend Infrastructure"]
             AzureStaticWebApps[Azure Static Web Apps]
             CDN[Azure CDN]
-            Monitoring[Application Insights]
         end
         
         subgraph BackendInfra["Backend Infrastructure (Separate)"]
@@ -676,7 +663,6 @@ flowchart TD
     
     Deploy -->|Deploys to| AzureStaticWebApps
     AzureStaticWebApps -->|Fronted by| CDN
-    AzureStaticWebApps -->|Monitored by| Monitoring
     
     EnvLocal -->|Used in| Local
     GitHubSecrets -->|Generates| BuildEnv

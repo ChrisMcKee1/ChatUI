@@ -3,7 +3,6 @@ import { Message, ToolCall } from '@/components/molecules/ChatMessagePanel';
 import { Role } from '@/components/molecules/MessageBubble';
 import { AgentMode } from '@/components/molecules/AgentToggle';
 import { IChatService, ChatMessage } from './IChatService';
-import { trackApiCall } from '@/utils/telemetry';
 
 // Define error types for better error handling
 export class ChatApiError extends Error {
@@ -86,69 +85,49 @@ export class ApiChatService implements IChatService {
    * @throws {Error} For other unexpected errors
    */
   async sendMessage(messages: ChatMessage[], agentMode: AgentMode): Promise<Message | Message[]> {
-    // Use trackApiCall to add telemetry to the API call
-    return trackApiCall(
-      agentMode === 'standard' ? 'standard_chat' : 'multi_agent_chat',
-      async () => {
-        // Create a new abort controller for this request
-        this.abortController = new AbortController();
-        const signal = this.abortController.signal;
-        
-        // Create a timeout that will abort the request if it takes too long
-        let timeoutId: NodeJS.Timeout | null = setTimeout(() => {
-          this.abortController?.abort();
-          timeoutId = null; // Clear timeoutId when timeout occurs
-        }, this.timeoutMs);
-        
-        try {
-          // Determine which API endpoint to use based on the agent mode
-          const apiUrl = agentMode === 'standard' ? this.standardChatApiUrl : this.multiAgentChatApiUrl;
-          
-          // Prepare the request payload - same for both modes
-          const payload = {
-            messages: messages.map(msg => ({
-              role: msg.role,
-              content: msg.content
-            })),
-          };
-          
-          if (agentMode === 'standard') {
-            return await this.handleStandardMode(apiUrl, payload, signal);
-          } else {
-            return await this.handleMultiAgentMode(apiUrl, payload, signal);
-          }
-        } catch (error: unknown) {
-          // Centralized error checking
-          if (error instanceof Error) {
-            if (error.name === 'AbortError') {
-              // Use !!timeoutId to check if it was a timeout or manual abort
-              if (timeoutId) { // If timeoutId still exists, it was a manual abort
-                throw new Error('Request was cancelled.');
-              } else { // If timeoutId is null, the timeout occurred
-                throw new TimeoutError();
-              }
-            } else if (error instanceof ChatApiError || error instanceof NetworkError) {
-              throw error; // Rethrow known API/Network error types
-            } else if (error.message.includes('fetch') || error.message.includes('network')) {
-              // Catch generic fetch/network errors
-              throw new NetworkError('Network error. Please check your connection.');
-            }
-          }
-          
-          // Log and throw generic error for anything else
-          console.error('Unexpected API call error:', error);
-          throw new Error('An unexpected error occurred. Please try again later.');
-        } finally {
-          if (timeoutId) clearTimeout(timeoutId);
-          this.abortController = null;
-        }
-      },
-      {
-        'agent.mode': agentMode,
-        'messages.count': messages.length,
-        'timeout.ms': this.timeoutMs
+    this.abortController = new AbortController();
+    const { signal } = this.abortController;
+
+    // Determine the correct API endpoint based on agent mode
+    const endpoint = agentMode === 'standard' 
+      ? process.env.NEXT_PUBLIC_STANDARD_CHAT_API_URL
+      : process.env.NEXT_PUBLIC_MULTI_AGENT_CHAT_API_URL;
+
+    if (!endpoint) {
+      throw new ChatApiError('API endpoint is not configured. Please check environment variables.', 500);
+    }
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ messages }),
+        signal, // Pass the signal to the fetch request
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({ message: 'Failed to parse error response' }));
+        console.error('API Error:', response.status, errorBody);
+        throw new ChatApiError(errorBody.message || `HTTP error! status: ${response.status}`, response.status);
       }
-    );
+
+      const data = await response.json();
+      return data.messages;
+
+    } catch (error) {
+      if (error instanceof ChatApiError) {
+        throw error; // Re-throw ChatApiError directly
+      }
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        console.log('Request aborted by user');
+        throw new Error('Request aborted'); // Or handle as needed
+      }
+      // Handle network errors or other unexpected errors
+      console.error('Network or unexpected error:', error);
+      throw new Error('Network error or unexpected issue occurred.');
+    }
   }
   
   /**
@@ -377,20 +356,9 @@ export class ApiChatService implements IChatService {
    */
   private async handleErrorResponse(response: Response): Promise<void> {
     if (!response.ok) {
-      const errorText = await response.text().catch(() => 'Failed to read error details.');
-      let errorMessage = `API call failed with status ${response.status}: ${errorText}`;
-
-      // Provide more user-friendly messages for common statuses
-      switch (response.status) {
-        case 400: errorMessage = `Bad request: ${errorText}`; break;
-        case 401: errorMessage = 'Authentication failed. Please check credentials.'; break;
-        case 403: errorMessage = 'Permission denied to access the resource.'; break;
-        case 404: errorMessage = 'API endpoint not found.'; break;
-        case 429: errorMessage = 'Too many requests. Please try again later.'; break;
-        case 500: case 502: case 503: case 504:
-          errorMessage = `Server error (${response.status}). Please try again later.`; break;
-      }
-      throw new ChatApiError(errorMessage, response.status);
+      const errorBody = await response.json().catch(() => ({ message: 'Failed to parse error response' }));
+      console.error('API Error:', response.status, errorBody);
+      throw new ChatApiError(errorBody.message || `HTTP error! status: ${response.status}`, response.status);
     }
   }
   

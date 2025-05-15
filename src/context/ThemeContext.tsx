@@ -1,9 +1,12 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { createTheme, ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
 import darkThemeVSCode from '../themes/DarkTheme.json';
 import lightThemeVSCode from '../themes/LightTheme.json';
+
+// Define TextSizeOption type (can be moved to a shared types file later if needed)
+export type TextSizeOption = 'small' | 'medium' | 'large';
 
 // Default fallback colors if the theme import fails
 const DEFAULT_THEME = {
@@ -97,12 +100,14 @@ type ThemeContextType = {
   theme: SimplifiedTheme;
   isDarkMode: boolean;
   toggleTheme: () => void;
+  textSize: TextSizeOption;
+  setTextSize: (size: TextSizeOption) => void;
 };
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export interface ThemeProviderProps {
-  children: React.ReactNode;
+  children: ReactNode;
   // Optional prop to override the default theme (used by Storybook)
   _storybook_isDarkMode?: boolean;
 }
@@ -157,6 +162,15 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
 
   // Set theme based on current dark mode state
   const [theme, setTheme] = useState<SimplifiedTheme>(isDarkMode ? darkTheme : lightTheme);
+  const [textSize, setTextSizeState] = useState<TextSizeOption>('medium');
+
+  // Load textSize from localStorage on initial mount
+  useEffect(() => {
+    const storedTextSize = localStorage.getItem('chatui-text-size');
+    if (storedTextSize && ['small', 'medium', 'large'].includes(storedTextSize)) {
+      setTextSizeState(storedTextSize as TextSizeOption);
+    }
+  }, []);
 
   // Toggle between dark and light modes
   const toggleTheme = () => {
@@ -194,8 +208,14 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     }
   }, [isDarkMode]); // Only depend on isDarkMode, not theme
 
+  // Function to update text size and save to localStorage
+  const setTextSize = (size: TextSizeOption) => {
+    setTextSizeState(size);
+    localStorage.setItem('chatui-text-size', size);
+  };
+
   return (
-    <ThemeContext.Provider value={{ theme, isDarkMode, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, isDarkMode, toggleTheme, textSize, setTextSize }}>
       {children}
     </ThemeContext.Provider>
   );

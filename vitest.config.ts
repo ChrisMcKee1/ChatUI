@@ -23,9 +23,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(dirname, './src'),
-      // Mock the OpenTelemetry API during tests
-      '@opentelemetry/api': path.resolve(dirname, './.storybook/mocks/opentelemetry.js')
+      '@': path.resolve(dirname, './src')
     }
   }
 });
